@@ -234,7 +234,7 @@ SUPABASE_PUBLISHABLE_KEY="sb_publishable_NEW_KEY"
 
 (client keys ถูก bake เข้า bundle ตอน build — ต้อง re-build หลังแก้)
 
-### 7. อัปเดต env vars บน production runtime (แจ้ง admin)
+### 7. อัปเดต env vars บน production runtime (แจ้ง admin INET)
 
 ค่า `SUPABASE_*` (ไม่มี `VITE_`) ใช้ตอน runtime บน server — admin ของทีมจะเป็นคนอัปเดตให้ตรง
 
