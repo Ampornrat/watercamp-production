@@ -97,7 +97,7 @@ git commit -m "docs: แก้ typo ใน README"
 git push
 ```
 
-หรือบังคับ skip ตอน commit (แม้จะแก้ source code):
+#### หรือบังคับ skip ตอน commit (แม้จะแก้ source code) ให้ใส่ [skip ci] ในข้อความ:
 
 ```powershell
 git add src/routes/index.tsx
@@ -127,8 +127,6 @@ Live ที่ https://watercamp.kwunjai.com
 ```
 
 **รวม 3-18 นาที** จาก push ถึงเห็นการเปลี่ยนแปลงในเว็บ
-
-ถ้าอยากเห็นทันที (ไม่รอ 15 นาที) แจ้ง admin ของทีมให้ trigger pull ให้
 
 ---
 
@@ -162,6 +160,105 @@ Live ที่ https://watercamp.kwunjai.com
 | Build fail ที่ `bun install` | network โหลด package พลาด | กด **Re-run all jobs** ปกติหายเอง |
 | Workflow ไม่รันหลัง push | แก้แค่ไฟล์ที่อยู่ใน `paths-ignore` หรือ commit message มี `[skip ci]` | normal — ใช้ Force deploy ถ้าจำเป็น |
 | Workflow เขียวแล้วแต่เว็บยังไม่เปลี่ยน | container platform ยังไม่ pull image ใหม่ | รอจนครบ 15 นาที หรือแจ้ง admin |
+
+---
+
+## เปลี่ยน Supabase project (ย้ายจาก Lovable → account ของทีมเอง)
+
+ถ้าจะย้ายจาก Supabase ที่ใช้ร่วมกับ Lovable มาเป็น project ใหม่ของทีมเอง ต้องแก้หลายจุดให้ครบ ไม่งั้นเว็บจะเชื่อม DB ไม่ตรงกัน
+
+### 1. สร้าง Supabase project ใหม่
+
+ที่ https://supabase.com/dashboard → **New project**
+
+เก็บค่าจาก **Project Settings → API**:
+
+| ค่า | จะใช้ที่ไหน |
+|---|---|
+| Project URL (`https://xxx.supabase.co`) | env var ทุกที่ |
+| Project ID (`xxx`) | env var ทุกที่ |
+| `publishable` / `anon` key | client + server |
+| `service_role` key (`sb_secret_*`) | ใส่ใน Supabase Vault เท่านั้น — **ห้าม commit / ห้ามใส่ใน env var** |
+
+### 2. Run migrations ลง project ใหม่
+
+ติดตั้ง [Supabase CLI](https://supabase.com/docs/guides/local-development) แล้ว:
+
+```powershell
+supabase login
+supabase link --project-ref <NEW_PROJECT_ID>
+supabase db push
+```
+
+### 3. ตั้ง Vault secret (สำคัญ — ไม่งั้น email/queue ไม่ทำงาน)
+
+ที่ Supabase Dashboard → **SQL Editor** รัน:
+
+```sql
+SELECT vault.update_secret(
+  (SELECT id FROM vault.secrets WHERE name='email_queue_service_role_key'),
+  'sb_secret_YOUR_NEW_SERVICE_ROLE_KEY',
+  'email_queue_service_role_key'
+);
+```
+
+(migration `20260528091115_*.sql` มี placeholder ที่ต้องใส่ค่าจริงด้วยตัวเอง)
+
+### 4. ตั้ง Auth URLs
+
+Supabase Dashboard → **Authentication → URL Configuration**:
+- **Site URL**: `https://watercamp.kwunjai.com`
+- **Redirect URLs**: เพิ่ม `https://watercamp.kwunjai.com/**` + `http://localhost:3000/**` (สำหรับ dev)
+
+### 5. อัปเดต `.env` ในเครื่อง local
+
+แก้ทั้ง 6 ตัว — `VITE_*` (client) และไม่มี prefix (server) ต้องชี้ไป project เดียวกัน:
+
+```
+VITE_SUPABASE_URL="https://NEW_ID.supabase.co"
+VITE_SUPABASE_PROJECT_ID="NEW_ID"
+VITE_SUPABASE_PUBLISHABLE_KEY="sb_publishable_NEW_KEY"
+SUPABASE_URL="https://NEW_ID.supabase.co"
+SUPABASE_PROJECT_ID="NEW_ID"
+SUPABASE_PUBLISHABLE_KEY="sb_publishable_NEW_KEY"
+```
+
+แจ้งทีมให้อัปเดตค่าใน shared vault ด้วย
+
+### 6. อัปเดต GitHub Secrets (สำหรับ CI build)
+
+ไปที่ repo → **Settings → Secrets and variables → Actions** อัปเดต 3 ตัว:
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PROJECT_ID`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+
+(client keys ถูก bake เข้า bundle ตอน build — ต้อง re-build หลังแก้)
+
+### 7. อัปเดต env vars บน production runtime (แจ้ง admin)
+
+ค่า `SUPABASE_*` (ไม่มี `VITE_`) ใช้ตอน runtime บน server — admin ของทีมจะเป็นคนอัปเดตให้ตรง
+
+### 8. Force re-build + redeploy
+
+หลังอัปเดต GitHub Secrets เสร็จ ต้อง re-build image (ของเดิมยัง bake key เก่าไว้):
+
+ไปที่ [Actions tab](https://github.com/Ampornrat/watercamp-production/actions) → **Build and Deploy** → **Run workflow** → main → **Run workflow**
+
+รอจน build เสร็จ + admin trigger pull image ใหม่บน container platform → ตรวจเว็บว่าเชื่อม DB ใหม่ได้
+
+### (Optional) ย้ายข้อมูลจาก DB เก่า
+
+ใช้ `pg_dump` / `pg_restore`:
+
+```powershell
+# Export จาก Supabase เก่า (เอา connection string จาก Settings → Database)
+pg_dump "postgres://OLD_CONNECTION_STRING" --no-owner --no-acl > backup.sql
+
+# Import เข้า Supabase ใหม่
+psql "postgres://NEW_CONNECTION_STRING" < backup.sql
+```
+
+⚠️ **Storage files** (รูป / ไฟล์ upload) ใน `storage.objects` ต้อง copy แยก — ไม่มากับ pg_dump ปกติ ใช้ Supabase Storage API หรือ download/reupload เอง
 
 ---
 
