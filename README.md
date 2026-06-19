@@ -73,6 +73,40 @@ GitHub Actions รัน workflow [Build and Deploy](.github/workflows/deploy.ym
 | `*.md`, `.env.example`, `.gitignore`, `e2e/**`, `.vscode/**` | ❌ Skip |
 | commit message มี `[skip ci]` (เช่น `git commit -m "wip [skip ci]"`) | ❌ Skip |
 
+#### ✅ ตัวอย่าง push ที่ **deploy**
+
+แก้ source code แล้ว push ปกติ — workflow จะรันให้เอง:
+
+```powershell
+# แก้ไฟล์ใน src/ (เช่น เปลี่ยน text บนหน้าเว็บ)
+git add src/routes/index.tsx
+git commit -m "fix: ปรับ text หัวข้อ"
+git push
+```
+
+→ ภายใน 3-18 นาที จะเห็นการเปลี่ยนแปลงที่ https://watercamp.kwunjai.com
+
+#### ❌ ตัวอย่าง push ที่ **ไม่ deploy**
+
+แก้แค่ docs / config ที่ไม่กระทบ build — workflow ข้ามอัตโนมัติ:
+
+```powershell
+# แก้แค่ README ไม่ต้อง deploy
+git add README.md
+git commit -m "docs: แก้ typo ใน README"
+git push
+```
+
+หรือบังคับ skip ตอน commit (แม้จะแก้ source code):
+
+```powershell
+git add src/routes/index.tsx
+git commit -m "wip: ทดสอบ local ก่อน [skip ci]"
+git push
+```
+
+→ image บน Docker Hub และ live site **ไม่เปลี่ยน**
+
 ### Force deploy โดยไม่แก้ code
 
 ใช้เมื่อ image มีปัญหา / อยาก rebuild:
