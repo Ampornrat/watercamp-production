@@ -3,6 +3,18 @@ name: Build and Deploy
 on:
   push:
     branches: [main]
+    # Auto-deploy skips when only these files change. Use the "Run workflow"
+    # button in the Actions tab to force a deploy, or add [skip ci] to a
+    # commit message to skip on an otherwise-matching push.
+    paths-ignore:
+      - '**.md'
+      - '.env.example'
+      - '.gitignore'
+      - '.dockerignore'
+      - '.prettierrc'
+      - '.prettierignore'
+      - 'e2e/**'
+      - '.vscode/**'
   workflow_dispatch:
 
 concurrency:

@@ -250,6 +250,25 @@ env:
 
 หลัง push เข้า branch `main` workflow จะทำงานอัตโนมัติ
 
+### Skip auto-deploy
+
+ไม่ต้องการให้ workflow รันทุกครั้งที่ push? มี 3 วิธี:
+
+1. **เปลี่ยนเฉพาะไฟล์ที่อยู่ใน `paths-ignore`** — workflow จะ skip อัตโนมัติ (default: `**.md`, `.env.example`, `.gitignore`, `.dockerignore`, prettier configs, `e2e/**`, `.vscode/**`)
+2. **ใส่ `[skip ci]` ใน commit message** — บังคับ skip แม้จะเปลี่ยน source code
+   ```powershell
+   git commit -m "wip: testing locally [skip ci]"
+   ```
+3. **Push ไป branch อื่นที่ไม่ใช่ `main`** — workflow ตั้ง trigger เฉพาะ main
+
+### Force deploy ทั้งที่ไม่มี code change
+
+ถ้า image บน Docker Hub มีปัญหาหรืออยาก rebuild:
+1. ไปที่ Actions tab → **Build and Deploy** workflow
+2. มุมขวาบน → **Run workflow** → เลือก branch `main` → **Run workflow**
+
+(ใช้ trigger `workflow_dispatch` ที่กำหนดไว้ใน workflow)
+
 ### Deploy ที่ไหนก็ได้ที่รัน Docker container ได้
 
 Image ที่ push ขึ้น Docker Hub เป็น **portable image** — เอาไป deploy ที่ไหนก็ได้:
