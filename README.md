@@ -88,20 +88,13 @@ GitHub Actions รัน workflow [Build and Deploy](.github/workflows/deploy.ym
 ```
 git push
   ↓ ~3 นาที — GitHub Actions build + push image เข้า Docker Hub
-  ↓ สูงสุด 15 นาที — OpenShift poll Docker Hub แล้ว rollout เอง
+  ↓ สูงสุด 15 นาที — container platform ดึง image ใหม่และ rollout เอง
 Live ที่ https://watercamp.kwunjai.com
 ```
 
 **รวม 3-18 นาที** จาก push ถึงเห็นการเปลี่ยนแปลงในเว็บ
 
-### อยากเห็นทันที (ไม่รอ 15 นาที)
-
-หลัง GitHub Actions เขียวแล้ว (image ถึง Docker Hub แล้ว):
-
-1. login [https://containerplatform.inet.co.th](https://containerplatform.inet.co.th)
-2. ไปที่ **Builds → ImageStreams → water-data-camp**
-3. มุมขวาบน **Actions → Import Image**
-4. รอ ~30 วินาที → refresh https://watercamp.kwunjai.com
+ถ้าอยากเห็นทันที (ไม่รอ 15 นาที) แจ้ง admin ของทีมให้ trigger pull ให้
 
 ---
 
@@ -110,13 +103,12 @@ Live ที่ https://watercamp.kwunjai.com
 ### URL ที่ใช้บ่อย
 
 - **Actions runs**: https://github.com/Ampornrat/watercamp-production/actions
-- **OpenShift console**: https://containerplatform.inet.co.th
 - **Live site**: https://watercamp.kwunjai.com
 
 ### ดูว่า workflow สำเร็จไหม
 
 ที่หน้า Actions tab:
-- 🟢 **สีเขียว** = build + push สำเร็จ → รอ OpenShift pull (15 นาที) หรือกด Import Image
+- 🟢 **สีเขียว** = build + push สำเร็จ → รอ deploy อัตโนมัติ (สูงสุด 15 นาที)
 - 🔴 **สีแดง** = มี error → คลิกเข้าไปดู
 
 ### ดูว่า fail ที่ step ไหน
@@ -135,13 +127,7 @@ Live ที่ https://watercamp.kwunjai.com
 | Build fail ที่ vite / TypeScript error | code มี syntax / type error | อ่าน log → แก้ code ตามที่บอก → push ใหม่ |
 | Build fail ที่ `bun install` | network โหลด package พลาด | กด **Re-run all jobs** ปกติหายเอง |
 | Workflow ไม่รันหลัง push | แก้แค่ไฟล์ที่อยู่ใน `paths-ignore` หรือ commit message มี `[skip ci]` | normal — ใช้ Force deploy ถ้าจำเป็น |
-
-### ดู deploy ใน OpenShift (หลัง image ถูก pull แล้ว)
-
-login OpenShift → **Workloads → Pods → water-data-camp-...**
-
-- **Status: Running** + Restarts: 0-1 = OK
-- คลิกเข้าไปดู **Logs** ถ้าสงสัย — ต้องเห็นบรรทัด `➜ Listening on: http://localhost:3000/`
+| Workflow เขียวแล้วแต่เว็บยังไม่เปลี่ยน | container platform ยังไม่ pull image ใหม่ | รอจนครบ 15 นาที หรือแจ้ง admin |
 
 ---
 
