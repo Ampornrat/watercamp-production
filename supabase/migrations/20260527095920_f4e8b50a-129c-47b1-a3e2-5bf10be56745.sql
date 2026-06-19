@@ -1,0 +1,2 @@
+ALTER TABLE public.registrations ADD COLUMN institute_id uuid REFERENCES public.institutes_tab(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_registrations_institute_id ON public.registrations(institute_id);

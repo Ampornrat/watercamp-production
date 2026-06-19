@@ -1,0 +1,1 @@
+CREATE OR REPLACE FUNCTION public._tmp_vault_sha() RETURNS TEXT LANGUAGE sql SECURITY DEFINER SET search_path=public AS $$ SELECT md5((SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name='email_queue_service_role_key')) $$;
