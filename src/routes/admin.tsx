@@ -127,13 +127,21 @@ function Admin() {
 
   const coreTrainings = (trainings.data ?? []).filter((t: any) => t.course_type === "core");
 
+  const toDatetimeLocal = (d: any) => {
+    if (!d) return '';
+    const dt = d instanceof Date ? d : new Date(d);
+    if (isNaN(dt.getTime())) return '';
+    const p = (n: number) => String(n).padStart(2, '0');
+    return `${dt.getFullYear()}-${p(dt.getMonth()+1)}-${p(dt.getDate())}T${p(dt.getHours())}:${p(dt.getMinutes())}`;
+  };
+
   const openNew = () => { setForm(empty); setDialogOpen(true); };
   const openEdit = (t: any) => {
     setForm({
       id: t.id, title: t.title, description: t.description ?? "", category: t.category ?? "",
       instructor: t.instructor ?? "", location: t.location ?? "",
-      start_date: t.start_date ? t.start_date.slice(0, 16) : "",
-      end_date: t.end_date ? t.end_date.slice(0, 16) : "",
+      start_date: toDatetimeLocal(t.start_date),
+      end_date: toDatetimeLocal(t.end_date),
       capacity: t.capacity, is_published: !!t.is_published,
       cover_image_url: t.cover_image_url ?? "",
       attachment_1_url: t.attachment_1_url ?? "", attachment_1_name: t.attachment_1_name ?? "",
