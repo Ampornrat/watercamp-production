@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
 import { useEffect, useState } from 'react'
-import { BookOpen, CheckCircle2, Clock, ExternalLink, GraduationCap, LogOut, Trophy, User, XCircle } from 'lucide-react'
+import { BookOpen, CheckCircle2, Clock, ExternalLink, GraduationCap, LogOut, Trophy, User } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -241,16 +241,11 @@ function StudentDashboardPage() {
                               </span>
                             )
                           )}
-                          {r.approval_status === 'approved' && r.completion_status === 'enrolled' && (
+                          {r.approval_status === 'approved' && r.completion_status === 'enrolled' && !hasEnded && (
                             r.self_confirmed_at ? (
                               <span className="mt-1.5 inline-flex items-center gap-1 text-xs text-muted-foreground">
                                 <CheckCircle2 className="h-3 w-3 text-green-500" />
                                 ยืนยันการเข้าเรียนแล้ว — รอ admin ตรวจสอบ
-                              </span>
-                            ) : hasEnded ? (
-                              <span className="mt-1.5 inline-flex items-center gap-1 text-xs text-destructive/80">
-                                <XCircle className="h-3 w-3" />
-                                เลยเวลาเรียนแล้ว ไม่สามารถเข้าเรียนได้
                               </span>
                             ) : hasStarted ? (
                               <Button
