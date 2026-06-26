@@ -25,6 +25,10 @@ export const notifyRegistration = createServerFn({ method: 'POST' })
       `- ${t.title} (${new Date(t.start_date).toLocaleDateString('th-TH', { dateStyle: 'long' })})`
     ).join('\n')
 
+    const siteUrl = process.env.SITE_URL ?? 'http://localhost:3000'
+    const profileUrl = `${siteUrl}/student/profile?email=${encodeURIComponent(data.guest_email)}`
+    const dashboardUrl = `${siteUrl}/advisor/dashboard`
+
     // Email to student
     await sendMail({
       to: data.guest_email,
@@ -40,11 +44,17 @@ export const notifyRegistration = createServerFn({ method: 'POST' })
           <p style="color:#64748b;font-size:13px;margin-top:24px">
             ท่านจะได้รับอีเมลแจ้งผลการอนุมัติจากอาจารย์ที่ปรึกษาอีกครั้ง
           </p>
+          <div style="text-align:center;margin:28px 0">
+            <a href="${profileUrl}"
+               style="background:#0f172a;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px">
+              ดูประวัติการเรียนของฉัน
+            </a>
+          </div>
           <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">
           <p style="color:#94a3b8;font-size:12px">ศูนย์ฝึกอบรม คลังข้อมูลน้ำแห่งชาติ</p>
         </div>
       `,
-      text: `เรียนคุณ ${data.guest_name}\n\nระบบได้รับการลงทะเบียนของท่านแล้ว รอการอนุมัติจากอาจารย์ที่ปรึกษา\n\nหลักสูตรที่ลงทะเบียน:\n${trainingListText}`,
+      text: `เรียนคุณ ${data.guest_name}\n\nระบบได้รับการลงทะเบียนของท่านแล้ว รอการอนุมัติจากอาจารย์ที่ปรึกษา\n\nหลักสูตรที่ลงทะเบียน:\n${trainingListText}\n\nดูประวัติการเรียน: ${profileUrl}`,
     })
 
     // Find advisors for this institute
@@ -53,9 +63,6 @@ export const notifyRegistration = createServerFn({ method: 'POST' })
       [data.institute_id]
     )
     const advisors = advisorRows as { full_name: string; email: string }[]
-
-    const siteUrl = process.env.SITE_URL ?? 'http://localhost:3000'
-    const dashboardUrl = `${siteUrl}/advisor/dashboard`
 
     await Promise.all(advisors.map((advisor) =>
       sendMail({

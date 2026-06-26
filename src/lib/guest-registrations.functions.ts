@@ -75,5 +75,27 @@ export const createGuestRegistrations = createServerFn({ method: 'POST' })
       }
     }
 
+    // Upsert student profile
+    const { randomUUID } = await import('crypto')
+    await pool.query(
+      `INSERT INTO student_profiles
+         (id, email, full_name, gender, age, education_level, field_of_study, participant_status, institute_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         full_name = VALUES(full_name),
+         gender = VALUES(gender),
+         age = VALUES(age),
+         education_level = VALUES(education_level),
+         field_of_study = VALUES(field_of_study),
+         participant_status = VALUES(participant_status),
+         institute_id = VALUES(institute_id),
+         updated_at = NOW()`,
+      [
+        randomUUID(), data.guest_email, data.guest_name,
+        data.gender, data.age, data.education_level,
+        data.field_of_study ?? null, data.participant_status, data.institute_id,
+      ]
+    )
+
     return { ok: true, count: data.training_ids.length };
   });

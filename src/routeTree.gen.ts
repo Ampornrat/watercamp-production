@@ -22,6 +22,7 @@ import { Route as TrainingsIndexRouteImport } from './routes/trainings.index'
 import { Route as ContestIndexRouteImport } from './routes/contest.index'
 import { Route as TrainingsIdRouteImport } from './routes/trainings.$id'
 import { Route as SurveyTokenRouteImport } from './routes/survey.$token'
+import { Route as StudentProfileRouteImport } from './routes/student.profile'
 import { Route as STokenRouteImport } from './routes/s.$token'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as ContestSubmitRouteImport } from './routes/contest.submit'
@@ -100,6 +101,11 @@ const TrainingsIdRoute = TrainingsIdRouteImport.update({
 const SurveyTokenRoute = SurveyTokenRouteImport.update({
   id: '/survey/$token',
   path: '/survey/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudentProfileRoute = StudentProfileRouteImport.update({
+  id: '/student/profile',
+  path: '/student/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const STokenRoute = STokenRouteImport.update({
@@ -194,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/contest/submit': typeof ContestSubmitRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/s/$token': typeof STokenRoute
+  '/student/profile': typeof StudentProfileRoute
   '/survey/$token': typeof SurveyTokenRoute
   '/trainings/$id': typeof TrainingsIdRoute
   '/contest/': typeof ContestIndexRoute
@@ -223,6 +230,7 @@ export interface FileRoutesByTo {
   '/contest/submit': typeof ContestSubmitRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/s/$token': typeof STokenRoute
+  '/student/profile': typeof StudentProfileRoute
   '/survey/$token': typeof SurveyTokenRoute
   '/trainings/$id': typeof TrainingsIdRoute
   '/contest': typeof ContestIndexRoute
@@ -253,6 +261,7 @@ export interface FileRoutesById {
   '/contest/submit': typeof ContestSubmitRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/s/$token': typeof STokenRoute
+  '/student/profile': typeof StudentProfileRoute
   '/survey/$token': typeof SurveyTokenRoute
   '/trainings/$id': typeof TrainingsIdRoute
   '/contest/': typeof ContestIndexRoute
@@ -284,6 +293,7 @@ export interface FileRouteTypes {
     | '/contest/submit'
     | '/email/unsubscribe'
     | '/s/$token'
+    | '/student/profile'
     | '/survey/$token'
     | '/trainings/$id'
     | '/contest/'
@@ -313,6 +323,7 @@ export interface FileRouteTypes {
     | '/contest/submit'
     | '/email/unsubscribe'
     | '/s/$token'
+    | '/student/profile'
     | '/survey/$token'
     | '/trainings/$id'
     | '/contest'
@@ -342,6 +353,7 @@ export interface FileRouteTypes {
     | '/contest/submit'
     | '/email/unsubscribe'
     | '/s/$token'
+    | '/student/profile'
     | '/survey/$token'
     | '/trainings/$id'
     | '/contest/'
@@ -372,6 +384,7 @@ export interface RootRouteChildren {
   ContestSubmitRoute: typeof ContestSubmitRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   STokenRoute: typeof STokenRoute
+  StudentProfileRoute: typeof StudentProfileRoute
   SurveyTokenRoute: typeof SurveyTokenRoute
   TrainingsIdRoute: typeof TrainingsIdRoute
   ContestIndexRoute: typeof ContestIndexRoute
@@ -476,6 +489,13 @@ declare module '@tanstack/react-router' {
       path: '/survey/$token'
       fullPath: '/survey/$token'
       preLoaderRoute: typeof SurveyTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/student/profile': {
+      id: '/student/profile'
+      path: '/student/profile'
+      fullPath: '/student/profile'
+      preLoaderRoute: typeof StudentProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/s/$token': {
@@ -596,6 +616,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContestSubmitRoute: ContestSubmitRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   STokenRoute: STokenRoute,
+  StudentProfileRoute: StudentProfileRoute,
   SurveyTokenRoute: SurveyTokenRoute,
   TrainingsIdRoute: TrainingsIdRoute,
   ContestIndexRoute: ContestIndexRoute,
