@@ -23,6 +23,7 @@ import { CustomSurveyDashboard } from "@/components/CustomSurveyDashboard";
 import {
   getAdminTrainings,
   getAdminRegistrations,
+  getAdminUsers,
   saveAdminTraining,
   deleteAdminTraining,
   updateAdminRegStatus,
@@ -79,6 +80,7 @@ function Admin() {
 
   const getTrainingsFn = useServerFn(getAdminTrainings);
   const getRegsFn = useServerFn(getAdminRegistrations);
+  const getUsersFn = useServerFn(getAdminUsers);
   const saveTrainingFn = useServerFn(saveAdminTraining);
   const deleteTrainingFn = useServerFn(deleteAdminTraining);
   const updateStatusFn = useServerFn(updateAdminRegStatus);
@@ -86,6 +88,7 @@ function Admin() {
 
   const trainings = useQuery({ queryKey: ["admin-trainings"], queryFn: () => getTrainingsFn() });
   const registrations = useQuery({ queryKey: ["admin-registrations"], queryFn: () => getRegsFn() });
+  const users = useQuery({ queryKey: ["admin-users"], queryFn: () => getUsersFn() });
 
   const saveTraining = useMutation({
     mutationFn: (f: TrainingForm) => saveTrainingFn({ data: f }),
@@ -152,6 +155,7 @@ function Admin() {
           <TabsList>
             <TabsTrigger value="trainings">หลักสูตร</TabsTrigger>
             <TabsTrigger value="registrations">การลงทะเบียน</TabsTrigger>
+            <TabsTrigger value="users">ผู้ใช้งาน</TabsTrigger>
             <TabsTrigger value="survey-builder">สร้างแบบสำรวจ</TabsTrigger>
             <TabsTrigger value="surveys">ผลสำรวจ (มาตรฐาน)</TabsTrigger>
             <TabsTrigger value="custom-surveys">ผลแบบสำรวจที่สร้าง</TabsTrigger>
@@ -249,6 +253,41 @@ function Admin() {
                       </TableRow>
                     );
                   })}
+                </TableBody>
+              </Table>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="users" className="mt-4">
+            <Card>
+              <Table>
+                <TableHeader><TableRow>
+                  <TableHead>ชื่อ-นามสกุล</TableHead>
+                  <TableHead>อีเมล</TableHead>
+                  <TableHead>บทบาท</TableHead>
+                  <TableHead>สถาบัน</TableHead>
+                  <TableHead>สถานะ</TableHead>
+                  <TableHead>วันที่สมัคร</TableHead>
+                </TableRow></TableHeader>
+                <TableBody>
+                  {(users.data ?? []).map((u: any) => (
+                    <TableRow key={u.id}>
+                      <TableCell className="font-medium">{u.full_name || '-'}</TableCell>
+                      <TableCell className="text-sm">{u.email}</TableCell>
+                      <TableCell>
+                        {u.role === 'admin' && <Badge>ผู้ดูแลระบบ</Badge>}
+                        {u.role === 'advisor' && <Badge variant="outline">อาจารย์ที่ปรึกษา</Badge>}
+                        {u.role === 'student' && <Badge variant="secondary">นักศึกษา</Badge>}
+                      </TableCell>
+                      <TableCell className="text-sm">{u.institute_name || '-'}</TableCell>
+                      <TableCell>
+                        {u.is_active ? <Badge className="bg-green-600 hover:bg-green-600">ใช้งาน</Badge> : <Badge variant="secondary">ยังไม่ยืนยัน</Badge>}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {new Date(u.created_at).toLocaleDateString('th-TH')}
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </Card>

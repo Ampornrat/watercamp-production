@@ -2,6 +2,23 @@ import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
 
+export const getAdminUsers = createServerFn({ method: 'GET' }).handler(async () => {
+  const pool = (await import('@/lib/db.server')).default;
+  const [rows] = await pool.query(`
+    SELECT u.id, u.email, u.full_name, u.role, u.is_active, u.created_at,
+           a.institute_id, i.institute AS institute_name
+    FROM users u
+    LEFT JOIN advisors a ON a.email = u.email
+    LEFT JOIN institutes_tab i ON i.id = a.institute_id
+    ORDER BY u.created_at DESC
+  `);
+  return rows as {
+    id: string; email: string; full_name: string | null; role: string;
+    is_active: number; created_at: string;
+    institute_name: string | null;
+  }[];
+});
+
 export const getAdminTrainings = createServerFn({ method: 'GET' }).handler(async () => {
   const pool = (await import('@/lib/db.server')).default;
   const [rows] = await pool.query(`SELECT * FROM trainings ORDER BY created_at DESC`);
