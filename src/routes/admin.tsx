@@ -248,17 +248,24 @@ function Admin() {
                         <TableCell className="text-sm">{r.institute_name || r.institute_id || "-"}</TableCell>
                         <TableCell><Badge variant={r.approval_status === "approved" ? "default" : "secondary"}>{r.approval_status ?? "pending"}</Badge></TableCell>
                         <TableCell>
-                          <Select
-                            value={cs}
-                            onValueChange={(v) => updateCompletion.mutate({ id: r.id, completion_status: v })}
-                          >
-                            <SelectTrigger className="h-8 w-36"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="enrolled">กำลังเรียน</SelectItem>
-                              <SelectItem value="completed">ผ่าน</SelectItem>
-                              <SelectItem value="failed">ไม่ผ่าน</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <div className="flex flex-col gap-1">
+                            <Select
+                              value={cs}
+                              onValueChange={(v) => updateCompletion.mutate({ id: r.id, completion_status: v })}
+                            >
+                              <SelectTrigger className="h-8 w-36"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="enrolled">กำลังเรียน</SelectItem>
+                                <SelectItem value="completed">ผ่าน</SelectItem>
+                                <SelectItem value="failed">ไม่ผ่าน</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            {r.self_confirmed_at && cs === "enrolled" && (
+                              <span className="inline-flex items-center gap-1 text-xs text-amber-600">
+                                ✅ นักเรียนยืนยันเข้าเรียนแล้ว
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-right space-x-1">
                           {r.approval_status !== "approved" && (

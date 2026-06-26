@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button'
 import { SiteHeader } from '@/components/SiteHeader'
 import { SiteFooter } from '@/components/SiteFooter'
 import { getSession, logout } from '@/lib/auth.server'
-import { getStudentProfile } from '@/lib/student-profile.functions'
+import { confirmAttendance, getStudentProfile } from '@/lib/student-profile.functions'
+import { toast } from 'sonner'
 
 export const Route = createFileRoute('/student/dashboard')({
   component: StudentDashboardPage,
@@ -31,9 +32,12 @@ function StudentDashboardPage() {
   const logoutFn = useServerFn(logout)
   const getProfileFn = useServerFn(getStudentProfile)
 
+  const confirmFn = useServerFn(confirmAttendance)
+
   const [sessionUser, setSessionUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [confirming, setConfirming] = useState<string | null>(null)
 
   useEffect(() => {
     getSessionFn()
@@ -48,6 +52,25 @@ function StudentDashboardPage() {
       .then((prof) => { if (prof) setProfile(prof) })
       .finally(() => setLoading(false))
   }, [])
+
+  const handleConfirm = async (registrationId: string) => {
+    if (!sessionUser?.email) return
+    setConfirming(registrationId)
+    try {
+      await confirmFn({ data: { registration_id: registrationId, student_email: sessionUser.email } })
+      toast.success('ยืนยันการเข้าเรียนแล้ว รอ admin ตรวจสอบ')
+      setProfile((prev: any) => ({
+        ...prev,
+        registrations: prev.registrations.map((r: any) =>
+          r.id === registrationId ? { ...r, self_confirmed_at: new Date().toISOString() } : r
+        ),
+      }))
+    } catch (err: any) {
+      toast.error(err?.message ?? 'เกิดข้อผิดพลาด')
+    } finally {
+      setConfirming(null)
+    }
+  }
 
   const handleLogout = async () => {
     await logoutFn()
@@ -204,6 +227,25 @@ function StudentDashboardPage() {
                               <ExternalLink className="h-3 w-3" />
                               Link สำหรับเข้าเรียน Online
                             </a>
+                          )}
+                          {r.approval_status === 'approved' && r.completion_status === 'enrolled' && (
+                            r.self_confirmed_at ? (
+                              <span className="mt-1.5 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                <CheckCircle2 className="h-3 w-3 text-green-500" />
+                                ยืนยันการเข้าเรียนแล้ว — รอ admin ตรวจสอบ
+                              </span>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="mt-1.5 h-7 gap-1 text-xs"
+                                disabled={confirming === r.id}
+                                onClick={() => handleConfirm(r.id)}
+                              >
+                                <CheckCircle2 className="h-3 w-3" />
+                                {confirming === r.id ? 'กำลังบันทึก...' : 'ยืนยันการเข้าเรียน'}
+                              </Button>
+                            )
                           )}
                         </div>
                         <div className="flex flex-wrap gap-2">

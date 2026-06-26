@@ -18,7 +18,7 @@ export const getStudentProfile = createServerFn({ method: 'GET' })
     if (!profile) return null
 
     const [regRows] = await pool.query(
-      `SELECT r.id, r.approval_status, r.completion_status, r.created_at,
+      `SELECT r.id, r.approval_status, r.completion_status, r.self_confirmed_at, r.created_at,
               t.title AS training_title, t.start_date, t.end_date, t.course_type, t.online_url
        FROM registrations r
        JOIN trainings t ON t.id = r.training_id
@@ -40,6 +40,30 @@ export const getStudentProfile = createServerFn({ method: 'GET' })
         course_type: string
       }[],
     }
+  })
+
+export const confirmAttendance = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => d as { registration_id: string; student_email: string })
+  .handler(async ({ data }) => {
+    const pool = (await import('@/lib/db.server')).default
+    const email = data.student_email.trim().toLowerCase()
+
+    const [rows] = await pool.query(
+      `SELECT id, approval_status, completion_status, self_confirmed_at
+       FROM registrations WHERE id = ? AND LOWER(guest_email) = ? LIMIT 1`,
+      [data.registration_id, email]
+    )
+    const reg = (rows as any[])[0]
+    if (!reg) throw new Error('ไม่พบข้อมูลการลงทะเบียน')
+    if (reg.approval_status !== 'approved') throw new Error('การลงทะเบียนยังไม่ได้รับการอนุมัติ')
+    if (reg.completion_status !== 'enrolled') throw new Error('ไม่สามารถยืนยันได้ในขณะนี้')
+    if (reg.self_confirmed_at) throw new Error('ยืนยันการเข้าเรียนไปแล้ว')
+
+    await pool.query(
+      `UPDATE registrations SET self_confirmed_at = NOW() WHERE id = ?`,
+      [data.registration_id]
+    )
+    return { ok: true }
   })
 
 export const upsertStudentProfile = createServerFn({ method: 'POST' })

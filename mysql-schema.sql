@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS registrations (
   participant_status_other VARCHAR(255),
   approval_status VARCHAR(50) NOT NULL DEFAULT 'pending',
   completion_status VARCHAR(50) NOT NULL DEFAULT 'enrolled',
+  self_confirmed_at DATETIME DEFAULT NULL,
   pdpa_consent TINYINT(1) DEFAULT 0,
   pdpa_consent_at DATETIME,
   pdpa_consent_text TEXT,
