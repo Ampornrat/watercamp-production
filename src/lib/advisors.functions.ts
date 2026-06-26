@@ -1,5 +1,37 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
+import { randomUUID } from 'crypto'
+
+export const getInstitutes = createServerFn({ method: 'GET' }).handler(async () => {
+  const pool = (await import('@/lib/db.server')).default
+  const [rows] = await pool.query(
+    `SELECT id, institute FROM institutes_tab WHERE institute IS NOT NULL ORDER BY institute ASC`
+  )
+  return rows as { id: string; institute: string }[]
+})
+
+export const checkInstituteHasMainAdvisor = createServerFn({ method: 'GET' })
+  .inputValidator((d: unknown) => d as { institute_id: string })
+  .handler(async ({ data }) => {
+    const pool = (await import('@/lib/db.server')).default
+    const [rows] = await pool.query(
+      `SELECT id FROM advisors WHERE institute_id = ? AND role = 'main' LIMIT 1`,
+      [data.institute_id]
+    )
+    return (rows as any[]).length > 0
+  })
+
+export const getInstituteJoinParticipation = createServerFn({ method: 'GET' })
+  .inputValidator((d: unknown) => d as { institute_id: string })
+  .handler(async ({ data }) => {
+    const pool = (await import('@/lib/db.server')).default
+    const [rows] = await pool.query(
+      `SELECT id FROM institute_participations WHERE institute_id = ? AND status = 'join' ORDER BY created_at DESC LIMIT 1`,
+      [data.institute_id]
+    )
+    const row = (rows as any[])[0]
+    return row ? { id: row.id as string } : null
+  })
 
 const Schema = z.object({
   full_name: z.string().min(1).max(255),
@@ -18,79 +50,40 @@ const Schema = z.object({
 export const registerAdvisor = createServerFn({ method: 'POST' })
   .inputValidator((input: unknown) => Schema.parse(input))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
+    const pool = (await import('@/lib/db.server')).default
     const email = data.email.trim().toLowerCase()
 
     // Enforce role rules: only one 'main' per institute
     if (data.role === 'main') {
-      const { data: existingMain } = await supabaseAdmin
-        .from('advisors')
-        .select('id')
-        .eq('institute_id', data.institute_id)
-        .eq('role', 'main')
-        .maybeSingle()
-      if (existingMain) {
+      const [existing] = await pool.query(
+        `SELECT id FROM advisors WHERE institute_id = ? AND role = 'main' LIMIT 1`,
+        [data.institute_id]
+      )
+      if ((existing as any[]).length > 0) {
         throw new Error('สถาบันนี้มีอาจารย์หลักแล้ว กรุณาเลือกบทบาทเป็นอาจารย์ผู้ช่วย')
       }
     }
 
     // Check duplicate advisor email
-    const { data: dup } = await supabaseAdmin
-      .from('advisors')
-      .select('id')
-      .ilike('email', email)
-      .maybeSingle()
-    if (dup) throw new Error('อีเมลนี้ได้ลงทะเบียนเป็นอาจารย์แล้ว')
+    const [dupRows] = await pool.query(
+      `SELECT id FROM advisors WHERE LOWER(email) = ? LIMIT 1`,
+      [email]
+    )
+    if ((dupRows as any[]).length > 0) throw new Error('อีเมลนี้ได้ลงทะเบียนเป็นอาจารย์แล้ว')
 
-    // Create or find auth user
-    let userId: string | null = null
-    const { data: invited, error: inviteErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-      data: {
-        full_name: data.full_name,
-        role: 'advisor',
-        institute_id: data.institute_id,
-      },
-      redirectTo: data.redirect_to || undefined,
-    })
-    if (inviteErr) {
-      // If already registered, look up the user id by listing
-      const msg = String(inviteErr.message || '')
-      if (/already|registered|exists/i.test(msg)) {
-        const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 })
-        const found = list?.users?.find((u) => (u.email || '').toLowerCase() === email)
-        userId = found?.id ?? null
-      } else {
-        throw new Error(inviteErr.message)
-      }
-    } else {
-      userId = invited?.user?.id ?? null
+    const id = randomUUID()
+    try {
+      await pool.query(
+        `INSERT INTO advisors (id, full_name, position, faculty, institute_id, email, phone, address, postal_code, role, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        [
+          id, data.full_name, data.position, data.faculty, data.institute_id,
+          email, data.phone || null, data.address || null, data.postal_code || null, data.role,
+        ]
+      )
+    } catch (err: any) {
+      throw new Error(err?.message ?? 'เกิดข้อผิดพลาดในการบันทึกข้อมูล')
     }
 
-    const { data: inserted, error } = await supabaseAdmin
-      .from('advisors')
-      .insert({
-        full_name: data.full_name,
-        position: data.position,
-        faculty: data.faculty,
-        institute_id: data.institute_id,
-        email,
-        phone: data.phone || null,
-        address: data.address || null,
-        postal_code: data.postal_code || null,
-        role: data.role,
-        user_id: userId,
-        institute_participation_id: data.institute_participation_id || null,
-      } as any)
-      .select('id')
-      .single()
-    if (error) throw new Error(error.message)
-
-    // Ensure user has the 'advisor' role
-    if (userId) {
-      await supabaseAdmin
-        .from('user_roles')
-        .upsert({ user_id: userId, role: 'advisor' }, { onConflict: 'user_id,role' })
-    }
-
-    return { id: inserted.id, userId }
+    return { id }
   })

@@ -1,70 +1,88 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { Droplets } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { useServerFn } from '@tanstack/react-start'
+import { useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
+import { toast } from 'sonner'
+import { Droplets } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card } from '@/components/ui/card'
+import { getSession, login } from '@/lib/auth.server'
 
-export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "เข้าสู่ระบบ | คลังข้อมูลน้ำแห่งชาติ" }] }),
-  component: Login,
-});
+export const Route = createFileRoute('/login')({
+  beforeLoad: async () => {
+    const user = await getSession()
+    if (user) throw redirect({ to: user.role === 'admin' ? '/admin' : '/' })
+  },
+  component: LoginPage,
+})
 
-function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
-  const navigate = useNavigate();
+function LoginPage() {
+  const loginFn = useServerFn(login)
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    if (user) navigate({ to: "/dashboard", replace: true });
-  }, [user, navigate]);
-
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success("เข้าสู่ระบบสำเร็จ");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email || !password) return
+    setLoading(true)
+    try {
+      const user = await loginFn({ data: { email, password } })
+      queryClient.setQueryData(['session'], user)
+      toast.success('เข้าสู่ระบบสำเร็จ')
+      navigate({ to: user.role === 'admin' ? '/admin' : '/' })
+    } catch (err: any) {
+      toast.error(err?.message ?? 'เข้าสู่ระบบไม่สำเร็จ')
+    } finally {
+      setLoading(false)
     }
-  };
+  }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-hero p-4">
-      <Card className="w-full max-w-md p-8 shadow-soft">
-        <Link to="/" className="mb-6 flex items-center justify-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-primary text-primary-foreground">
-            <Droplets className="h-5 w-5" />
+    <div className="flex min-h-screen items-center justify-center bg-gradient-hero px-4">
+      <Card className="w-full max-w-md rounded-3xl border-border bg-card p-8 shadow-soft">
+        <div className="mb-8 flex flex-col items-center gap-3 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <Droplets className="h-7 w-7" />
           </div>
-          <span className="font-bold">คลังข้อมูลน้ำแห่งชาติ</span>
-        </Link>
-        <h1 className="mb-1 text-2xl font-bold">เข้าสู่ระบบ</h1>
-        <p className="mb-6 text-sm text-muted-foreground">เข้าสู่ระบบเพื่อลงทะเบียนหลักสูตร</p>
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div>
+          <h1 className="font-heading text-2xl font-extrabold text-foreground">เข้าสู่ระบบ</h1>
+          <p className="text-sm text-muted-foreground">ศูนย์ฝึกอบรม คลังข้อมูลน้ำแห่งชาติ</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-1.5">
             <Label htmlFor="email">อีเมล</Label>
-            <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="กรอกอีเมล"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
           </div>
-          <div>
+          <div className="space-y-1.5">
             <Label htmlFor="password">รหัสผ่าน</Label>
-            <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              placeholder="กรอกรหัสผ่าน"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
           </div>
-          <Button type="submit" className="w-full bg-gradient-primary" disabled={loading}>
-            {loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+          <Button type="submit" className="w-full rounded-xl bg-gradient-primary" disabled={loading}>
+            {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
           </Button>
         </form>
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          ยังไม่มีบัญชี? <Link to="/signup" className="font-medium text-primary hover:underline">สมัครสมาชิก</Link>
-        </p>
       </Card>
     </div>
-  );
+  )
 }

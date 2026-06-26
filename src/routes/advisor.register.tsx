@@ -4,7 +4,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +14,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { registerAdvisor } from "@/lib/advisors.functions";
+import { registerAdvisor, getInstitutes, checkInstituteHasMainAdvisor, getInstituteJoinParticipation } from "@/lib/advisors.functions";
 import { recordInstituteDecline, recordInstituteJoinConsent } from "@/lib/institute-participation.functions";
 
 export const Route = createFileRoute("/advisor/register")({
@@ -50,44 +49,27 @@ function AdvisorRegisterPage() {
   const registerAdvisorFn = useServerFn(registerAdvisor);
   const recordInstituteDeclineFn = useServerFn(recordInstituteDecline);
   const recordInstituteJoinConsentFn = useServerFn(recordInstituteJoinConsent);
+  const getInstitutesFn = useServerFn(getInstitutes);
+  const checkMainAdvisorFn = useServerFn(checkInstituteHasMainAdvisor);
+  const getJoinParticipationFn = useServerFn(getInstituteJoinParticipation);
 
   const { data: institutes, isLoading: institutesLoading } = useQuery({
     queryKey: ["institutes"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("institutes_tab")
-        .select("id, institute")
-        .order("institute", { ascending: true });
-      if (error) throw error;
-      return data ?? [];
-    },
+    queryFn: () => getInstitutesFn(),
   });
 
   const selectedInstitute = institutes?.find((i) => i.id === instituteId);
 
-  // ตรวจสอบว่ามีอาจารย์หลักของสถาบันนี้แล้วหรือยัง (ผ่าน RPC ที่คืนเฉพาะ boolean — ไม่เปิดเผย PII)
   const { data: existingMain } = useQuery({
     queryKey: ["advisor-main-exists", instituteId],
     enabled: !!instituteId && (step === "advisor" || step === "institute"),
-    queryFn: async () => {
-      const { data } = await (supabase as any).rpc("institute_has_main_advisor", {
-        _institute_id: instituteId,
-      });
-      return Boolean(data);
-    },
+    queryFn: () => checkMainAdvisorFn({ data: { institute_id: instituteId } }),
   });
 
-  // ตรวจสอบว่าสถาบันนี้เคยลงทะเบียน "ยินดีเข้าร่วม" แล้วหรือยัง (ผ่าน RPC ที่คืนเฉพาะ id — ไม่เปิดเผย consent_text)
   const { data: existingJoinParticipation } = useQuery({
     queryKey: ["institute-join-participation", instituteId],
     enabled: !!instituteId && step === "institute",
-    queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc("get_institute_join_participation_id", {
-        _institute_id: instituteId,
-      });
-      if (error) throw error;
-      return data ? { id: data as string } : null;
-    },
+    queryFn: () => getJoinParticipationFn({ data: { institute_id: instituteId } }),
   });
 
   const instituteAlreadyJoined = !!existingJoinParticipation;
