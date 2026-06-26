@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import { randomUUID } from 'crypto';
 
 const GuestRegistrationsInput = z.object({
   training_ids: z.array(z.string().uuid()).min(1).max(20),
@@ -16,78 +17,63 @@ const GuestRegistrationsInput = z.object({
   pdpa_consent_text: z.string().min(10).max(10000),
 });
 
-/**
- * Creates guest (unauthenticated) registrations for one or more trainings.
- *
- * Hardening:
- * - Validates the institute exists
- * - Validates every training_id exists (trainings table is the source of truth, not client input)
- * - PDPA timestamp is stamped server-side
- * - Database triggers still enforce capacity and prerequisite rules
- * - advisor_email is intentionally not accepted from client input — guests cannot pre-attach themselves
- *   to an arbitrary advisor (which was the original RLS hole).
- */
 export const createGuestRegistrations = createServerFn({ method: 'POST' })
   .inputValidator((raw: unknown) => GuestRegistrationsInput.parse(raw))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const pool = (await import('@/lib/db.server')).default;
 
-    // Verify institute
-    const { data: inst, error: instErr } = await supabaseAdmin
-      .from('institutes_tab')
-      .select('id')
-      .eq('id', data.institute_id)
-      .maybeSingle();
-    if (instErr) throw new Error(instErr.message);
-    if (!inst) throw new Error('ไม่พบสถาบันที่เลือก');
+    // Verify institute exists
+    const [instRows] = await pool.query(`SELECT id FROM institutes_tab WHERE id = ?`, [data.institute_id]);
+    if ((instRows as any[]).length === 0) throw new Error('ไม่พบสถาบันที่เลือก');
 
     // Verify all training ids exist
-    const { data: foundTrainings, error: tErr } = await supabaseAdmin
-      .from('trainings')
-      .select('id')
-      .in('id', data.training_ids);
-    if (tErr) throw new Error(tErr.message);
-    const foundSet = new Set((foundTrainings ?? []).map((t) => t.id));
+    const placeholders = data.training_ids.map(() => '?').join(',');
+    const [foundTrainings] = await pool.query(
+      `SELECT id FROM trainings WHERE id IN (${placeholders})`,
+      data.training_ids
+    );
+    const foundSet = new Set((foundTrainings as any[]).map((t) => t.id));
     const missing = data.training_ids.filter((tid) => !foundSet.has(tid));
     if (missing.length > 0) throw new Error('พบรายการหลักสูตรที่ไม่ถูกต้อง');
 
-    // Block duplicate email across institutes — one email may only register under a single institute
-    const { data: existing, error: dupErr } = await supabaseAdmin
-      .from('registrations')
-      .select('institute_id')
-      .eq('guest_email', data.guest_email)
-      .limit(50);
-    if (dupErr) throw new Error(dupErr.message);
-    const otherInstitute = (existing ?? []).find((r) => r.institute_id && r.institute_id !== data.institute_id);
+    // Block duplicate email across institutes
+    const [existingRows] = await pool.query(
+      `SELECT institute_id FROM registrations WHERE guest_email = ? LIMIT 50`,
+      [data.guest_email]
+    );
+    const otherInstitute = (existingRows as any[]).find(
+      (r) => r.institute_id && r.institute_id !== data.institute_id
+    );
     if (otherInstitute) {
       throw new Error('อีเมลนี้ได้ลงทะเบียนกับสถาบันอื่นแล้ว ไม่สามารถลงทะเบียนซ้ำกับสถาบันอื่นได้');
     }
 
-    const stampedAt = new Date().toISOString();
-    const rows = data.training_ids.map((tid) => ({
-      training_id: tid,
-      user_id: null,
-      institute_id: data.institute_id,
-      guest_name: data.guest_name,
-      guest_email: data.guest_email,
-      gender: data.gender,
-      age: data.age,
-      education_level: data.education_level,
-      education_level_other: data.education_level_other ?? null,
-      field_of_study: data.field_of_study ?? null,
-      participant_status: data.participant_status,
-      participant_status_other: data.participant_status_other ?? null,
-      pdpa_consent: true,
-      pdpa_consent_at: stampedAt,
-      pdpa_consent_text: data.pdpa_consent_text,
-    }));
+    const stampedAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
-    const { error } = await supabaseAdmin.from('registrations').insert(rows);
-    if (error) {
-      if ((error as { code?: string }).code === '23505') {
-        throw new Error('อีเมลนี้ได้ลงทะเบียนหลักสูตรนี้ไปแล้ว');
+    for (const tid of data.training_ids) {
+      const id = randomUUID();
+      try {
+        await pool.query(
+          `INSERT INTO registrations (
+            id, training_id, institute_id, guest_name, guest_email,
+            gender, age, education_level, education_level_other, field_of_study,
+            participant_status, participant_status_other,
+            pdpa_consent, pdpa_consent_at, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+          [
+            id, tid, data.institute_id, data.guest_name, data.guest_email,
+            data.gender, data.age, data.education_level, data.education_level_other ?? null,
+            data.field_of_study ?? null, data.participant_status,
+            data.participant_status_other ?? null, stampedAt, stampedAt,
+          ]
+        );
+      } catch (err: any) {
+        if (err?.code === 'ER_DUP_ENTRY') {
+          throw new Error('อีเมลนี้ได้ลงทะเบียนหลักสูตรนี้ไปแล้ว');
+        }
+        throw new Error(err?.message ?? 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
       }
-      throw new Error(error.message);
     }
-    return { ok: true, count: rows.length };
+
+    return { ok: true, count: data.training_ids.length };
   });

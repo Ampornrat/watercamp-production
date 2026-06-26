@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import { randomUUID } from 'crypto';
 
 const DeclineInput = z.object({
   institute_id: z.string().uuid(),
@@ -10,60 +11,36 @@ const JoinInput = z.object({
   consent_text: z.string().min(10).max(5000),
 });
 
-/**
- * Records that an institute declined participation. Public endpoint (used on the advisor-register page
- * before any user is signed in). Validates the institute exists.
- */
 export const recordInstituteDecline = createServerFn({ method: 'POST' })
   .inputValidator((raw: unknown) => DeclineInput.parse(raw))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const pool = (await import('@/lib/db.server')).default;
 
-    const { data: inst, error: instErr } = await supabaseAdmin
-      .from('institutes_tab')
-      .select('id')
-      .eq('id', data.institute_id)
-      .maybeSingle();
-    if (instErr) throw new Error(instErr.message);
-    if (!inst) throw new Error('ไม่พบสถาบันที่เลือก');
+    const [instRows] = await pool.query(`SELECT id FROM institutes_tab WHERE id = ? LIMIT 1`, [data.institute_id]);
+    if ((instRows as any[]).length === 0) throw new Error('ไม่พบสถาบันที่เลือก');
 
-    const { data: row, error } = await supabaseAdmin
-      .from('institute_participations')
-      .insert({ institute_id: data.institute_id, status: 'decline' })
-      .select('id')
-      .single();
-    if (error) throw new Error(error.message);
-    return { id: row.id as string };
+    const id = randomUUID();
+    await pool.query(
+      `INSERT INTO institute_participations (id, institute_id, status, created_at) VALUES (?, ?, 'decline', NOW())`,
+      [id, data.institute_id]
+    );
+    return { id };
   });
 
-/**
- * Records that an institute is joining with a signed consent. Public endpoint. Validates the institute
- * exists and stores the consent text/timestamp server-side so the payload cannot be forged client-side.
- */
 export const recordInstituteJoinConsent = createServerFn({ method: 'POST' })
   .inputValidator((raw: unknown) => JoinInput.parse(raw))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const pool = (await import('@/lib/db.server')).default;
 
-    const { data: inst, error: instErr } = await supabaseAdmin
-      .from('institutes_tab')
-      .select('id')
-      .eq('id', data.institute_id)
-      .maybeSingle();
-    if (instErr) throw new Error(instErr.message);
-    if (!inst) throw new Error('ไม่พบสถาบันที่เลือก');
+    const [instRows] = await pool.query(`SELECT id FROM institutes_tab WHERE id = ? LIMIT 1`, [data.institute_id]);
+    if ((instRows as any[]).length === 0) throw new Error('ไม่พบสถาบันที่เลือก');
 
-    const { data: row, error } = await supabaseAdmin
-      .from('institute_participations')
-      .insert({
-        institute_id: data.institute_id,
-        status: 'join',
-        consent_given: true,
-        consent_text: data.consent_text,
-        consent_at: new Date().toISOString(),
-      })
-      .select('id')
-      .single();
-    if (error) throw new Error(error.message);
-    return { id: row.id as string };
+    const id = randomUUID();
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    await pool.query(
+      `INSERT INTO institute_participations (id, institute_id, status, consent_given, consent_text, consent_at, created_at)
+       VALUES (?, ?, 'join', 1, ?, ?, NOW())`,
+      [id, data.institute_id, data.consent_text, now]
+    );
+    return { id };
   });

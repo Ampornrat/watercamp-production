@@ -1,12 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Calendar, MapPin, Users, ArrowRight, Droplets, BookOpen, Award } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { getFeaturedTrainings, getTrainingsCount, getRegistrationsCount, getInstitutesCount } from "@/lib/trainings.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -23,49 +24,15 @@ function formatDate(s: string) {
 }
 
 function Index() {
-  const { data: trainings } = useQuery({
-    queryKey: ["trainings", "featured"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("trainings")
-        .select("*")
-        .eq("is_published", true)
-        .order("start_date", { ascending: true })
-        .limit(6);
-      if (error) throw error;
-      return data;
-    },
-  });
+  const getFeatured = useServerFn(getFeaturedTrainings);
+  const getCount = useServerFn(getTrainingsCount);
+  const getRegCount = useServerFn(getRegistrationsCount);
+  const getInstCount = useServerFn(getInstitutesCount);
 
-  const { data: trainingsCount } = useQuery({
-    queryKey: ["trainings", "count"],
-    queryFn: async () => {
-      const { count } = await supabase
-        .from("trainings")
-        .select("*", { count: "exact", head: true })
-        .eq("is_published", true);
-      return count ?? 0;
-    },
-  });
-
-  const { data: registrationsCount } = useQuery({
-    queryKey: ["registrations", "count"],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("public_registrations_count");
-      if (error) throw error;
-      return Number(data ?? 0);
-    },
-  });
-
-  const { data: institutesCount } = useQuery({
-    queryKey: ["institutes", "count"],
-    queryFn: async () => {
-      const { count } = await supabase
-        .from("institutes_tab")
-        .select("*", { count: "exact", head: true });
-      return count ?? 0;
-    },
-  });
+  const { data: trainings } = useQuery({ queryKey: ["trainings", "featured"], queryFn: () => getFeatured() });
+  const { data: trainingsCount } = useQuery({ queryKey: ["trainings", "count"], queryFn: () => getCount() });
+  const { data: registrationsCount } = useQuery({ queryKey: ["registrations", "count"], queryFn: () => getRegCount() });
+  const { data: institutesCount } = useQuery({ queryKey: ["institutes", "count"], queryFn: () => getInstCount() });
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -111,15 +78,6 @@ function Index() {
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>
             </Link>
-            {/* <Link to="/signup">
-              <Button
-                size="lg"
-                variant="outline"
-                className="rounded-2xl border-white/20 bg-white/5 px-8 py-6 text-base font-bold text-white hover:bg-white/10 hover:text-white"
-              >
-                สมัครสมาชิกใหม่
-              </Button>
-            </Link> */}
           </div>
         </div>
       </section>

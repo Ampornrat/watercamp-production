@@ -4,7 +4,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Calendar, MapPin, Users, User, Clock, ArrowLeft, Lock, Sparkles, Info, Paperclip, Download } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,8 +14,15 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { useAuth } from "@/hooks/useAuth";
 import { createGuestRegistrations } from "@/lib/guest-registrations.functions";
+import {
+  getTrainingById,
+  getAllInstitutes,
+  getRegistrationsForTraining,
+  getElectiveTrainingsForCore,
+  getCoreTrainingsForElective,
+  getElectiveSeatsStats,
+} from "@/lib/trainings.functions";
 
 
 export const Route = createFileRoute("/trainings/$id")({
@@ -68,8 +74,14 @@ const PARTICIPANT_STATUS_OPTIONS = [
 function TrainingDetail() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
-  const { user } = useAuth();
   const createGuestRegistrationsFn = useServerFn(createGuestRegistrations);
+  const getTraining = useServerFn(getTrainingById);
+  const getInstitutes = useServerFn(getAllInstitutes);
+  const getRegCount = useServerFn(getRegistrationsForTraining);
+  const getElectives = useServerFn(getElectiveTrainingsForCore);
+  const getCores = useServerFn(getCoreTrainingsForElective);
+  const getElectiveStats = useServerFn(getElectiveSeatsStats);
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -93,103 +105,42 @@ function TrainingDetail() {
     refetch: refetchInstitutes,
   } = useQuery({
     queryKey: ["institutes"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("institutes_tab")
-        .select("id, institute, region")
-        .order("institute", { ascending: true });
-      if (error) throw error;
-      return data ?? [];
-    },
+    queryFn: () => getInstitutes(),
   });
 
   const { data: training, isLoading } = useQuery({
     queryKey: ["training", id],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("trainings").select("*").eq("id", id).maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  // ดึงชื่อหลักสูตรหลักที่ต้องผ่านก่อน (ถ้ามีการระบุ) สำหรับหน้า elective
-  const { data: prereqTraining } = useQuery({
-    queryKey: ["prereq", training?.prerequisite_training_id],
-    enabled: !!training?.prerequisite_training_id,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("trainings")
-        .select("id, title")
-        .eq("id", training!.prerequisite_training_id!)
-        .maybeSingle();
-      return data;
-    },
-  });
-
-  // สำหรับหน้า "หลักสูตรหลัก": ดึงหลักสูตรเสริมทักษะที่ผูกกับหลักสูตรนี้ หรือไม่ระบุ prereq เลย
-  const { data: relatedElectives } = useQuery({
-    queryKey: ["relatedElectives", id, training?.course_type],
-    enabled: !!training && training.course_type === "core",
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("trainings")
-        .select("id, title, description, start_date, end_date, location, category, prerequisite_training_id")
-        .eq("course_type", "elective")
-        .eq("is_published", true)
-        .or(`prerequisite_training_id.eq.${id},prerequisite_training_id.is.null`)
-        .order("start_date", { ascending: true });
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-
-  // สำหรับหน้า "เสริมทักษะ": ดึงรายชื่อหลักสูตรหลักที่แนะนำ (โดยเฉพาะ prereq ถ้ามี)
-  const { data: recommendedCores } = useQuery({
-    queryKey: ["recommendedCores", id, training?.course_type, training?.prerequisite_training_id],
-    enabled: !!training && training.course_type === "elective",
-    queryFn: async () => {
-      let q = supabase
-        .from("trainings")
-        .select("id, title, start_date")
-        .eq("course_type", "core")
-        .eq("is_published", true)
-        .order("start_date", { ascending: true });
-      if (training!.prerequisite_training_id) {
-        q = q.eq("id", training!.prerequisite_training_id);
-      }
-      const { data } = await q;
-      return data ?? [];
-    },
+    queryFn: () => getTraining({ data: id }),
   });
 
   const { data: regCount } = useQuery({
     queryKey: ["regCount", id],
-    queryFn: async () => {
-      const { count } = await supabase
-        .from("registrations")
-        .select("*", { count: "exact", head: true })
-        .eq("training_id", id);
-      return count ?? 0;
-    },
+    queryFn: () => getRegCount({ data: id }),
   });
 
-  // ดึงจำนวนที่นั่งคงเหลือของแต่ละหลักสูตรเสริมทักษะที่แสดง
-  const electiveIdsList = (relatedElectives ?? []).map((e) => e.id);
+  const { data: relatedElectives } = useQuery({
+    queryKey: ["relatedElectives", id, training?.course_type],
+    enabled: !!training && training.course_type === "core",
+    queryFn: () => getElectives({ data: id }),
+  });
+
+  const { data: recommendedCores } = useQuery({
+    queryKey: ["recommendedCores", id, training?.course_type, training?.prerequisite_training_id],
+    enabled: !!training && training.course_type === "elective",
+    queryFn: () => getCores({ data: training!.prerequisite_training_id ?? null }),
+  });
+
+  const { data: prereqTraining } = useQuery({
+    queryKey: ["prereq", training?.prerequisite_training_id],
+    enabled: !!training?.prerequisite_training_id,
+    queryFn: () => getTraining({ data: training!.prerequisite_training_id! }),
+  });
+
+  const electiveIdsList = (relatedElectives ?? []).map((e: any) => e.id);
   const { data: electiveStats, refetch: refetchElectiveStats } = useQuery({
     queryKey: ["electiveStats", electiveIdsList.slice().sort().join(",")],
     enabled: electiveIdsList.length > 0,
-    queryFn: async () => {
-      const results = await Promise.all(
-        electiveIdsList.map(async (eid) => {
-          const [{ data: t }, { count }] = await Promise.all([
-            supabase.from("trainings").select("capacity").eq("id", eid).maybeSingle(),
-            supabase.from("registrations").select("*", { count: "exact", head: true }).eq("training_id", eid),
-          ]);
-          return [eid, { capacity: t?.capacity ?? 0, count: count ?? 0 }] as const;
-        }),
-      );
-      return Object.fromEntries(results) as Record<string, { capacity: number; count: number }>;
-    },
+    queryFn: () => getElectiveStats({ data: electiveIdsList }),
   });
 
   const register = useMutation({
@@ -215,100 +166,24 @@ function TrainingDetail() {
 
       const electiveIds = Array.from(selectedElectives);
 
-      // ตรวจสอบจำนวนที่นั่งหลักสูตรหลัก + หลักสูตรเสริมทักษะที่เลือก แบบสด ๆ ก่อนยืนยัน
-      const idsToCheck = [id, ...electiveIds];
-      const fresh = await Promise.all(
-        idsToCheck.map(async (tid) => {
-          const [{ data: t }, { count }] = await Promise.all([
-            supabase.from("trainings").select("title, capacity").eq("id", tid).maybeSingle(),
-            supabase.from("registrations").select("*", { count: "exact", head: true }).eq("training_id", tid),
-          ]);
-          return { id: tid, title: t?.title ?? "", capacity: t?.capacity ?? 0, count: count ?? 0 };
-        }),
-      );
-      const full = fresh.filter((r) => r.count >= r.capacity);
-      if (full.length > 0) {
-        qc.invalidateQueries({ queryKey: ["regCount", id] });
-        refetchElectiveStats();
-        const names = full.map((f) => `"${f.title}" (${f.count}/${f.capacity})`).join(", ");
-        throw new Error(`ที่นั่งเต็มแล้วสำหรับ: ${names} กรุณายกเลิกการเลือกหลักสูตรดังกล่าวก่อนยืนยัน`);
-      }
+      await createGuestRegistrationsFn({
+        data: {
+          training_ids: [id, ...electiveIds],
+          institute_id: form.instituteId,
+          guest_name: form.name.trim(),
+          guest_email: form.email.trim(),
+          gender: form.gender,
+          age: ageNum,
+          education_level: form.educationLevel,
+          education_level_other: form.educationLevel === "อื่นๆ" ? form.educationLevelOther.trim() : null,
+          field_of_study: form.fieldOfStudy.trim() || null,
+          participant_status: form.participantStatus,
+          participant_status_other: form.participantStatus === "อื่นๆ" ? form.participantStatusOther.trim() : null,
+          pdpa_consent_text: PDPA_TEXT,
+        },
+      });
 
-      const baseRow = {
-        user_id: user?.id ?? null,
-        institute_id: form.instituteId,
-        guest_name: form.name.trim(),
-        guest_email: form.email.trim(),
-        gender: form.gender,
-        age: ageNum,
-        education_level: form.educationLevel,
-        education_level_other: form.educationLevel === "อื่นๆ" ? form.educationLevelOther.trim() : null,
-        field_of_study: form.fieldOfStudy.trim() || null,
-        participant_status: form.participantStatus,
-        participant_status_other: form.participantStatus === "อื่นๆ" ? form.participantStatusOther.trim() : null,
-        pdpa_consent: true,
-        pdpa_consent_at: new Date().toISOString(),
-        pdpa_consent_text: PDPA_TEXT,
-      };
-
-
-
-      // ตรวจสอบว่าผู้ใช้ลงทะเบียนหลักสูตรเหล่านี้ไปแล้วหรือยัง (กันซ้ำ)
-      if (user?.id) {
-        const { data: existing } = await supabase
-          .from("registrations")
-          .select("training_id, trainings(title)")
-          .eq("user_id", user.id)
-          .in("training_id", idsToCheck);
-        if (existing && existing.length > 0) {
-          const names = existing.map((r: any) => `"${r.trainings?.title ?? r.training_id}"`).join(", ");
-          throw new Error(`คุณได้ลงทะเบียนหลักสูตรนี้ไปแล้ว: ${names} กรุณายกเลิกการเลือกก่อนยืนยัน`);
-        }
-      }
-
-      // 1) ลงหลักสูตรหลักก่อน (เพื่อให้ trigger ของ elective ผ่าน)
-      if (user?.id) {
-        const { error: mainErr } = await supabase
-          .from("registrations")
-          .insert({ ...baseRow, training_id: id });
-        if (mainErr) {
-          if ((mainErr as any).code === "23505") throw new Error("คุณได้ลงทะเบียนหลักสูตรนี้ไปแล้ว");
-          throw mainErr;
-        }
-
-        // 2) ลงหลักสูตรเสริมทักษะที่เลือกไว้ (ถ้ามี)
-        if (electiveIds.length > 0) {
-          const rows = electiveIds.map((eid) => ({ ...baseRow, training_id: eid }));
-          const { error: elecErr } = await supabase.from("registrations").insert(rows);
-          if (elecErr) {
-            const msg = (elecErr as any).code === "23505"
-              ? "คุณได้ลงทะเบียนหลักสูตรเสริมทักษะบางหลักสูตรไปแล้ว"
-              : elecErr.message;
-            throw new Error(`ลงทะเบียนหลักสูตรหลักสำเร็จ แต่ลงหลักสูตรเสริมทักษะไม่สำเร็จ: ${msg}`);
-          }
-        }
-      } else {
-        // Guest path: route through validated server function (supabaseAdmin) instead of an open RLS policy
-        await createGuestRegistrationsFn({
-          data: {
-            training_ids: [id, ...electiveIds],
-            institute_id: form.instituteId,
-            guest_name: form.name.trim(),
-            guest_email: form.email.trim(),
-            gender: form.gender,
-            age: ageNum,
-            education_level: form.educationLevel,
-            education_level_other: form.educationLevel === "อื่นๆ" ? form.educationLevelOther.trim() : null,
-            field_of_study: form.fieldOfStudy.trim() || null,
-            participant_status: form.participantStatus,
-            participant_status_other: form.participantStatus === "อื่นๆ" ? form.participantStatusOther.trim() : null,
-            pdpa_consent_text: PDPA_TEXT,
-          },
-        });
-      }
-
-
-      // 3) ส่งอีเมลยืนยันการลงทะเบียน แยกเมล์ละหลักสูตร (ไม่ block หากส่งไม่สำเร็จ)
+      // Send confirmation emails (non-blocking)
       const trainingIds = [id, ...electiveIds];
       await Promise.all(
         trainingIds.map(async (tid) => {
@@ -326,8 +201,6 @@ function TrainingDetail() {
           }
         }),
       );
-
-
 
       return { mainOk: true, electives: electiveIds.length };
     },
@@ -459,8 +332,6 @@ function TrainingDetail() {
               );
             })()}
 
-
-
             {/* หลักสูตรเสริมทักษะที่ลงพร้อมกันได้ (เฉพาะเมื่อดูหลักสูตรหลัก) */}
             {isCore && (
               <Card className="p-6">
@@ -478,7 +349,7 @@ function TrainingDetail() {
                   </p>
                 ) : (
                   <div className="mt-4 space-y-3">
-                    {relatedElectives.map((e) => {
+                    {(relatedElectives as any[]).map((e) => {
                       const checked = selectedElectives.has(e.id);
                       const stat = electiveStats?.[e.id];
                       const seatsLeft = stat ? Math.max(stat.capacity - stat.count, 0) : undefined;
@@ -556,10 +427,10 @@ function TrainingDetail() {
                     จากหลักสูตรหลัก — กรุณาลงทะเบียน <span className="font-medium text-foreground">{prereqLabel}</span> ก่อน
                     แล้วระบบจะให้คุณเลือกลงหลักสูตรนี้พร้อมกันในขั้นตอนเดียวได้
                   </p>
-                  {recommendedCores && recommendedCores.length > 0 && (
+                  {recommendedCores && (recommendedCores as any[]).length > 0 && (
                     <div className="space-y-2 pt-1">
                       <div className="text-xs font-medium text-foreground">หลักสูตรหลักที่แนะนำ:</div>
-                      {recommendedCores.map((c) => (
+                      {(recommendedCores as any[]).map((c) => (
                         <Link
                           key={c.id}
                           to="/trainings/$id"
@@ -598,8 +469,8 @@ function TrainingDetail() {
                         />
                       </SelectTrigger>
                       <SelectContent>
-                        {institutes?.map((i) => (
-                          <SelectItem key={i.id} value={i.id}>{i.institute}</SelectItem>
+                        {(institutes as any[] | undefined)?.map((i) => (
+                          <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -611,7 +482,7 @@ function TrainingDetail() {
                         </Button>
                       </div>
                     )}
-                    {!institutesLoading && !institutesError && institutes && institutes.length === 0 && (
+                    {!institutesLoading && !institutesError && institutes && (institutes as any[]).length === 0 && (
                       <p className="mt-1 text-xs text-muted-foreground">ยังไม่มีรายการสถาบันในระบบ</p>
                     )}
                   </div>

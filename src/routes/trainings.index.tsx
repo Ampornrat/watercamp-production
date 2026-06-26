@@ -1,14 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { Calendar, MapPin, Users, Search } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { getPublishedTrainings } from "@/lib/trainings.functions";
 
 export const Route = createFileRoute("/trainings/")({
   head: () => ({
@@ -26,17 +27,10 @@ function formatDate(s: string) {
 
 function TrainingsList() {
   const [q, setQ] = useState("");
+  const getAll = useServerFn(getPublishedTrainings);
   const { data, isLoading } = useQuery({
     queryKey: ["trainings", "all"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("trainings")
-        .select("*")
-        .eq("is_published", true)
-        .order("start_date", { ascending: true });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => getAll(),
   });
 
   const filtered = (data ?? []).filter((t) =>

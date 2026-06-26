@@ -15,14 +15,24 @@ const DemographicsSchema = z.object({
 export const getSurveyResponseByToken = createServerFn({ method: 'POST' })
   .inputValidator((input: unknown) => TokenSchema.parse(input))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
-    const { data: row, error } = await supabaseAdmin
-      .from('survey_responses')
-      .select('id, token, submitted_at, trainings:training_id(title, start_date, end_date, location, instructor)')
-      .eq('token', data.token)
-      .maybeSingle()
-    if (error) throw new Error(error.message)
-    return row
+    const pool = (await import('@/lib/db.server')).default;
+    const [rows] = await pool.query(
+      `SELECT sr.id, sr.token, sr.submitted_at,
+              t.title, t.start_date, t.end_date, t.location, t.instructor
+       FROM survey_responses sr
+       LEFT JOIN trainings t ON t.id = sr.training_id
+       WHERE sr.token = ?
+       LIMIT 1`,
+      [data.token]
+    );
+    const row = (rows as any[])[0] ?? null;
+    if (!row) return null;
+    return {
+      id: row.id,
+      token: row.token,
+      submitted_at: row.submitted_at,
+      trainings: { title: row.title, start_date: row.start_date, end_date: row.end_date, location: row.location, instructor: row.instructor },
+    };
   })
 
 const SubmitResponseSchema = TokenSchema.extend({
@@ -43,39 +53,50 @@ const SubmitResponseSchema = TokenSchema.extend({
 export const submitSurveyResponse = createServerFn({ method: 'POST' })
   .inputValidator((input: unknown) => SubmitResponseSchema.parse(input))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
-    const { token, ...payload } = data
-    const { data: updated, error } = await supabaseAdmin
-      .from('survey_responses')
-      .update({ ...payload, suggestions: payload.suggestions || null, submitted_at: new Date().toISOString() } as never)
-      .eq('token', token)
-      .is('submitted_at', null)
-      .select('id')
-      .maybeSingle()
-    if (error) throw new Error(error.message)
-    if (!updated) throw new Error('ลิงก์ไม่ถูกต้องหรือส่งคำตอบไปแล้ว')
-    return { ok: true }
+    const pool = (await import('@/lib/db.server')).default;
+    const { token, ...payload } = data;
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const [result] = await pool.query(
+      `UPDATE survey_responses SET
+         gender=?, age_range=?, education=?, suggestions=?, submitted_at=?,
+         rating_knowledge=?, rating_application=?, rating_instructor=?, rating_assistant=?,
+         rating_materials=?, rating_duration=?, rating_venue=?, rating_equipment=?
+       WHERE token=? AND submitted_at IS NULL`,
+      [
+        payload.gender, payload.age_range, payload.education, payload.suggestions || null, now,
+        payload.rating_knowledge, payload.rating_application, payload.rating_instructor, payload.rating_assistant,
+        payload.rating_materials, payload.rating_duration, payload.rating_venue, payload.rating_equipment,
+        token,
+      ]
+    );
+    if ((result as any).affectedRows === 0) throw new Error('ลิงก์ไม่ถูกต้องหรือส่งคำตอบไปแล้ว');
+    return { ok: true };
   })
 
-// ------- Custom survey via survey_invitations -------
+// ------- Custom survey via survey_invitations (stub — returns null if tables don't exist) -------
 
 export const getSurveyInvitationByToken = createServerFn({ method: 'POST' })
   .inputValidator((input: unknown) => TokenSchema.parse(input))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
-    const { data: inv, error } = await supabaseAdmin
-      .from('survey_invitations' as any)
-      .select('id, token, submitted_at, survey_id, surveys(*), trainings(title, instructor, start_date, end_date, location, cover_image_url, category)')
-      .eq('token', data.token)
-      .maybeSingle()
-    if (error) throw new Error(error.message)
-    if (!inv) return null
-    const { data: qs } = await supabaseAdmin
-      .from('survey_questions' as any)
-      .select('*')
-      .eq('survey_id', (inv as any).survey_id)
-      .order('position')
-    return { inv, questions: qs ?? [] }
+    const pool = (await import('@/lib/db.server')).default;
+    try {
+      const [invRows] = await pool.query(
+        `SELECT si.*, t.title, t.instructor, t.start_date, t.end_date, t.location, t.cover_image_url, t.category
+         FROM survey_invitations si
+         LEFT JOIN trainings t ON t.id = si.training_id
+         WHERE si.token = ? LIMIT 1`,
+        [data.token]
+      );
+      const inv = (invRows as any[])[0] ?? null;
+      if (!inv) return null;
+      const [qs] = await pool.query(
+        `SELECT * FROM survey_questions WHERE survey_id = ? ORDER BY position`,
+        [inv.survey_id]
+      );
+      return { inv, questions: qs as any[] };
+    } catch {
+      return null;
+    }
   })
 
 const AnswerSchema = z.object({
@@ -93,42 +114,36 @@ const SubmitInvitationSchema = TokenSchema.extend({
 export const submitSurveyInvitation = createServerFn({ method: 'POST' })
   .inputValidator((input: unknown) => SubmitInvitationSchema.parse(input))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
+    const pool = (await import('@/lib/db.server')).default;
 
-    const { data: inv, error: invErr } = await supabaseAdmin
-      .from('survey_invitations' as any)
-      .select('id, submitted_at')
-      .eq('token', data.token)
-      .maybeSingle()
-    if (invErr) throw new Error(invErr.message)
-    if (!inv) throw new Error('ลิงก์ไม่ถูกต้อง')
-    if ((inv as any).submitted_at) throw new Error('ส่งคำตอบไปแล้ว')
+    const [invRows] = await pool.query(
+      `SELECT id, submitted_at FROM survey_invitations WHERE token = ? LIMIT 1`,
+      [data.token]
+    );
+    const inv = (invRows as any[])[0];
+    if (!inv) throw new Error('ลิงก์ไม่ถูกต้อง');
+    if (inv.submitted_at) throw new Error('ส่งคำตอบไปแล้ว');
 
-    const { error: updErr } = await supabaseAdmin
-      .from('survey_invitations' as any)
-      .update({
-        gender: data.demographics.gender || null,
-        age_range: data.demographics.age_range || null,
-        education: data.demographics.education || null,
-        suggestions: data.demographics.suggestions || null,
-        submitted_at: new Date().toISOString(),
-      })
-      .eq('id', (inv as any).id)
-      .is('submitted_at', null)
-    if (updErr) throw new Error(updErr.message)
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    await pool.query(
+      `UPDATE survey_invitations SET gender=?, age_range=?, education=?, suggestions=?, submitted_at=? WHERE id=? AND submitted_at IS NULL`,
+      [
+        data.demographics.gender || null, data.demographics.age_range || null,
+        data.demographics.education || null, data.demographics.suggestions || null,
+        now, inv.id,
+      ]
+    );
 
     const rows = data.answers
       .filter((a) => a.value_number != null || a.value_text != null || a.value_json != null)
-      .map((a) => ({
-        invitation_id: (inv as any).id,
-        question_id: a.question_id,
-        value_number: a.value_number ?? null,
-        value_text: a.value_text ?? null,
-        value_json: a.value_json ?? null,
-      }))
-    if (rows.length) {
-      const { error: ansErr } = await supabaseAdmin.from('survey_answers' as any).insert(rows)
-      if (ansErr) throw new Error(ansErr.message)
+      .map((a) => [inv.id, a.question_id, a.value_number ?? null, a.value_text ?? null, JSON.stringify(a.value_json ?? null)]);
+
+    for (const row of rows) {
+      await pool.query(
+        `INSERT INTO survey_answers (invitation_id, question_id, value_number, value_text, value_json) VALUES (?, ?, ?, ?, ?)`,
+        row
+      );
     }
-    return { ok: true }
+
+    return { ok: true };
   })

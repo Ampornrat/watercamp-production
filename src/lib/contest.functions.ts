@@ -1,15 +1,12 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
+import { randomUUID } from 'crypto'
 
 // Public list — returns only what the submit page needs to populate the picker.
 export const listContestTeams = createServerFn({ method: 'GET' }).handler(async () => {
-  const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
-  const { data, error } = await supabaseAdmin
-    .from('contest_teams')
-    .select('id, team_name, campaign_name')
-    .order('created_at', { ascending: false })
-  if (error) throw new Error(error.message)
-  return data ?? []
+  const pool = (await import('@/lib/db.server')).default;
+  const [rows] = await pool.query(`SELECT id, team_name, campaign_name FROM contest_teams ORDER BY created_at DESC`);
+  return (rows as any[]) ?? [];
 })
 
 const RegisterTeamSchema = z.object({
@@ -24,54 +21,45 @@ const RegisterTeamSchema = z.object({
 export const registerContestTeam = createServerFn({ method: 'POST' })
   .inputValidator((input: unknown) => RegisterTeamSchema.parse(input))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
+    const pool = (await import('@/lib/db.server')).default;
 
-    const allRegIds = [data.leaderRegistrationId, ...data.memberRegistrationIds]
-    const { data: regs, error: regErr } = await supabaseAdmin
-      .from('registrations')
-      .select('id, guest_name, guest_email, institute_id, completion_status')
-      .in('id', allRegIds)
-    if (regErr) throw new Error(regErr.message)
+    const allRegIds = [data.leaderRegistrationId, ...data.memberRegistrationIds];
+    const placeholders = allRegIds.map(() => '?').join(',');
+    const [regs] = await pool.query(
+      `SELECT id, guest_name, guest_email, institute_id, completion_status FROM registrations WHERE id IN (${placeholders})`,
+      allRegIds
+    );
 
-    const byId = new Map((regs ?? []).map((r) => [r.id, r]))
+    const byId = new Map((regs as any[]).map((r) => [r.id, r]));
     for (const rid of allRegIds) {
-      const r = byId.get(rid)
-      if (!r) throw new Error('ไม่พบใบสมัครบางรายการ')
-      if (r.institute_id !== data.instituteId) throw new Error('สมาชิกบางคนไม่ได้สังกัดสถาบันนี้')
-      if (r.completion_status !== 'completed') throw new Error('สมาชิกบางคนยังไม่ผ่านการอบรม')
+      const r = byId.get(rid);
+      if (!r) throw new Error('ไม่พบใบสมัครบางรายการ');
+      if (r.institute_id !== data.instituteId) throw new Error('สมาชิกบางคนไม่ได้สังกัดสถาบันนี้');
+      if (r.completion_status !== 'completed') throw new Error('สมาชิกบางคนยังไม่ผ่านการอบรม');
     }
 
-    const leader = byId.get(data.leaderRegistrationId)!
-    const { data: team, error: insErr } = await supabaseAdmin
-      .from('contest_teams')
-      .insert({
-        team_name: data.teamName.trim(),
-        institute_id: data.instituteId,
-        leader_registration_id: leader.id,
-        leader_name: leader.guest_name ?? '',
-        leader_email: (leader.guest_email ?? '').toLowerCase(),
-        campaign_name: data.campaignName.trim(),
-        concept: data.concept.trim(),
-      })
-      .select('id')
-      .single()
-    if (insErr) throw new Error(insErr.message)
+    const leader = byId.get(data.leaderRegistrationId)!;
+    const teamId = randomUUID();
+    await pool.query(
+      `INSERT INTO contest_teams (id, team_name, institute_id, leader_registration_id, leader_name, leader_email, campaign_name, concept, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [
+        teamId, data.teamName.trim(), data.instituteId, leader.id,
+        leader.guest_name ?? '', (leader.guest_email ?? '').toLowerCase(),
+        data.campaignName.trim(), data.concept.trim(),
+      ]
+    );
 
-    const members = data.memberRegistrationIds.map((id) => {
-      const m = byId.get(id)!
-      return {
-        team_id: team.id,
-        registration_id: m.id,
-        member_name: m.guest_name ?? '',
-        member_email: (m.guest_email ?? '').toLowerCase(),
-      }
-    })
-    if (members.length) {
-      const { error: mErr } = await supabaseAdmin.from('contest_team_members').insert(members)
-      if (mErr) throw new Error(mErr.message)
+    for (const mid of data.memberRegistrationIds) {
+      const m = byId.get(mid)!;
+      const memberId = randomUUID();
+      await pool.query(
+        `INSERT INTO contest_team_members (id, team_id, registration_id, member_name, member_email) VALUES (?, ?, ?, ?, ?)`,
+        [memberId, teamId, m.id, m.guest_name ?? '', (m.guest_email ?? '').toLowerCase()]
+      );
     }
 
-    return { id: team.id }
+    return { id: teamId };
   })
 
 const UploadUrlSchema = z.object({
@@ -82,21 +70,9 @@ const UploadUrlSchema = z.object({
 export const createContestUploadUrl = createServerFn({ method: 'POST' })
   .inputValidator((input: unknown) => UploadUrlSchema.parse(input))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
-    const { data: team } = await supabaseAdmin
-      .from('contest_teams')
-      .select('id')
-      .eq('id', data.teamId)
-      .maybeSingle()
-    if (!team) throw new Error('ไม่พบทีม')
-
-    const ext = data.filename.includes('.') ? data.filename.split('.').pop()!.slice(0, 10) : 'bin'
-    const path = `${data.teamId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
-    const { data: signed, error } = await supabaseAdmin.storage
-      .from('contest-submissions')
-      .createSignedUploadUrl(path)
-    if (error || !signed) throw new Error(error?.message ?? 'สร้างลิงก์อัปโหลดไม่สำเร็จ')
-    return { path, token: signed.token, signedUrl: signed.signedUrl }
+    // Storage upload via Supabase removed.
+    // Return a stub — caller should handle this gracefully.
+    throw new Error('ระบบอัปโหลดไฟล์ยังไม่พร้อมใช้งาน กรุณาติดต่อผู้ดูแลระบบ');
   })
 
 const SubmitEntrySchema = z.object({
@@ -112,36 +88,20 @@ const SubmitEntrySchema = z.object({
 export const submitContestEntry = createServerFn({ method: 'POST' })
   .inputValidator((input: unknown) => SubmitEntrySchema.parse(input))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
-    const { data: team } = await supabaseAdmin
-      .from('contest_teams')
-      .select('id, leader_email')
-      .eq('id', data.teamId)
-      .maybeSingle()
-    if (!team) throw new Error('ไม่พบทีม')
+    const pool = (await import('@/lib/db.server')).default;
+    const [teamRows] = await pool.query(`SELECT id, leader_email FROM contest_teams WHERE id = ? LIMIT 1`, [data.teamId]);
+    const team = (teamRows as any[])[0];
+    if (!team) throw new Error('ไม่พบทีม');
 
-    // Verify the file actually exists in storage at the given path.
-    const folder = data.path.split('/')[0]
-    if (folder !== data.teamId) throw new Error('เส้นทางไฟล์ไม่ถูกต้อง')
-    const { data: list } = await supabaseAdmin.storage
-      .from('contest-submissions')
-      .list(data.teamId, { search: data.path.split('/').slice(1).join('/') })
-    if (!list || list.length === 0) throw new Error('ไม่พบไฟล์ที่อัปโหลด')
-
-    const { data: signed } = await supabaseAdmin.storage
-      .from('contest-submissions')
-      .createSignedUrl(data.path, 60 * 60 * 24 * 365)
-
-    const { error } = await supabaseAdmin.from('contest_submissions').insert({
-      team_id: data.teamId,
-      campaign_name: data.campaignName.trim(),
-      file_url: signed?.signedUrl ?? data.path,
-      file_name: data.fileName,
-      file_size: data.fileSize,
-      note: data.note?.trim() || null,
-      submitted_by_email:
+    const id = randomUUID();
+    await pool.query(
+      `INSERT INTO contest_submissions (id, team_id, campaign_name, file_url, file_name, file_size, note, submitted_by_email, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [
+        id, data.teamId, data.campaignName.trim(), data.path, data.fileName,
+        data.fileSize, data.note?.trim() || null,
         data.submitterEmail?.trim().toLowerCase() || team.leader_email || 'unknown',
-    })
-    if (error) throw new Error(error.message)
-    return { ok: true }
+      ]
+    );
+    return { ok: true };
   })
