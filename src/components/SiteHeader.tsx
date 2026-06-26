@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 
 export function SiteHeader() {
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, isAdvisor, signOut } = useAuth();
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-navy/90 backdrop-blur-md">
@@ -35,6 +35,9 @@ export function SiteHeader() {
           <Link to="/advisor/register" className="text-sm font-medium text-white/70 transition-colors hover:text-teal">ลงทะเบียนสถาบัน</Link>
           <Link to="/trainings" className="text-sm font-medium text-white/70 transition-colors hover:text-teal">เยาวชนเข้าร่วมโครงการ</Link>
           <Link to="/contest" className="text-sm font-medium text-white/70 transition-colors hover:text-teal">ประกวดชิงรางวัล</Link>
+          {isAdvisor && (
+            <Link to="/advisor/dashboard" className="text-sm font-medium text-teal transition-colors hover:text-teal/80">ระบบอนุมัติ</Link>
+          )}
           {isAdmin && (
             <Link to="/admin" className="text-sm font-medium text-teal transition-colors hover:text-teal/80">ผู้ดูแลระบบ</Link>
           )}
