@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 
 export function SiteHeader() {
-  const { user, isAdmin, isAdvisor, signOut } = useAuth();
+  const { user, isAdmin, isAdvisor, isStudent, signOut } = useAuth();
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-navy/90 backdrop-blur-md">
@@ -41,6 +41,9 @@ export function SiteHeader() {
           {isAdmin && (
             <Link to="/admin" className="text-sm font-medium text-teal transition-colors hover:text-teal/80">ผู้ดูแลระบบ</Link>
           )}
+          {isStudent && (
+            <Link to="/student/dashboard" className="text-sm font-medium text-teal transition-colors hover:text-teal/80">แดชบอร์ดนักเรียน</Link>
+          )}
 
           {user ? (
             <div className="flex items-center gap-3">
@@ -59,12 +62,20 @@ export function SiteHeader() {
               </Button>
             </div>
           ) : (
-            <Link to="/login">
-              <Button size="sm" variant="ghost" className="gap-1.5 text-white/70 hover:text-white">
-                <LogIn className="h-4 w-4" />
-                เข้าสู่ระบบ
-              </Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link to="/student/login">
+                <Button size="sm" variant="ghost" className="gap-1.5 text-teal/80 hover:text-teal">
+                  <LogIn className="h-4 w-4" />
+                  นักเรียน
+                </Button>
+              </Link>
+              <Link to="/login">
+                <Button size="sm" variant="ghost" className="gap-1.5 text-white/70 hover:text-white">
+                  <LogIn className="h-4 w-4" />
+                  เจ้าหน้าที่
+                </Button>
+              </Link>
+            </div>
           )}
         </nav>
       </div>

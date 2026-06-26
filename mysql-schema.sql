@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS trainings (
   cover_image_url TEXT,
   is_published TINYINT(1) NOT NULL DEFAULT 1,
   course_type VARCHAR(50) DEFAULT 'elective',
+  required_for_contest TINYINT(1) NOT NULL DEFAULT 0,
   prerequisite_training_id CHAR(36),
   attachment_1_url TEXT,
   attachment_1_name VARCHAR(255),
@@ -208,6 +209,13 @@ CREATE TABLE IF NOT EXISTS sessions (
   expires_at DATETIME NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS student_otp (
+  email VARCHAR(255) NOT NULL PRIMARY KEY,
+  otp CHAR(6) NOT NULL,
+  expires_at DATETIME NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS invite_tokens (

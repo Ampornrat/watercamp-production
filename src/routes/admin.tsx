@@ -60,6 +60,7 @@ type TrainingForm = {
   attachment_3_name: string;
   course_type: "core" | "elective";
   prerequisite_training_id: string;
+  required_for_contest: boolean;
 };
 
 const empty: TrainingForm = {
@@ -70,6 +71,7 @@ const empty: TrainingForm = {
   attachment_3_url: "", attachment_3_name: "",
   course_type: "elective",
   prerequisite_training_id: "",
+  required_for_contest: false,
 };
 
 function Admin() {
@@ -151,6 +153,7 @@ function Admin() {
       attachment_3_url: t.attachment_3_url ?? "", attachment_3_name: t.attachment_3_name ?? "",
       course_type: (t.course_type ?? "elective") as "core" | "elective",
       prerequisite_training_id: t.prerequisite_training_id ?? "",
+      required_for_contest: !!t.required_for_contest,
     });
     setDialogOpen(true);
   };
@@ -193,7 +196,10 @@ function Admin() {
                       </TableCell>
                       <TableCell>{t.category || "-"}</TableCell>
                       <TableCell className="text-sm">{t.start_date ? new Date(t.start_date).toLocaleDateString("th-TH") : "-"}</TableCell>
-                      <TableCell>{t.is_published ? <Badge>เผยแพร่</Badge> : <Badge variant="secondary">ซ่อน</Badge>}</TableCell>
+                      <TableCell className="space-x-1">
+                        {t.is_published ? <Badge>เผยแพร่</Badge> : <Badge variant="secondary">ซ่อน</Badge>}
+                        {!!t.required_for_contest && <Badge variant="outline" className="border-yellow-500 text-yellow-600">ต้องผ่านประกวด</Badge>}
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button size="sm" variant="ghost" onClick={() => openEdit(t)}><Pencil className="h-4 w-4" /></Button>
                         <Button size="sm" variant="ghost" onClick={() => { if (confirm("ลบหลักสูตรนี้?")) deleteTraining.mutate(t.id); }}><Trash2 className="h-4 w-4" /></Button>
@@ -366,7 +372,10 @@ function Admin() {
             <div><Label>วันเริ่ม *</Label><Input type="datetime-local" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} /></div>
             <div><Label>วันสิ้นสุด *</Label><Input type="datetime-local" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} /></div>
             <div><Label>จำนวนรับ</Label><Input type="number" value={form.capacity} onChange={(e) => setForm({ ...form, capacity: Number(e.target.value) })} /></div>
-            <div className="flex items-end gap-2"><input type="checkbox" id="pub" checked={form.is_published} onChange={(e) => setForm({ ...form, is_published: e.target.checked })} /><Label htmlFor="pub">เผยแพร่</Label></div>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2"><input type="checkbox" id="pub" checked={form.is_published} onChange={(e) => setForm({ ...form, is_published: e.target.checked })} /><Label htmlFor="pub">เผยแพร่</Label></div>
+              <div className="flex items-center gap-2"><input type="checkbox" id="req-contest" checked={form.required_for_contest} onChange={(e) => setForm({ ...form, required_for_contest: e.target.checked })} /><Label htmlFor="req-contest">หลักสูตรที่ต้องผ่านสำหรับการประกวด</Label></div>
+            </div>
             <div className="md:col-span-2">
               <Label>รูปหน้าปก (URL)</Label>
               <Input value={form.cover_image_url} onChange={(e) => setForm({ ...form, cover_image_url: e.target.value })} placeholder="https://..." />

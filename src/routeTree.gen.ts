@@ -23,6 +23,8 @@ import { Route as ContestIndexRouteImport } from './routes/contest.index'
 import { Route as TrainingsIdRouteImport } from './routes/trainings.$id'
 import { Route as SurveyTokenRouteImport } from './routes/survey.$token'
 import { Route as StudentProfileRouteImport } from './routes/student.profile'
+import { Route as StudentLoginRouteImport } from './routes/student.login'
+import { Route as StudentDashboardRouteImport } from './routes/student.dashboard'
 import { Route as STokenRouteImport } from './routes/s.$token'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as ContestSubmitRouteImport } from './routes/contest.submit'
@@ -106,6 +108,16 @@ const SurveyTokenRoute = SurveyTokenRouteImport.update({
 const StudentProfileRoute = StudentProfileRouteImport.update({
   id: '/student/profile',
   path: '/student/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudentLoginRoute = StudentLoginRouteImport.update({
+  id: '/student/login',
+  path: '/student/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudentDashboardRoute = StudentDashboardRouteImport.update({
+  id: '/student/dashboard',
+  path: '/student/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const STokenRoute = STokenRouteImport.update({
@@ -200,6 +212,8 @@ export interface FileRoutesByFullPath {
   '/contest/submit': typeof ContestSubmitRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/s/$token': typeof STokenRoute
+  '/student/dashboard': typeof StudentDashboardRoute
+  '/student/login': typeof StudentLoginRoute
   '/student/profile': typeof StudentProfileRoute
   '/survey/$token': typeof SurveyTokenRoute
   '/trainings/$id': typeof TrainingsIdRoute
@@ -230,6 +244,8 @@ export interface FileRoutesByTo {
   '/contest/submit': typeof ContestSubmitRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/s/$token': typeof STokenRoute
+  '/student/dashboard': typeof StudentDashboardRoute
+  '/student/login': typeof StudentLoginRoute
   '/student/profile': typeof StudentProfileRoute
   '/survey/$token': typeof SurveyTokenRoute
   '/trainings/$id': typeof TrainingsIdRoute
@@ -261,6 +277,8 @@ export interface FileRoutesById {
   '/contest/submit': typeof ContestSubmitRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/s/$token': typeof STokenRoute
+  '/student/dashboard': typeof StudentDashboardRoute
+  '/student/login': typeof StudentLoginRoute
   '/student/profile': typeof StudentProfileRoute
   '/survey/$token': typeof SurveyTokenRoute
   '/trainings/$id': typeof TrainingsIdRoute
@@ -293,6 +311,8 @@ export interface FileRouteTypes {
     | '/contest/submit'
     | '/email/unsubscribe'
     | '/s/$token'
+    | '/student/dashboard'
+    | '/student/login'
     | '/student/profile'
     | '/survey/$token'
     | '/trainings/$id'
@@ -323,6 +343,8 @@ export interface FileRouteTypes {
     | '/contest/submit'
     | '/email/unsubscribe'
     | '/s/$token'
+    | '/student/dashboard'
+    | '/student/login'
     | '/student/profile'
     | '/survey/$token'
     | '/trainings/$id'
@@ -353,6 +375,8 @@ export interface FileRouteTypes {
     | '/contest/submit'
     | '/email/unsubscribe'
     | '/s/$token'
+    | '/student/dashboard'
+    | '/student/login'
     | '/student/profile'
     | '/survey/$token'
     | '/trainings/$id'
@@ -384,6 +408,8 @@ export interface RootRouteChildren {
   ContestSubmitRoute: typeof ContestSubmitRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   STokenRoute: typeof STokenRoute
+  StudentDashboardRoute: typeof StudentDashboardRoute
+  StudentLoginRoute: typeof StudentLoginRoute
   StudentProfileRoute: typeof StudentProfileRoute
   SurveyTokenRoute: typeof SurveyTokenRoute
   TrainingsIdRoute: typeof TrainingsIdRoute
@@ -496,6 +522,20 @@ declare module '@tanstack/react-router' {
       path: '/student/profile'
       fullPath: '/student/profile'
       preLoaderRoute: typeof StudentProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/student/login': {
+      id: '/student/login'
+      path: '/student/login'
+      fullPath: '/student/login'
+      preLoaderRoute: typeof StudentLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/student/dashboard': {
+      id: '/student/dashboard'
+      path: '/student/dashboard'
+      fullPath: '/student/dashboard'
+      preLoaderRoute: typeof StudentDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/s/$token': {
@@ -616,6 +656,8 @@ const rootRouteChildren: RootRouteChildren = {
   ContestSubmitRoute: ContestSubmitRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   STokenRoute: STokenRoute,
+  StudentDashboardRoute: StudentDashboardRoute,
+  StudentLoginRoute: StudentLoginRoute,
   StudentProfileRoute: StudentProfileRoute,
   SurveyTokenRoute: SurveyTokenRoute,
   TrainingsIdRoute: TrainingsIdRoute,

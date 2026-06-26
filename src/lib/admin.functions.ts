@@ -58,6 +58,7 @@ const TrainingFormSchema = z.object({
   attachment_3_name: z.string().max(255).optional(),
   course_type: z.enum(['core', 'elective']),
   prerequisite_training_id: z.string().optional(),
+  required_for_contest: z.boolean().optional(),
 });
 
 export const saveAdminTraining = createServerFn({ method: 'POST' })
@@ -71,7 +72,8 @@ export const saveAdminTraining = createServerFn({ method: 'POST' })
         `UPDATE trainings SET title=?, description=?, category=?, instructor=?, location=?,
          start_date=?, end_date=?, capacity=?, is_published=?, cover_image_url=?, online_url=?,
          attachment_1_url=?, attachment_1_name=?, attachment_2_url=?, attachment_2_name=?,
-         attachment_3_url=?, attachment_3_name=?, course_type=?, prerequisite_training_id=?
+         attachment_3_url=?, attachment_3_name=?, course_type=?, prerequisite_training_id=?,
+         required_for_contest=?
          WHERE id=?`,
         [
           data.title, data.description || null, data.category || null, data.instructor || null, data.location || null,
@@ -80,7 +82,7 @@ export const saveAdminTraining = createServerFn({ method: 'POST' })
           data.attachment_1_url || null, data.attachment_1_name || null,
           data.attachment_2_url || null, data.attachment_2_name || null,
           data.attachment_3_url || null, data.attachment_3_name || null,
-          data.course_type, prereqId, data.id,
+          data.course_type, prereqId, data.required_for_contest ? 1 : 0, data.id,
         ]
       );
       return { id: data.id };
@@ -90,8 +92,9 @@ export const saveAdminTraining = createServerFn({ method: 'POST' })
         `INSERT INTO trainings (id, title, description, category, instructor, location,
          start_date, end_date, capacity, is_published, cover_image_url, online_url,
          attachment_1_url, attachment_1_name, attachment_2_url, attachment_2_name,
-         attachment_3_url, attachment_3_name, course_type, prerequisite_training_id, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+         attachment_3_url, attachment_3_name, course_type, prerequisite_training_id,
+         required_for_contest, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
         [
           id, data.title, data.description || null, data.category || null, data.instructor || null, data.location || null,
           data.start_date, data.end_date, data.capacity, data.is_published ? 1 : 0,
@@ -99,7 +102,7 @@ export const saveAdminTraining = createServerFn({ method: 'POST' })
           data.attachment_1_url || null, data.attachment_1_name || null,
           data.attachment_2_url || null, data.attachment_2_name || null,
           data.attachment_3_url || null, data.attachment_3_name || null,
-          data.course_type, prereqId,
+          data.course_type, prereqId, data.required_for_contest ? 1 : 0,
         ]
       );
       return { id };

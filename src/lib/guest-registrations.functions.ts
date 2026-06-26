@@ -76,7 +76,6 @@ export const createGuestRegistrations = createServerFn({ method: 'POST' })
     }
 
     // Upsert student profile
-    const { randomUUID } = await import('crypto')
     await pool.query(
       `INSERT INTO student_profiles
          (id, email, full_name, gender, age, education_level, field_of_study, participant_status, institute_id)
