@@ -223,7 +223,7 @@ function StudentDashboardPage() {
                             ลงทะเบียน: {new Date(r.created_at).toLocaleDateString('th-TH')}
                           </div>
                           {r.online_url && r.approval_status === 'approved' && (
-                            hasStarted ? (
+                            hasEnded ? null : hasStarted ? (
                               <a
                                 href={r.online_url}
                                 target="_blank"
@@ -245,6 +245,11 @@ function StudentDashboardPage() {
                               <span className="mt-1.5 inline-flex items-center gap-1 text-xs text-muted-foreground">
                                 <CheckCircle2 className="h-3 w-3 text-green-500" />
                                 ยืนยันการเข้าเรียนแล้ว — รอ admin ตรวจสอบ
+                              </span>
+                            ) : hasEnded ? (
+                              <span className="mt-1.5 inline-flex items-center gap-1 text-xs text-destructive/80">
+                                <XCircle className="h-3 w-3" />
+                                เลยเวลาเรียนแล้ว ไม่สามารถเข้าเรียนได้
                               </span>
                             ) : hasStarted ? (
                               <Button
