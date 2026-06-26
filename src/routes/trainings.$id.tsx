@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Calendar, MapPin, Users, User, Clock, ArrowLeft, Lock, Sparkles, Info, Paperclip, Download } from "lucide-react";
+import { Calendar, MapPin, Users, User, Clock, ArrowLeft, Lock, Sparkles, Info, Paperclip, Download, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -278,6 +278,17 @@ function TrainingDetail() {
                 <div className="flex items-start gap-3"><Calendar className="mt-0.5 h-4 w-4 text-primary" /><div><div className="font-medium">เริ่ม</div><div className="text-muted-foreground">{formatDate(training.start_date)}</div></div></div>
                 <div className="flex items-start gap-3"><Clock className="mt-0.5 h-4 w-4 text-primary" /><div><div className="font-medium">สิ้นสุด</div><div className="text-muted-foreground">{formatDate(training.end_date)}</div></div></div>
                 {training.location && <div className="flex items-start gap-3"><MapPin className="mt-0.5 h-4 w-4 text-primary" /><div><div className="font-medium">สถานที่</div><div className="text-muted-foreground">{training.location}</div></div></div>}
+                {(training as any).online_url && (
+                  <div className="flex items-start gap-3">
+                    <ExternalLink className="mt-0.5 h-4 w-4 text-primary" />
+                    <div>
+                      <div className="font-medium">Link เข้าเรียน Online</div>
+                      <a href={(training as any).online_url} target="_blank" rel="noopener noreferrer" className="break-all text-primary underline hover:text-primary/80">
+                        {(training as any).online_url}
+                      </a>
+                    </div>
+                  </div>
+                )}
                 {training.instructor && <div className="flex items-start gap-3"><User className="mt-0.5 h-4 w-4 text-primary" /><div><div className="font-medium">วิทยากร</div><div className="text-muted-foreground">{training.instructor}</div></div></div>}
                 <div className="flex items-start gap-3"><Users className="mt-0.5 h-4 w-4 text-primary" /><div><div className="font-medium">ผู้ลงทะเบียน</div><div className="text-muted-foreground">{regCount ?? 0} / {training.capacity} คน</div></div></div>
               </div>

@@ -51,6 +51,7 @@ type TrainingForm = {
   capacity: number;
   is_published: boolean;
   cover_image_url: string;
+  online_url: string;
   attachment_1_url: string;
   attachment_1_name: string;
   attachment_2_url: string;
@@ -63,7 +64,7 @@ type TrainingForm = {
 
 const empty: TrainingForm = {
   title: "", description: "", category: "", instructor: "", location: "",
-  start_date: "", end_date: "", capacity: 30, is_published: true, cover_image_url: "",
+  start_date: "", end_date: "", capacity: 30, is_published: true, cover_image_url: "", online_url: "",
   attachment_1_url: "", attachment_1_name: "",
   attachment_2_url: "", attachment_2_name: "",
   attachment_3_url: "", attachment_3_name: "",
@@ -144,6 +145,7 @@ function Admin() {
       end_date: toDatetimeLocal(t.end_date),
       capacity: t.capacity, is_published: !!t.is_published,
       cover_image_url: t.cover_image_url ?? "",
+      online_url: t.online_url ?? "",
       attachment_1_url: t.attachment_1_url ?? "", attachment_1_name: t.attachment_1_name ?? "",
       attachment_2_url: t.attachment_2_url ?? "", attachment_2_name: t.attachment_2_name ?? "",
       attachment_3_url: t.attachment_3_url ?? "", attachment_3_name: t.attachment_3_name ?? "",
@@ -368,6 +370,10 @@ function Admin() {
             <div className="md:col-span-2">
               <Label>รูปหน้าปก (URL)</Label>
               <Input value={form.cover_image_url} onChange={(e) => setForm({ ...form, cover_image_url: e.target.value })} placeholder="https://..." />
+            </div>
+            <div className="md:col-span-2">
+              <Label>Link สำหรับเข้าเรียน Online (URL)</Label>
+              <Input value={form.online_url} onChange={(e) => setForm({ ...form, online_url: e.target.value })} placeholder="https://meet.google.com/... หรือ https://zoom.us/..." />
             </div>
             <div className="md:col-span-2 space-y-2 rounded-md border p-3">
               <Label className="text-sm font-semibold">เอกสารแนบหลักสูตร</Label>

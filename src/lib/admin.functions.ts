@@ -49,6 +49,7 @@ const TrainingFormSchema = z.object({
   capacity: z.number().int().min(1).max(10000),
   is_published: z.boolean(),
   cover_image_url: z.string().max(2000).optional(),
+  online_url: z.string().max(2000).optional(),
   attachment_1_url: z.string().max(2000).optional(),
   attachment_1_name: z.string().max(255).optional(),
   attachment_2_url: z.string().max(2000).optional(),
@@ -68,14 +69,14 @@ export const saveAdminTraining = createServerFn({ method: 'POST' })
     if (data.id) {
       await pool.query(
         `UPDATE trainings SET title=?, description=?, category=?, instructor=?, location=?,
-         start_date=?, end_date=?, capacity=?, is_published=?, cover_image_url=?,
+         start_date=?, end_date=?, capacity=?, is_published=?, cover_image_url=?, online_url=?,
          attachment_1_url=?, attachment_1_name=?, attachment_2_url=?, attachment_2_name=?,
          attachment_3_url=?, attachment_3_name=?, course_type=?, prerequisite_training_id=?
          WHERE id=?`,
         [
           data.title, data.description || null, data.category || null, data.instructor || null, data.location || null,
           data.start_date, data.end_date, data.capacity, data.is_published ? 1 : 0,
-          data.cover_image_url || null,
+          data.cover_image_url || null, data.online_url || null,
           data.attachment_1_url || null, data.attachment_1_name || null,
           data.attachment_2_url || null, data.attachment_2_name || null,
           data.attachment_3_url || null, data.attachment_3_name || null,
@@ -87,14 +88,14 @@ export const saveAdminTraining = createServerFn({ method: 'POST' })
       const id = randomUUID();
       await pool.query(
         `INSERT INTO trainings (id, title, description, category, instructor, location,
-         start_date, end_date, capacity, is_published, cover_image_url,
+         start_date, end_date, capacity, is_published, cover_image_url, online_url,
          attachment_1_url, attachment_1_name, attachment_2_url, attachment_2_name,
          attachment_3_url, attachment_3_name, course_type, prerequisite_training_id, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
         [
           id, data.title, data.description || null, data.category || null, data.instructor || null, data.location || null,
           data.start_date, data.end_date, data.capacity, data.is_published ? 1 : 0,
-          data.cover_image_url || null,
+          data.cover_image_url || null, data.online_url || null,
           data.attachment_1_url || null, data.attachment_1_name || null,
           data.attachment_2_url || null, data.attachment_2_name || null,
           data.attachment_3_url || null, data.attachment_3_name || null,
