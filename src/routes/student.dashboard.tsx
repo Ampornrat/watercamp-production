@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
 import { useEffect, useState } from 'react'
-import { BookOpen, CheckCircle2, Clock, ExternalLink, GraduationCap, LogOut, Trophy, User } from 'lucide-react'
+import { BookOpen, CheckCircle2, Clock, ExternalLink, GraduationCap, LogOut, Trophy, User, XCircle } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
