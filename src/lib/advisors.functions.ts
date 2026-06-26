@@ -2,6 +2,52 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { randomUUID } from 'crypto'
 
+export const getAdvisorByEmail = createServerFn({ method: 'GET' })
+  .inputValidator((d: unknown) => d as { email: string })
+  .handler(async ({ data }) => {
+    const pool = (await import('@/lib/db.server')).default
+    const [rows] = await pool.query(
+      `SELECT a.id, a.full_name, a.email, a.institute_id, i.institute AS institute_name
+       FROM advisors a
+       LEFT JOIN institutes_tab i ON i.id = a.institute_id
+       WHERE LOWER(a.email) = ? LIMIT 1`,
+      [data.email.toLowerCase()]
+    )
+    const row = (rows as any[])[0]
+    return row as { id: string; full_name: string; email: string; institute_id: string; institute_name: string } | null
+  })
+
+export const getAdvisorRegistrations = createServerFn({ method: 'GET' })
+  .inputValidator((d: unknown) => d as { institute_id: string })
+  .handler(async ({ data }) => {
+    const pool = (await import('@/lib/db.server')).default
+    const [rows] = await pool.query(
+      `SELECT r.id, r.guest_name, r.guest_email, r.approval_status, r.created_at,
+              t.title AS training_title, t.start_date
+       FROM registrations r
+       JOIN trainings t ON t.id = r.training_id
+       WHERE r.institute_id = ?
+       ORDER BY r.created_at DESC`,
+      [data.institute_id]
+    )
+    return rows as {
+      id: string; guest_name: string | null; guest_email: string | null;
+      approval_status: string; created_at: string;
+      training_title: string; start_date: string;
+    }[]
+  })
+
+export const updateRegistrationApproval = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => d as { id: string; status: 'approved' | 'rejected' })
+  .handler(async ({ data }) => {
+    const pool = (await import('@/lib/db.server')).default
+    await pool.query(
+      `UPDATE registrations SET approval_status = ?, updated_at = NOW() WHERE id = ?`,
+      [data.status, data.id]
+    )
+    return { ok: true }
+  })
+
 export const getInstitutes = createServerFn({ method: 'GET' }).handler(async () => {
   const pool = (await import('@/lib/db.server')).default
   const [rows] = await pool.query(

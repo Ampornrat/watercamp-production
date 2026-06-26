@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { createGuestRegistrations } from "@/lib/guest-registrations.functions";
+import { notifyRegistration } from "@/lib/registration-notify.functions";
 import {
   getTrainingById,
   getAllInstitutes,
@@ -75,6 +76,7 @@ function TrainingDetail() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
   const createGuestRegistrationsFn = useServerFn(createGuestRegistrations);
+  const notifyRegistrationFn = useServerFn(notifyRegistration);
   const getTraining = useServerFn(getTrainingById);
   const getInstitutes = useServerFn(getAllInstitutes);
   const getRegCount = useServerFn(getRegistrationsForTraining);
@@ -183,24 +185,15 @@ function TrainingDetail() {
         },
       });
 
-      // Send confirmation emails (non-blocking)
-      const trainingIds = [id, ...electiveIds];
-      await Promise.all(
-        trainingIds.map(async (tid) => {
-          try {
-            await fetch("/api/public/trainings/notify-registration", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                trainingId: tid,
-                email: form.email.trim(),
-              }),
-            });
-          } catch (err) {
-            console.error("Failed to send confirmation email for training", tid, err);
-          }
-        }),
-      );
+      // Send confirmation to student + notify advisors (non-blocking)
+      notifyRegistrationFn({
+        data: {
+          training_ids: [id, ...electiveIds],
+          institute_id: form.instituteId,
+          guest_name: form.name.trim(),
+          guest_email: form.email.trim(),
+        },
+      }).catch((err) => console.error('Failed to send registration emails:', err?.message));
 
       return { mainOk: true, electives: electiveIds.length };
     },
