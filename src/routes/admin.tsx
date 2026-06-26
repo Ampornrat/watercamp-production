@@ -369,6 +369,25 @@ function Admin() {
               <Label>รูปหน้าปก (URL)</Label>
               <Input value={form.cover_image_url} onChange={(e) => setForm({ ...form, cover_image_url: e.target.value })} placeholder="https://..." />
             </div>
+            <div className="md:col-span-2 space-y-2 rounded-md border p-3">
+              <Label className="text-sm font-semibold">เอกสารแนบหลักสูตร</Label>
+              {([1, 2, 3] as const).map((n) => {
+                const urlKey = `attachment_${n}_url` as keyof TrainingForm;
+                const nameKey = `attachment_${n}_name` as keyof TrainingForm;
+                return (
+                  <div key={n} className="grid gap-2 md:grid-cols-2">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">เอกสาร {n} — ชื่อไฟล์</Label>
+                      <Input value={form[nameKey] as string} onChange={(e) => setForm({ ...form, [nameKey]: e.target.value })} placeholder={`เช่น คู่มือ${n}.pdf`} />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">เอกสาร {n} — URL</Label>
+                      <Input value={form[urlKey] as string} onChange={(e) => setForm({ ...form, [urlKey]: e.target.value })} placeholder="https://..." />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
             <div className="md:col-span-2 space-y-3 rounded-md border p-3">
               <div>
                 <Label>ประเภทหลักสูตร *</Label>
