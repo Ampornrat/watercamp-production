@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth.server";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Send } from "lucide-react";
+import { Plus, Pencil, Trash2, Send, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -77,6 +77,7 @@ function Admin() {
   const [form, setForm] = useState<TrainingForm>(empty);
   const [sendDialog, setSendDialog] = useState<null | { id: string; email: string; name: string; training_id: string; training_title: string }>(null);
   const [pickedSurvey, setPickedSurvey] = useState<string>("__default__");
+  const [regSort, setRegSort] = useState<{ col: 'guest_name' | 'training_title' | 'institute_name'; dir: 'asc' | 'desc' } | null>(null);
 
   const getTrainingsFn = useServerFn(getAdminTrainings);
   const getRegsFn = useServerFn(getAdminRegistrations);
@@ -198,12 +199,31 @@ function Admin() {
             <Card>
               <Table>
                 <TableHeader><TableRow>
-                  <TableHead>ผู้ลงทะเบียน</TableHead><TableHead>หลักสูตร</TableHead>
-                  <TableHead>สถาบัน</TableHead><TableHead>สถานะ</TableHead>
+                  <TableHead>
+                    <button className="flex items-center gap-1 hover:text-foreground" onClick={() => setRegSort(s => s?.col === 'guest_name' ? { col: 'guest_name', dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col: 'guest_name', dir: 'asc' })}>
+                      ผู้ลงทะเบียน {regSort?.col === 'guest_name' ? (regSort.dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                    </button>
+                  </TableHead>
+                  <TableHead>
+                    <button className="flex items-center gap-1 hover:text-foreground" onClick={() => setRegSort(s => s?.col === 'training_title' ? { col: 'training_title', dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col: 'training_title', dir: 'asc' })}>
+                      หลักสูตร {regSort?.col === 'training_title' ? (regSort.dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                    </button>
+                  </TableHead>
+                  <TableHead>
+                    <button className="flex items-center gap-1 hover:text-foreground" onClick={() => setRegSort(s => s?.col === 'institute_name' ? { col: 'institute_name', dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col: 'institute_name', dir: 'asc' })}>
+                      สถาบัน {regSort?.col === 'institute_name' ? (regSort.dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                    </button>
+                  </TableHead>
+                  <TableHead>สถานะ</TableHead>
                   <TableHead>ผลการเรียน</TableHead><TableHead></TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
-                  {(registrations.data ?? []).map((r: any) => {
+                  {([...(registrations.data ?? [])].sort((a: any, b: any) => {
+                    if (!regSort) return 0;
+                    const av = (a[regSort.col] ?? '').toString().toLowerCase();
+                    const bv = (b[regSort.col] ?? '').toString().toLowerCase();
+                    return regSort.dir === 'asc' ? av.localeCompare(bv, 'th') : bv.localeCompare(av, 'th');
+                  })).map((r: any) => {
                     const cs: string = r.completion_status ?? "enrolled";
                     return (
                       <TableRow key={r.id}>
