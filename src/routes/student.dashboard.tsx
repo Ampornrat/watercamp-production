@@ -203,7 +203,8 @@ function StudentDashboardPage() {
                     const startDate = r.start_date ? (r.start_date instanceof Date ? r.start_date : new Date(r.start_date)) : null
                     const endDate = r.end_date ? (r.end_date instanceof Date ? r.end_date : new Date(r.end_date)) : null
                     const hasStarted = startDate ? startDate <= now : false
-                    const hasEnded = endDate ? endDate <= now : false
+                    // hasEnded is true only when end_date is valid (after start_date) and has passed
+                    const hasEnded = endDate && startDate && endDate > startDate ? endDate <= now : false
                     return (
                       <li key={r.id} className="flex flex-col gap-2 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex-1">

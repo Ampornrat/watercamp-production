@@ -59,6 +59,9 @@ const TrainingFormSchema = z.object({
   course_type: z.enum(['core', 'elective']),
   prerequisite_training_id: z.string().optional(),
   required_for_contest: z.boolean().optional(),
+}).refine((d) => new Date(d.end_date) > new Date(d.start_date), {
+  message: 'วันสิ้นสุดต้องหลังวันเริ่มต้น',
+  path: ['end_date'],
 });
 
 export const saveAdminTraining = createServerFn({ method: 'POST' })
