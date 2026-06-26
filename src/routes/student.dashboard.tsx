@@ -199,6 +199,11 @@ function StudentDashboardPage() {
                     const cs = completionInfo[r.completion_status] ?? r.completion_status
                     const isCompleted = r.completion_status === 'completed'
                     const isFailed = r.completion_status === 'failed'
+                    const now = new Date()
+                    const startDate = r.start_date ? (r.start_date instanceof Date ? r.start_date : new Date(r.start_date)) : null
+                    const endDate = r.end_date ? (r.end_date instanceof Date ? r.end_date : new Date(r.end_date)) : null
+                    const hasStarted = startDate ? startDate <= now : false
+                    const hasEnded = endDate ? endDate <= now : false
                     return (
                       <li key={r.id} className="flex flex-col gap-2 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex-1">
@@ -218,15 +223,22 @@ function StudentDashboardPage() {
                             ลงทะเบียน: {new Date(r.created_at).toLocaleDateString('th-TH')}
                           </div>
                           {r.online_url && r.approval_status === 'approved' && (
-                            <a
-                              href={r.online_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-primary underline-offset-2 hover:underline"
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                              Link สำหรับเข้าเรียน Online
-                            </a>
+                            hasStarted ? (
+                              <a
+                                href={r.online_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-primary underline-offset-2 hover:underline"
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                                Link สำหรับเข้าเรียน Online
+                              </a>
+                            ) : (
+                              <span className="mt-1.5 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                <Clock className="h-3 w-3" />
+                                Link จะเปิดให้เข้าเรียนเมื่อถึงวันและเวลาอบรม
+                              </span>
+                            )
                           )}
                           {r.approval_status === 'approved' && r.completion_status === 'enrolled' && (
                             r.self_confirmed_at ? (
@@ -234,7 +246,7 @@ function StudentDashboardPage() {
                                 <CheckCircle2 className="h-3 w-3 text-green-500" />
                                 ยืนยันการเข้าเรียนแล้ว — รอ admin ตรวจสอบ
                               </span>
-                            ) : (
+                            ) : hasStarted ? (
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -245,7 +257,14 @@ function StudentDashboardPage() {
                                 <CheckCircle2 className="h-3 w-3" />
                                 {confirming === r.id ? 'กำลังบันทึก...' : 'ยืนยันการเข้าเรียน'}
                               </Button>
-                            )
+                            ) : startDate ? (
+                              <span className="mt-1.5 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                <Clock className="h-3 w-3" />
+                                ยืนยันได้เมื่อ{' '}
+                                {startDate.toLocaleDateString('th-TH', { dateStyle: 'long' })}{' '}
+                                {startDate.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.
+                              </span>
+                            ) : null
                           )}
                         </div>
                         <div className="flex flex-wrap gap-2">
