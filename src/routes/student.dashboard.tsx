@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
 import { useEffect, useState } from 'react'
-import { BookOpen, CheckCircle2, Clock, GraduationCap, LogOut, Trophy, User, XCircle } from 'lucide-react'
+import { BookOpen, CheckCircle2, Clock, ExternalLink, GraduationCap, LogOut, Trophy, User, XCircle } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -194,6 +194,17 @@ function StudentDashboardPage() {
                           <div className="mt-0.5 text-xs text-muted-foreground">
                             ลงทะเบียน: {new Date(r.created_at).toLocaleDateString('th-TH')}
                           </div>
+                          {r.online_url && r.approval_status === 'approved' && (
+                            <a
+                              href={r.online_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-primary underline-offset-2 hover:underline"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              Link สำหรับเข้าเรียน Online
+                            </a>
+                          )}
                         </div>
                         <div className="flex flex-wrap gap-2">
                           <Badge

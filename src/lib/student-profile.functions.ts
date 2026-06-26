@@ -19,7 +19,7 @@ export const getStudentProfile = createServerFn({ method: 'GET' })
 
     const [regRows] = await pool.query(
       `SELECT r.id, r.approval_status, r.completion_status, r.created_at,
-              t.title AS training_title, t.start_date, t.end_date, t.course_type
+              t.title AS training_title, t.start_date, t.end_date, t.course_type, t.online_url
        FROM registrations r
        JOIN trainings t ON t.id = r.training_id
        WHERE LOWER(r.guest_email) = ?
