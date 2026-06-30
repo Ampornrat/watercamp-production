@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Calendar, MapPin, Users, User, Clock, ArrowLeft, Lock, Sparkles, Info, Paperclip, Download, ExternalLink } from "lucide-react";
+import { Calendar, MapPin, Users, User, Clock, ArrowLeft, Lock, Sparkles, Info, Paperclip, Download } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -278,17 +278,6 @@ function TrainingDetail() {
                 <div className="flex items-start gap-3"><Calendar className="mt-0.5 h-4 w-4 text-primary" /><div><div className="font-medium">เริ่ม</div><div className="text-muted-foreground">{formatDate(training.start_date)}</div></div></div>
                 <div className="flex items-start gap-3"><Clock className="mt-0.5 h-4 w-4 text-primary" /><div><div className="font-medium">สิ้นสุด</div><div className="text-muted-foreground">{formatDate(training.end_date)}</div></div></div>
                 {training.location && <div className="flex items-start gap-3"><MapPin className="mt-0.5 h-4 w-4 text-primary" /><div><div className="font-medium">สถานที่</div><div className="text-muted-foreground">{training.location}</div></div></div>}
-                {(training as any).online_url && (
-                  <div className="flex items-start gap-3">
-                    <ExternalLink className="mt-0.5 h-4 w-4 text-primary" />
-                    <div>
-                      <div className="font-medium">Link เข้าเรียน Online</div>
-                      <a href={(training as any).online_url} target="_blank" rel="noopener noreferrer" className="break-all text-primary underline hover:text-primary/80">
-                        {(training as any).online_url}
-                      </a>
-                    </div>
-                  </div>
-                )}
                 {training.instructor && <div className="flex items-start gap-3"><User className="mt-0.5 h-4 w-4 text-primary" /><div><div className="font-medium">วิทยากร</div><div className="text-muted-foreground">{training.instructor}</div></div></div>}
                 <div className="flex items-start gap-3"><Users className="mt-0.5 h-4 w-4 text-primary" /><div><div className="font-medium">ผู้ลงทะเบียน</div><div className="text-muted-foreground">{regCount ?? 0} / {training.capacity} คน</div></div></div>
               </div>
@@ -420,36 +409,20 @@ function TrainingDetail() {
 
               {isFull ? (
                 <Button className="mt-6 w-full" disabled>เต็มแล้ว</Button>
-              ) : isElective ? (
-                <div className="mt-5 space-y-3 rounded-md border border-amber-300/60 bg-amber-50 p-4 text-sm dark:border-amber-500/30 dark:bg-amber-950/30">
-                  <div className="flex items-center gap-2 font-medium text-foreground">
-                    <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                    กรุณาลงทะเบียนหลักสูตรหลักก่อน
-                  </div>
-                  <p className="text-muted-foreground">
-                    หลักสูตรนี้เป็น <span className="font-medium text-foreground">หลักสูตรเสริมทักษะ</span> เป็นการเรียนต่อเนื่อง
-                    จากหลักสูตรหลัก — กรุณาลงทะเบียน <span className="font-medium text-foreground">{prereqLabel}</span> ก่อน
-                    แล้วระบบจะให้คุณเลือกลงหลักสูตรนี้พร้อมกันในขั้นตอนเดียวได้
-                  </p>
-                  {recommendedCores && (recommendedCores as any[]).length > 0 && (
-                    <div className="space-y-2 pt-1">
-                      <div className="text-xs font-medium text-foreground">หลักสูตรหลักที่แนะนำ:</div>
-                      {(recommendedCores as any[]).map((c) => (
-                        <Link
-                          key={c.id}
-                          to="/trainings/$id"
-                          params={{ id: c.id }}
-                          className="block rounded-md border bg-background px-3 py-2 text-sm hover:border-primary hover:bg-muted/40"
-                        >
-                          <div className="font-medium text-foreground">{c.title}</div>
-                          <div className="text-xs text-muted-foreground">{formatDate(c.start_date)}</div>
-                        </Link>
-                      ))}
+              ) : (
+                <>
+                  {isElective && (
+                    <div className="mt-5 space-y-2 rounded-md border border-amber-300/60 bg-amber-50 p-3 text-sm dark:border-amber-500/30 dark:bg-amber-950/30">
+                      <div className="flex items-center gap-2 font-medium text-foreground">
+                        <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                        หลักสูตรเสริมทักษะ — ต้องลงทะเบียน{" "}
+                        <span className="font-medium">{prereqLabel}</span>{" "}ก่อน
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        ระบบจะตรวจสอบอัตโนมัติเมื่อกดลงทะเบียน หากยังไม่ได้ลงทะเบียนหลักสูตรหลัก จะไม่สามารถบันทึกได้
+                      </p>
                     </div>
                   )}
-                  <Link to="/trainings"><Button variant="outline" className="mt-2 w-full">ดูหลักสูตรหลักทั้งหมด</Button></Link>
-                </div>
-              ) : (
                 <form
                   className="mt-5 space-y-3"
                   onSubmit={(e) => { e.preventDefault(); register.mutate(); }}
@@ -587,6 +560,7 @@ function TrainingDetail() {
                     {register.isPending ? "กำลังลงทะเบียน..." : "ลงทะเบียน"}
                   </Button>
                 </form>
+                </>
               )}
             </Card>
           </div>

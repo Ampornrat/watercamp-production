@@ -57,8 +57,32 @@ export const createGuestRegistrations = createServerFn({ method: 'POST' })
       throw new Error('อีเมลนี้ได้ลงทะเบียนกับสถาบันอื่นแล้ว ไม่สามารถลงทะเบียนซ้ำกับสถาบันอื่นได้');
     }
 
-    // Block duplicate registrations (same email + training)
+    // Validate prerequisite for elective courses
     const tidPlaceholders = data.training_ids.map(() => '?').join(',');
+    const [trainingDetails] = await pool.query(
+      `SELECT id, title, course_type, prerequisite_training_id FROM trainings WHERE id IN (${tidPlaceholders})`,
+      data.training_ids
+    );
+    const submittedIds = new Set(data.training_ids);
+    for (const t of (trainingDetails as any[])) {
+      if (t.course_type === 'elective' && t.prerequisite_training_id) {
+        if (submittedIds.has(t.prerequisite_training_id)) continue;
+        const [prereqRows] = await pool.query(
+          `SELECT id FROM registrations WHERE training_id = ? AND LOWER(guest_email) = ? LIMIT 1`,
+          [t.prerequisite_training_id, data.guest_email]
+        );
+        if ((prereqRows as any[]).length === 0) {
+          const [prereqInfo] = await pool.query(
+            `SELECT title FROM trainings WHERE id = ? LIMIT 1`,
+            [t.prerequisite_training_id]
+          );
+          const prereqTitle = (prereqInfo as any[])[0]?.title ?? 'หลักสูตรหลัก';
+          throw new Error(`กรุณาลงทะเบียน "${prereqTitle}" ก่อนจึงจะสามารถลงทะเบียน "${t.title}" ได้`);
+        }
+      }
+    }
+
+    // Block duplicate registrations (same email + training)
     const [dupRegRows] = await pool.query(
       `SELECT r.training_id, t.title
        FROM registrations r
