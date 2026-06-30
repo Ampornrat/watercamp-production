@@ -36,6 +36,15 @@ export const createGuestRegistrations = createServerFn({ method: 'POST' })
     const missing = data.training_ids.filter((tid) => !foundSet.has(tid));
     if (missing.length > 0) throw new Error('พบรายการหลักสูตรที่ไม่ถูกต้อง');
 
+    // Block email already used as an advisor
+    const [advisorRows] = await pool.query(
+      `SELECT id FROM advisors WHERE LOWER(email) = ? LIMIT 1`,
+      [data.guest_email]
+    );
+    if ((advisorRows as any[]).length > 0) {
+      throw new Error('อีเมลนี้ถูกใช้ลงทะเบียนเป็นอาจารย์แล้ว ไม่สามารถใช้อีเมลเดียวกันสมัครเป็นนักศึกษาได้');
+    }
+
     // Block duplicate email across institutes
     const [existingRows] = await pool.query(
       `SELECT institute_id FROM registrations WHERE guest_email = ? LIMIT 50`,
@@ -46,6 +55,20 @@ export const createGuestRegistrations = createServerFn({ method: 'POST' })
     );
     if (otherInstitute) {
       throw new Error('อีเมลนี้ได้ลงทะเบียนกับสถาบันอื่นแล้ว ไม่สามารถลงทะเบียนซ้ำกับสถาบันอื่นได้');
+    }
+
+    // Block duplicate registrations (same email + training)
+    const tidPlaceholders = data.training_ids.map(() => '?').join(',');
+    const [dupRegRows] = await pool.query(
+      `SELECT r.training_id, t.title
+       FROM registrations r
+       JOIN trainings t ON t.id = r.training_id
+       WHERE LOWER(r.guest_email) = ? AND r.training_id IN (${tidPlaceholders})`,
+      [data.guest_email, ...data.training_ids]
+    );
+    if ((dupRegRows as any[]).length > 0) {
+      const titles = (dupRegRows as any[]).map((r: any) => r.title).join(', ');
+      throw new Error(`อีเมลนี้ได้ลงทะเบียนหลักสูตรต่อไปนี้ไปแล้ว: ${titles}`);
     }
 
     const stampedAt = new Date().toISOString().slice(0, 19).replace('T', ' ');

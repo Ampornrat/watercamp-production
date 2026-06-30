@@ -122,6 +122,14 @@ export const registerAdvisor = createServerFn({ method: 'POST' })
     )
     if ((dupRows as any[]).length > 0) throw new Error('อีเมลนี้ได้ลงทะเบียนเป็นอาจารย์แล้ว')
 
+    // Block email already used as a student
+    const [studentRows] = await pool.query(
+      `SELECT email FROM student_profiles WHERE email = ? LIMIT 1`,
+      [email]
+    )
+    if ((studentRows as any[]).length > 0)
+      throw new Error('อีเมลนี้ถูกใช้ลงทะเบียนเป็นนักศึกษาแล้ว ไม่สามารถใช้อีเมลเดียวกันสมัครเป็นอาจารย์ได้')
+
     // Insert advisor record
     const advisorId = randomUUID()
     try {

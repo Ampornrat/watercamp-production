@@ -56,7 +56,8 @@ CREATE TABLE IF NOT EXISTS registrations (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (training_id) REFERENCES trainings(id) ON DELETE CASCADE,
-  FOREIGN KEY (institute_id) REFERENCES institutes_tab(id) ON DELETE SET NULL
+  FOREIGN KEY (institute_id) REFERENCES institutes_tab(id) ON DELETE SET NULL,
+  UNIQUE KEY uq_registration (training_id, guest_email(191))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS advisors (
