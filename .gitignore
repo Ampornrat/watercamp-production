@@ -28,6 +28,9 @@ dist-ssr
 # Lovable metadata (private)
 .lovable/
 
+# Local dev tools (never commit to repo)
+adminer.php
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
