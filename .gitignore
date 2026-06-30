@@ -30,6 +30,7 @@ dist-ssr
 
 # Local dev tools (never commit to repo)
 adminer.php
+mcp-server/
 
 # Editor directories and files
 .vscode/*
