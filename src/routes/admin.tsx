@@ -136,10 +136,11 @@ function Admin() {
       const s = v == null ? '' : String(v);
       return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
     };
-    const headers = ['ชื่อ-นามสกุล', 'รหัสนักศึกษา', 'อีเมล', 'หลักสูตร', 'สถาบัน', 'เพศ', 'อายุ', 'ระดับการศึกษา', 'สาขา/วิชาเอก', 'สถานะผู้เข้าร่วม', 'สถานะการอนุมัติ', 'ผลการเรียน', 'วันที่ลงทะเบียน'];
+    const headers = ['ชื่อ-นามสกุล', 'รหัสนักศึกษา', 'อีเมล', 'หลักสูตร', 'สถาบัน', 'เพศ', 'อายุ', 'ระดับการศึกษา', 'สาขา/วิชาเอก', 'สถานะผู้เข้าร่วม', 'ต้องการ SIM', 'สถานะการอนุมัติ', 'ผลการเรียน', 'วันที่ลงทะเบียน'];
     const data = rows.map((r: any) => [
       r.guest_name, r.student_id, r.guest_email, r.training_title, r.institute_name,
       r.gender, r.age, r.education_level, r.field_of_study, r.participant_status,
+      r.wants_sim === 1 || r.wants_sim === true ? 'ต้องการ' : r.wants_sim === 0 || r.wants_sim === false ? 'ไม่ต้องการ' : '',
       r.approval_status, r.completion_status,
       r.created_at ? new Date(r.created_at).toLocaleDateString('th-TH') : '',
     ].map(escape).join(','));
@@ -258,6 +259,7 @@ function Admin() {
                       สถาบัน {regSort?.col === 'institute_name' ? (regSort.dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
                     </button>
                   </TableHead>
+                  <TableHead>SIM</TableHead>
                   <TableHead>สถานะ</TableHead>
                   <TableHead>ผลการเรียน</TableHead><TableHead></TableHead>
                 </TableRow></TableHeader>
@@ -278,6 +280,9 @@ function Admin() {
                         </TableCell>
                         <TableCell>{r.training_title || r.training_id}</TableCell>
                         <TableCell className="text-sm">{r.institute_name || r.institute_id || "-"}</TableCell>
+                        <TableCell className="text-sm">
+                          {r.wants_sim === 1 || r.wants_sim === true ? "ต้องการ" : r.wants_sim === 0 || r.wants_sim === false ? "ไม่ต้องการ" : "-"}
+                        </TableCell>
                         <TableCell><Badge variant={r.approval_status === "approved" ? "default" : "secondary"}>{r.approval_status ?? "pending"}</Badge></TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-1">
