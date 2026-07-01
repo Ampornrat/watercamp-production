@@ -28,6 +28,8 @@ import {
   deleteAdminTraining,
   updateAdminRegStatus,
   updateAdminCompletion,
+  getAdminInstitutes,
+  updateInstituteRegion,
 } from "@/lib/admin.functions";
 import { getSessionsForTraining, saveAdminSession, deleteAdminSession, REGIONS } from "@/lib/training-sessions.functions";
 
@@ -98,10 +100,13 @@ function Admin() {
   const getSessionsFn = useServerFn(getSessionsForTraining);
   const saveSessionFn = useServerFn(saveAdminSession);
   const deleteSessionFn = useServerFn(deleteAdminSession);
+  const getInstitutesFn = useServerFn(getAdminInstitutes);
+  const updateInstituteRegionFn = useServerFn(updateInstituteRegion);
 
   const trainings = useQuery({ queryKey: ["admin-trainings"], queryFn: () => getTrainingsFn() });
   const registrations = useQuery({ queryKey: ["admin-registrations"], queryFn: () => getRegsFn() });
   const users = useQuery({ queryKey: ["admin-users"], queryFn: () => getUsersFn() });
+  const institutes = useQuery({ queryKey: ["admin-institutes"], queryFn: () => getInstitutesFn() });
   const sessions = useQuery({
     queryKey: ["admin-sessions", form.id],
     queryFn: () => getSessionsFn({ data: { training_id: form.id! } }),
@@ -228,6 +233,7 @@ function Admin() {
             <TabsTrigger value="trainings">หลักสูตร</TabsTrigger>
             <TabsTrigger value="registrations">การลงทะเบียน</TabsTrigger>
             <TabsTrigger value="users">ผู้ใช้งาน</TabsTrigger>
+            <TabsTrigger value="institutes">สถาบัน</TabsTrigger>
             <TabsTrigger value="survey-builder">สร้างแบบสำรวจ</TabsTrigger>
             <TabsTrigger value="surveys">ผลสำรวจ (มาตรฐาน)</TabsTrigger>
             <TabsTrigger value="custom-surveys">ผลแบบสำรวจที่สร้าง</TabsTrigger>
@@ -401,6 +407,54 @@ function Admin() {
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {new Date(u.created_at).toLocaleDateString('th-TH')}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="institutes" className="mt-4">
+            <Card className="p-0">
+              <div className="border-b px-6 py-4">
+                <h2 className="font-semibold">สถาบัน ({(institutes.data ?? []).length})</h2>
+                <p className="mt-1 text-xs text-muted-foreground">กำหนดภาคของแต่ละสถาบันเพื่อให้ระบบแสดงรอบการเรียนที่ตรงกัน</p>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ชื่อสถาบัน</TableHead>
+                    <TableHead className="w-48">ภาค</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(institutes.data ?? []).map((inst: any) => (
+                    <TableRow key={inst.id}>
+                      <TableCell className="font-medium">{inst.name}</TableCell>
+                      <TableCell>
+                        <Select
+                          value={inst.region ?? "__none__"}
+                          onValueChange={async (v) => {
+                            try {
+                              await updateInstituteRegionFn({ data: { id: inst.id, region: v === "__none__" ? null : v } });
+                              qc.invalidateQueries({ queryKey: ["admin-institutes"] });
+                              toast.success("บันทึกแล้ว");
+                            } catch (e: any) {
+                              toast.error(e?.message ?? "เกิดข้อผิดพลาด");
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="h-8 w-40 text-sm">
+                            <SelectValue placeholder="ไม่ระบุ" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">ไม่ระบุ</SelectItem>
+                            {REGIONS.map((r) => (
+                              <SelectItem key={r} value={r}>{r}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </TableCell>
                     </TableRow>
                   ))}

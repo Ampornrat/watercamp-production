@@ -137,3 +137,19 @@ export const updateAdminCompletion = createServerFn({ method: 'POST' })
     await pool.query(`UPDATE registrations SET completion_status = ? WHERE id = ?`, [data.completion_status, data.id]);
     return { ok: true };
   });
+
+export const getAdminInstitutes = createServerFn({ method: 'GET' }).handler(async () => {
+  const pool = (await import('@/lib/db.server')).default;
+  const [rows] = await pool.query(
+    `SELECT id, COALESCE(institute, name) AS name, region FROM institutes_tab ORDER BY COALESCE(institute, name) ASC`
+  );
+  return rows as { id: string; name: string; region: string | null }[];
+});
+
+export const updateInstituteRegion = createServerFn({ method: 'POST' })
+  .inputValidator((input: unknown) => z.object({ id: z.string(), region: z.string().nullable() }).parse(input))
+  .handler(async ({ data }) => {
+    const pool = (await import('@/lib/db.server')).default;
+    await pool.query(`UPDATE institutes_tab SET region = ? WHERE id = ?`, [data.region || null, data.id]);
+    return { ok: true };
+  });

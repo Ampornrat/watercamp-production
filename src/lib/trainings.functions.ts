@@ -41,8 +41,8 @@ export const getRegistrationsForTraining = createServerFn({ method: 'GET' })
   });
 
 export const getAllInstitutes = createServerFn({ method: 'GET' }).handler(async () => {
-  const [rows] = await pool.query(`SELECT id, COALESCE(institute, name) AS name FROM institutes_tab ORDER BY COALESCE(institute, name) ASC`);
-  return rows as any[];
+  const [rows] = await pool.query(`SELECT id, COALESCE(institute, name) AS name, region FROM institutes_tab ORDER BY COALESCE(institute, name) ASC`);
+  return rows as { id: string; name: string; region: string | null }[];
 });
 
 export const getElectiveTrainingsForCore = createServerFn({ method: 'GET' })

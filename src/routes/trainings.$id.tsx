@@ -149,6 +149,17 @@ function TrainingDetail() {
   });
   const hasSessions = (trainingSessions?.length ?? 0) > 0;
 
+  // Filter sessions to match the selected institute's region
+  const selectedInstitute = (institutes as { id: string; name: string; region: string | null }[] | undefined)?.find(
+    (i) => i.id === form.instituteId
+  );
+  const instituteRegion = selectedInstitute?.region ?? null;
+  const visibleSessions = hasSessions
+    ? (trainingSessions ?? []).filter((s: any) =>
+        !instituteRegion || s.region === instituteRegion
+      )
+    : [];
+
   const electiveIdsList = (relatedElectives ?? []).map((e: any) => e.id);
   const { data: electiveStats, refetch: refetchElectiveStats } = useQuery({
     queryKey: ["electiveStats", electiveIdsList.slice().sort().join(",")],
@@ -244,7 +255,7 @@ function TrainingDetail() {
 
   const selectedSession = trainingSessions?.find((s: any) => s.id === form.sessionId);
   const isFull = hasSessions
-    ? (trainingSessions ?? []).every((s: any) => s.reg_count >= s.capacity)
+    ? visibleSessions.every((s: any) => s.reg_count >= s.capacity) && visibleSessions.length > 0
     : (regCount ?? 0) >= training.capacity;
   const isElective = training.course_type === "elective";
   const isCore = training.course_type === "core";
@@ -480,7 +491,17 @@ function TrainingDetail() {
                     <Label htmlFor="institute">สถาบัน *</Label>
                     <Select
                       value={form.instituteId}
-                      onValueChange={(v) => setForm({ ...form, instituteId: v })}
+                      onValueChange={(v) => {
+                        const inst = (institutes as { id: string; name: string; region: string | null }[] | undefined)?.find((i) => i.id === v);
+                        const region = inst?.region ?? null;
+                        const matching = hasSessions
+                          ? (trainingSessions ?? []).filter((s: any) => !region || s.region === region)
+                          : [];
+                        const autoSession = matching.length === 1 && matching[0].reg_count < matching[0].capacity
+                          ? matching[0].id
+                          : "";
+                        setForm({ ...form, instituteId: v, sessionId: autoSession });
+                      }}
                       disabled={institutesLoading || institutesError}
                     >
                       <SelectTrigger id="institute">
@@ -515,12 +536,15 @@ function TrainingDetail() {
                   {hasSessions && (
                     <div>
                       <Label className="text-sm font-medium">ภาคที่ต้องการเรียน *</Label>
+                      {instituteRegion && visibleSessions.length === 0 && (
+                        <p className="mt-1 text-xs text-muted-foreground">ยังไม่มีรอบการสอนสำหรับ{instituteRegion}</p>
+                      )}
                       <RadioGroup
                         className="mt-2 space-y-2"
                         value={form.sessionId}
                         onValueChange={(v) => setForm({ ...form, sessionId: v })}
                       >
-                        {trainingSessions!.map((s: any) => {
+                        {visibleSessions.map((s: any) => {
                           const seatsLeft = Math.max(s.capacity - s.reg_count, 0);
                           const full = s.reg_count >= s.capacity;
                           const selected = form.sessionId === s.id;
