@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth.server";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Send, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Pencil, Trash2, Send, ArrowUpDown, ArrowUp, ArrowDown, Download } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -130,6 +130,29 @@ function Admin() {
 
   const coreTrainings = (trainings.data ?? []).filter((t: any) => t.course_type === "core");
 
+  const exportRegistrationsCSV = () => {
+    const rows = registrations.data ?? [];
+    const escape = (v: any) => {
+      const s = v == null ? '' : String(v);
+      return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const headers = ['ชื่อ-นามสกุล', 'รหัสนักศึกษา', 'อีเมล', 'หลักสูตร', 'สถาบัน', 'เพศ', 'อายุ', 'ระดับการศึกษา', 'สาขา/วิชาเอก', 'สถานะผู้เข้าร่วม', 'สถานะการอนุมัติ', 'ผลการเรียน', 'วันที่ลงทะเบียน'];
+    const data = rows.map((r: any) => [
+      r.guest_name, r.student_id, r.guest_email, r.training_title, r.institute_name,
+      r.gender, r.age, r.education_level, r.field_of_study, r.participant_status,
+      r.approval_status, r.completion_status,
+      r.created_at ? new Date(r.created_at).toLocaleDateString('th-TH') : '',
+    ].map(escape).join(','));
+    const csv = '﻿' + [headers.join(','), ...data].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `registrations_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const toDatetimeLocal = (d: any) => {
     if (!d) return '';
     const dt = d instanceof Date ? d : new Date(d);
@@ -212,6 +235,11 @@ function Admin() {
           </TabsContent>
 
           <TabsContent value="registrations" className="mt-4">
+            <div className="mb-3 flex justify-end">
+              <Button variant="outline" size="sm" onClick={exportRegistrationsCSV} disabled={!registrations.data?.length} className="gap-2">
+                <Download className="h-4 w-4" />Export CSV
+              </Button>
+            </div>
             <Card>
               <Table>
                 <TableHeader><TableRow>
