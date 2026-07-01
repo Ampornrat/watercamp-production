@@ -9,6 +9,7 @@ interface AdvisorApprovalRequestProps {
   advisorName?: string
   studentName?: string
   studentEmail?: string
+  studentId?: string
   trainingTitle?: string
   startDate?: string
   endDate?: string
@@ -20,6 +21,7 @@ const AdvisorApprovalRequestEmail = ({
   advisorName,
   studentName,
   studentEmail,
+  studentId,
   trainingTitle,
   startDate,
   endDate,
@@ -39,6 +41,7 @@ const AdvisorApprovalRequestEmail = ({
         <Section style={card}>
           <Text style={cardLabel}>นักศึกษา</Text>
           <Text style={cardTitle}>{studentName || '—'}</Text>
+          {studentId && <Text style={detail}><strong>รหัสนักศึกษา:</strong> {studentId}</Text>}
           {studentEmail && <Text style={detail}><strong>อีเมล:</strong> {studentEmail}</Text>}
           {trainingTitle && <Text style={detail}><strong>หลักสูตร:</strong> {trainingTitle}</Text>}
           {startDate && <Text style={detail}><strong>เริ่ม:</strong> {startDate}</Text>}
@@ -71,6 +74,7 @@ export const template = {
   previewData: {
     advisorName: 'ดร. สมชาย ใจดี',
     studentName: 'สมศรี เรียนดี',
+    studentId: '6401234567',
     studentEmail: 'somsri@example.ac.th',
     trainingTitle: 'การวิเคราะห์ข้อมูลน้ำเบื้องต้น',
     startDate: '15 มิถุนายน 2569 09:00 น.',

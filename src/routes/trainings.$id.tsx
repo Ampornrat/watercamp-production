@@ -194,6 +194,7 @@ function TrainingDetail() {
           institute_id: form.instituteId,
           guest_name: form.name.trim(),
           guest_email: form.email.trim(),
+          student_id: form.studentId.trim() || null,
         },
       }).catch((err) => console.error('Failed to send registration emails:', err?.message));
 

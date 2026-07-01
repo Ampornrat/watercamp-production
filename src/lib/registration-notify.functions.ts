@@ -6,6 +6,7 @@ export const notifyRegistration = createServerFn({ method: 'POST' })
     institute_id: string
     guest_name: string
     guest_email: string
+    student_id?: string | null
   })
   .handler(async ({ data }) => {
     const pool = (await import('@/lib/db.server')).default
@@ -76,6 +77,7 @@ export const notifyRegistration = createServerFn({ method: 'POST' })
             </p>
             <table style="width:100%;border-collapse:collapse;margin:16px 0">
               <tr><td style="color:#64748b;padding:4px 0;width:120px">ชื่อนักศึกษา</td><td style="color:#0f172a;font-weight:600">${data.guest_name}</td></tr>
+              ${data.student_id ? `<tr><td style="color:#64748b;padding:4px 0">รหัสนักศึกษา</td><td style="color:#0f172a">${data.student_id}</td></tr>` : ''}
               <tr><td style="color:#64748b;padding:4px 0">อีเมล</td><td style="color:#0f172a">${data.guest_email}</td></tr>
             </table>
             <p style="color:#334155;font-weight:600">หลักสูตรที่ลงทะเบียน:</p>
