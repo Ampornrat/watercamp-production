@@ -109,6 +109,7 @@ function StudentProfilePage() {
                 <User className="h-5 w-5 text-primary" />ข้อมูลส่วนตัว
               </h2>
               <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+                <div><span className="text-xs text-muted-foreground">รหัสนักศึกษา</span><p className="font-medium">{profile.student_id || '—'}</p></div>
                 <div><span className="text-xs text-muted-foreground">ชื่อ-นามสกุล</span><p className="font-medium">{profile.full_name || '—'}</p></div>
                 <div><span className="text-xs text-muted-foreground">อีเมล</span><p className="font-medium">{profile.email}</p></div>
                 <div><span className="text-xs text-muted-foreground">เพศ</span><p className="font-medium">{profile.gender || '—'}</p></div>

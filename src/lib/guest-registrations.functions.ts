@@ -127,9 +127,10 @@ export const createGuestRegistrations = createServerFn({ method: 'POST' })
     // Upsert student profile
     await pool.query(
       `INSERT INTO student_profiles
-         (id, email, full_name, gender, age, education_level, field_of_study, participant_status, institute_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+         (id, email, student_id, full_name, gender, age, education_level, field_of_study, participant_status, institute_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE
+         student_id = COALESCE(VALUES(student_id), student_id),
          full_name = VALUES(full_name),
          gender = VALUES(gender),
          age = VALUES(age),
@@ -139,7 +140,7 @@ export const createGuestRegistrations = createServerFn({ method: 'POST' })
          institute_id = VALUES(institute_id),
          updated_at = NOW()`,
       [
-        randomUUID(), data.guest_email, data.guest_name,
+        randomUUID(), data.guest_email, data.student_id ?? null, data.guest_name,
         data.gender, data.age, data.education_level,
         data.field_of_study ?? null, data.participant_status, data.institute_id,
       ]
