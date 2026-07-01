@@ -164,6 +164,7 @@ function TrainingDetail() {
         throw new Error("กรุณาระบุระดับการศึกษา");
       }
       if (!form.participantStatus) throw new Error("กรุณาเลือกสถานะการเข้าร่วม");
+      if (form.wantsSim === null) throw new Error("กรุณาเลือกว่าต้องการ SIM Internet หรือไม่");
       if (form.participantStatus === "อื่นๆ" && !form.participantStatusOther.trim()) {
         throw new Error("กรุณาระบุสถานะการเข้าร่วม");
       }
@@ -542,7 +543,7 @@ function TrainingDetail() {
                     <Input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
                   </div>
                   <div>
-                    <Label>โครงการมี SIM โทรศัพท์แจกฟรี ท่านต้องการหรือไม่</Label>
+                    <Label>SIM Internet แจกฟรี ท่านต้องการใช้หรือไม่ *</Label>
                     <RadioGroup
                       className="mt-2 flex gap-6"
                       value={form.wantsSim === null ? "" : form.wantsSim ? "yes" : "no"}
