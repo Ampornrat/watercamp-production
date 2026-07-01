@@ -243,7 +243,11 @@ function Admin() {
                     const cs: string = r.completion_status ?? "enrolled";
                     return (
                       <TableRow key={r.id}>
-                        <TableCell><div className="font-medium">{r.guest_name || "-"}</div><div className="text-xs text-muted-foreground">{r.guest_email}</div></TableCell>
+                        <TableCell>
+                          <div className="font-medium">{r.guest_name || "-"}</div>
+                          <div className="text-xs text-muted-foreground">{r.guest_email}</div>
+                          {r.student_id && <div className="text-xs text-muted-foreground">รหัส: {r.student_id}</div>}
+                        </TableCell>
                         <TableCell>{r.training_title || r.training_id}</TableCell>
                         <TableCell className="text-sm">{r.institute_name || r.institute_id || "-"}</TableCell>
                         <TableCell><Badge variant={r.approval_status === "approved" ? "default" : "secondary"}>{r.approval_status ?? "pending"}</Badge></TableCell>
