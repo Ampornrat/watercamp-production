@@ -7,6 +7,7 @@ const SITE_NAME = 'ศูนย์ฝึกอบรม คลังข้อม
 
 interface RegistrationConfirmationProps {
   name?: string
+  studentId?: string
   trainingTitle?: string
   startDate?: string
   endDate?: string
@@ -16,6 +17,7 @@ interface RegistrationConfirmationProps {
 
 const RegistrationConfirmationEmail = ({
   name,
+  studentId,
   trainingTitle,
   startDate,
   endDate,
@@ -34,6 +36,9 @@ const RegistrationConfirmationEmail = ({
         <Heading style={h1}>
           {name ? `เรียนคุณ ${name}` : 'เรียนผู้ลงทะเบียน'}
         </Heading>
+        {studentId && (
+          <Text style={studentIdStyle}>รหัสนักศึกษา: <strong>{studentId}</strong></Text>
+        )}
         <Text style={text}>
           ขอบคุณที่ลงทะเบียนเข้าร่วมหลักสูตรกับ {SITE_NAME} ระบบได้รับการลงทะเบียนของท่านเรียบร้อยแล้ว
           และอยู่ระหว่างรอการยืนยันจากผู้ดูแล
@@ -84,6 +89,7 @@ export const template = {
   displayName: 'ยืนยันการลงทะเบียนหลักสูตร',
   previewData: {
     name: 'สมชาย ใจดี',
+    studentId: '6401234567',
     trainingTitle: 'การวิเคราะห์ข้อมูลน้ำเบื้องต้น',
     startDate: '15 มิถุนายน 2569 09:00 น.',
     endDate: '15 มิถุนายน 2569 16:00 น.',
@@ -107,3 +113,4 @@ const cardLabel = { fontSize: '12px', color: '#64748b', margin: '0 0 4px', textT
 const cardTitle = { fontSize: '16px', fontWeight: 'bold', color: '#0f172a', margin: '0 0 12px' }
 const detail = { fontSize: '13px', color: '#334155', margin: '4px 0' }
 const footer = { fontSize: '12px', color: '#94a3b8', margin: '28px 0 0' }
+const studentIdStyle = { fontSize: '13px', color: '#64748b', margin: '0 0 12px' }

@@ -37,6 +37,7 @@ export const notifyRegistration = createServerFn({ method: 'POST' })
       html: `
         <div style="font-family:'Noto Sans Thai',Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px">
           <h2 style="color:#0f172a">เรียนคุณ ${data.guest_name}</h2>
+          ${data.student_id ? `<p style="color:#64748b;font-size:13px;margin:0 0 12px">รหัสนักศึกษา: <strong style="color:#0f172a">${data.student_id}</strong></p>` : ''}
           <p style="color:#334155;line-height:1.6">
             ระบบได้รับการลงทะเบียนของท่านเรียบร้อยแล้ว กำลังรอการอนุมัติจากอาจารย์ที่ปรึกษาของสถาบัน
           </p>
@@ -55,7 +56,7 @@ export const notifyRegistration = createServerFn({ method: 'POST' })
           <p style="color:#94a3b8;font-size:12px">ศูนย์ฝึกอบรม คลังข้อมูลน้ำแห่งชาติ</p>
         </div>
       `,
-      text: `เรียนคุณ ${data.guest_name}\n\nระบบได้รับการลงทะเบียนของท่านแล้ว รอการอนุมัติจากอาจารย์ที่ปรึกษา\n\nหลักสูตรที่ลงทะเบียน:\n${trainingListText}\n\nดูประวัติการเรียน: ${profileUrl}`,
+      text: `เรียนคุณ ${data.guest_name}${data.student_id ? ` (รหัสนักศึกษา: ${data.student_id})` : ''}\n\nระบบได้รับการลงทะเบียนของท่านแล้ว รอการอนุมัติจากอาจารย์ที่ปรึกษา\n\nหลักสูตรที่ลงทะเบียน:\n${trainingListText}\n\nดูประวัติการเรียน: ${profileUrl}`,
     })
 
     // Find advisors for this institute
