@@ -204,10 +204,9 @@ function StudentDashboardPage() {
                     const isCompleted = r.completion_status === 'completed'
                     const isFailed = r.completion_status === 'failed'
                     const now = new Date()
-                    const startDate = r.start_date ? (r.start_date instanceof Date ? r.start_date : new Date(r.start_date)) : null
-                    const endDate = r.end_date ? (r.end_date instanceof Date ? r.end_date : new Date(r.end_date)) : null
+                    const startDate = r.session_start ? (r.session_start instanceof Date ? r.session_start : new Date(r.session_start)) : null
+                    const endDate = r.session_end ? (r.session_end instanceof Date ? r.session_end : new Date(r.session_end)) : null
                     const hasStarted = startDate ? startDate <= now : false
-                    // hasEnded is true only when end_date is valid (after start_date) and has passed
                     const hasEnded = endDate && startDate && endDate > startDate ? endDate <= now : false
                     return (
                       <li key={r.id} className="flex flex-col gap-2 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -218,10 +217,13 @@ function StudentDashboardPage() {
                               {r.course_type === 'core' ? 'หลักสูตรหลัก' : 'เสริมทักษะ'}
                             </Badge>
                           </div>
+                          {r.session_region && (
+                            <div className="text-xs text-primary font-medium">{r.session_region}</div>
+                          )}
                           <div className="mt-1 text-xs text-muted-foreground">
                             วันอบรม:{' '}
-                            {r.start_date
-                              ? new Date(r.start_date).toLocaleDateString('th-TH', { dateStyle: 'long' })
+                            {startDate
+                              ? startDate.toLocaleDateString('th-TH', { dateStyle: 'long' })
                               : '—'}
                           </div>
                           <div className="mt-0.5 text-xs text-muted-foreground">

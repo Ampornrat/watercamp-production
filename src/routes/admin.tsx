@@ -29,6 +29,7 @@ import {
   updateAdminRegStatus,
   updateAdminCompletion,
 } from "@/lib/admin.functions";
+import { getSessionsForTraining, saveAdminSession, deleteAdminSession, REGIONS } from "@/lib/training-sessions.functions";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "ผู้ดูแลระบบ" }] }),
@@ -82,6 +83,11 @@ function Admin() {
   const [pickedSurvey, setPickedSurvey] = useState<string>("__default__");
   const [regSort, setRegSort] = useState<{ col: 'guest_name' | 'training_title' | 'institute_name'; dir: 'asc' | 'desc' } | null>(null);
 
+  const emptySessionForm = { region: '' as typeof REGIONS[number], start_datetime: '', end_datetime: '', location: '', online_url: '', capacity: 30 };
+  const [sessionForm, setSessionForm] = useState(emptySessionForm);
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [showSessionForm, setShowSessionForm] = useState(false);
+
   const getTrainingsFn = useServerFn(getAdminTrainings);
   const getRegsFn = useServerFn(getAdminRegistrations);
   const getUsersFn = useServerFn(getAdminUsers);
@@ -89,10 +95,18 @@ function Admin() {
   const deleteTrainingFn = useServerFn(deleteAdminTraining);
   const updateStatusFn = useServerFn(updateAdminRegStatus);
   const updateCompletionFn = useServerFn(updateAdminCompletion);
+  const getSessionsFn = useServerFn(getSessionsForTraining);
+  const saveSessionFn = useServerFn(saveAdminSession);
+  const deleteSessionFn = useServerFn(deleteAdminSession);
 
   const trainings = useQuery({ queryKey: ["admin-trainings"], queryFn: () => getTrainingsFn() });
   const registrations = useQuery({ queryKey: ["admin-registrations"], queryFn: () => getRegsFn() });
   const users = useQuery({ queryKey: ["admin-users"], queryFn: () => getUsersFn() });
+  const sessions = useQuery({
+    queryKey: ["admin-sessions", form.id],
+    queryFn: () => getSessionsFn({ data: { training_id: form.id! } }),
+    enabled: !!form.id && dialogOpen,
+  });
 
   const saveTraining = useMutation({
     mutationFn: (f: TrainingForm) => saveTrainingFn({ data: f }),
@@ -128,6 +142,25 @@ function Admin() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const saveSession = useMutation({
+    mutationFn: (s: typeof sessionForm & { id?: string }) =>
+      saveSessionFn({ data: { ...s, training_id: form.id!, region: s.region as typeof REGIONS[number], capacity: Number(s.capacity) } }),
+    onSuccess: () => {
+      toast.success("บันทึกรอบการสอนแล้ว");
+      setShowSessionForm(false);
+      setEditingSessionId(null);
+      setSessionForm(emptySessionForm);
+      qc.invalidateQueries({ queryKey: ["admin-sessions", form.id] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteSession = useMutation({
+    mutationFn: (id: string) => deleteSessionFn({ data: { id } }),
+    onSuccess: () => { toast.success("ลบรอบแล้ว"); qc.invalidateQueries({ queryKey: ["admin-sessions", form.id] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const coreTrainings = (trainings.data ?? []).filter((t: any) => t.course_type === "core");
 
   const exportRegistrationsCSV = () => {
@@ -136,9 +169,9 @@ function Admin() {
       const s = v == null ? '' : String(v);
       return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
     };
-    const headers = ['ชื่อ-นามสกุล', 'รหัสนักศึกษา', 'อีเมล', 'หลักสูตร', 'สถาบัน', 'เพศ', 'อายุ', 'ระดับการศึกษา', 'สาขา/วิชาเอก', 'สถานะผู้เข้าร่วม', 'ต้องการ SIM', 'สถานะการอนุมัติ', 'ผลการเรียน', 'วันที่ลงทะเบียน'];
+    const headers = ['ชื่อ-นามสกุล', 'รหัสนักศึกษา', 'อีเมล', 'หลักสูตร', 'ภาค', 'สถาบัน', 'เพศ', 'อายุ', 'ระดับการศึกษา', 'สาขา/วิชาเอก', 'สถานะผู้เข้าร่วม', 'ต้องการ SIM', 'สถานะการอนุมัติ', 'ผลการเรียน', 'วันที่ลงทะเบียน'];
     const data = rows.map((r: any) => [
-      r.guest_name, r.student_id, r.guest_email, r.training_title, r.institute_name,
+      r.guest_name, r.student_id, r.guest_email, r.training_title, (r as any).session_region ?? '', r.institute_name,
       r.gender, r.age, r.education_level, r.field_of_study, r.participant_status,
       r.wants_sim === 1 || r.wants_sim === true ? 'ต้องการ' : r.wants_sim === 0 || r.wants_sim === false ? 'ไม่ต้องการ' : '',
       r.approval_status, r.completion_status,
@@ -162,7 +195,7 @@ function Admin() {
     return `${dt.getFullYear()}-${p(dt.getMonth()+1)}-${p(dt.getDate())}T${p(dt.getHours())}:${p(dt.getMinutes())}`;
   };
 
-  const openNew = () => { setForm(empty); setDialogOpen(true); };
+  const openNew = () => { setForm(empty); setShowSessionForm(false); setSessionForm(emptySessionForm); setEditingSessionId(null); setDialogOpen(true); };
   const openEdit = (t: any) => {
     setForm({
       id: t.id, title: t.title, description: t.description ?? "", category: t.category ?? "",
@@ -179,6 +212,7 @@ function Admin() {
       prerequisite_training_id: t.prerequisite_training_id ?? "",
       required_for_contest: !!t.required_for_contest,
     });
+    setShowSessionForm(false); setSessionForm(emptySessionForm); setEditingSessionId(null);
     setDialogOpen(true);
   };
 
@@ -259,6 +293,7 @@ function Admin() {
                       สถาบัน {regSort?.col === 'institute_name' ? (regSort.dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
                     </button>
                   </TableHead>
+                  <TableHead>ภาค</TableHead>
                   <TableHead>SIM</TableHead>
                   <TableHead>สถานะ</TableHead>
                   <TableHead>ผลการเรียน</TableHead><TableHead></TableHead>
@@ -280,6 +315,7 @@ function Admin() {
                         </TableCell>
                         <TableCell>{r.training_title || r.training_id}</TableCell>
                         <TableCell className="text-sm">{r.institute_name || r.institute_id || "-"}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{(r as any).session_region || "-"}</TableCell>
                         <TableCell className="text-sm">
                           {r.wants_sim === 1 || r.wants_sim === true ? "ต้องการ" : r.wants_sim === 0 || r.wants_sim === false ? "ไม่ต้องการ" : "-"}
                         </TableCell>
@@ -447,6 +483,79 @@ function Admin() {
                 );
               })}
             </div>
+            {form.id && (
+              <div className="md:col-span-2 space-y-3 rounded-md border p-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold">รอบการสอน (แยกตามภาค)</Label>
+                  <Button type="button" size="sm" variant="outline" onClick={() => { setShowSessionForm(true); setEditingSessionId(null); setSessionForm(emptySessionForm); }}>
+                    <Plus className="mr-1 h-3 w-3" />เพิ่มรอบ
+                  </Button>
+                </div>
+                {sessions.data && sessions.data.length > 0 && (
+                  <div className="space-y-2">
+                    {sessions.data.map((s: any) => (
+                      <div key={s.id} className="flex items-start justify-between gap-2 rounded-md border bg-muted/20 p-3 text-xs">
+                        <div className="space-y-0.5">
+                          <div className="font-semibold text-primary">{s.region}</div>
+                          <div>{new Date(s.start_datetime).toLocaleString('th-TH')} — {new Date(s.end_datetime).toLocaleString('th-TH')}</div>
+                          {s.location && <div className="text-muted-foreground">📍 {s.location}</div>}
+                          {s.online_url && <div className="text-muted-foreground">🔗 {s.online_url}</div>}
+                          <div className="text-muted-foreground">ที่นั่ง: {s.reg_count}/{s.capacity}</div>
+                        </div>
+                        <div className="flex gap-1 shrink-0">
+                          <Button type="button" size="sm" variant="ghost" onClick={() => {
+                            const dt = (d: string) => d ? new Date(d).toISOString().slice(0,16) : '';
+                            setSessionForm({ region: s.region, start_datetime: dt(s.start_datetime), end_datetime: dt(s.end_datetime), location: s.location ?? '', online_url: s.online_url ?? '', capacity: s.capacity });
+                            setEditingSessionId(s.id);
+                            setShowSessionForm(true);
+                          }}><Pencil className="h-3 w-3" /></Button>
+                          <Button type="button" size="sm" variant="ghost" onClick={() => { if (confirm('ลบรอบนี้?')) deleteSession.mutate(s.id); }}><Trash2 className="h-3 w-3" /></Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {showSessionForm && (
+                  <div className="space-y-2 rounded-md border border-primary/30 bg-primary/5 p-3">
+                    <div className="grid gap-2 md:grid-cols-2">
+                      <div>
+                        <Label className="text-xs">ภาค *</Label>
+                        <Select value={sessionForm.region} onValueChange={(v) => setSessionForm({ ...sessionForm, region: v as typeof REGIONS[number] })}>
+                          <SelectTrigger className="h-8"><SelectValue placeholder="เลือกภาค" /></SelectTrigger>
+                          <SelectContent>{REGIONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">จำนวนที่นั่ง</Label>
+                        <Input type="number" className="h-8" value={sessionForm.capacity} onChange={(e) => setSessionForm({ ...sessionForm, capacity: Number(e.target.value) })} />
+                      </div>
+                      <div>
+                        <Label className="text-xs">เริ่ม *</Label>
+                        <Input type="datetime-local" className="h-8" value={sessionForm.start_datetime} onChange={(e) => setSessionForm({ ...sessionForm, start_datetime: e.target.value })} />
+                      </div>
+                      <div>
+                        <Label className="text-xs">สิ้นสุด *</Label>
+                        <Input type="datetime-local" className="h-8" value={sessionForm.end_datetime} onChange={(e) => setSessionForm({ ...sessionForm, end_datetime: e.target.value })} />
+                      </div>
+                      <div>
+                        <Label className="text-xs">สถานที่</Label>
+                        <Input className="h-8" value={sessionForm.location} onChange={(e) => setSessionForm({ ...sessionForm, location: e.target.value })} />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Online URL</Label>
+                        <Input className="h-8" value={sessionForm.online_url} onChange={(e) => setSessionForm({ ...sessionForm, online_url: e.target.value })} placeholder="https://meet.google.com/..." />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button type="button" size="sm" onClick={() => saveSession.mutate({ ...sessionForm, id: editingSessionId ?? undefined })} disabled={saveSession.isPending || !sessionForm.region || !sessionForm.start_datetime || !sessionForm.end_datetime}>
+                        {saveSession.isPending ? 'กำลังบันทึก...' : 'บันทึกรอบ'}
+                      </Button>
+                      <Button type="button" size="sm" variant="ghost" onClick={() => { setShowSessionForm(false); setEditingSessionId(null); setSessionForm(emptySessionForm); }}>ยกเลิก</Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             <div className="md:col-span-2 space-y-3 rounded-md border p-3">
               <div>
                 <Label>ประเภทหลักสูตร *</Label>

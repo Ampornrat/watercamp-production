@@ -16,6 +16,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { createGuestRegistrations } from "@/lib/guest-registrations.functions";
 import { notifyRegistration } from "@/lib/registration-notify.functions";
+import { getSessionsForTraining } from "@/lib/training-sessions.functions";
 import {
   getTrainingById,
   getAllInstitutes,
@@ -83,11 +84,13 @@ function TrainingDetail() {
   const getElectives = useServerFn(getElectiveTrainingsForCore);
   const getCores = useServerFn(getCoreTrainingsForElective);
   const getElectiveStats = useServerFn(getElectiveSeatsStats);
+  const getSessionsFn = useServerFn(getSessionsForTraining);
 
   const [form, setForm] = useState({
     name: "",
     email: "",
     studentId: "",
+    sessionId: "",
     wantsSim: null as boolean | null,
     instituteId: "",
     gender: "",
@@ -140,6 +143,12 @@ function TrainingDetail() {
     queryFn: () => getTraining({ data: training!.prerequisite_training_id! }),
   });
 
+  const { data: trainingSessions } = useQuery({
+    queryKey: ["sessions", id],
+    queryFn: () => getSessionsFn({ data: { training_id: id } }),
+  });
+  const hasSessions = (trainingSessions?.length ?? 0) > 0;
+
   const electiveIdsList = (relatedElectives ?? []).map((e: any) => e.id);
   const { data: electiveStats, refetch: refetchElectiveStats } = useQuery({
     queryKey: ["electiveStats", electiveIdsList.slice().sort().join(",")],
@@ -165,6 +174,7 @@ function TrainingDetail() {
       }
       if (!form.participantStatus) throw new Error("กรุณาเลือกสถานะการเข้าร่วม");
       if (form.wantsSim === null) throw new Error("กรุณาเลือกว่าต้องการ SIM Internet หรือไม่");
+      if (hasSessions && !form.sessionId) throw new Error("กรุณาเลือกภาคที่ต้องการเรียน");
       if (form.participantStatus === "อื่นๆ" && !form.participantStatusOther.trim()) {
         throw new Error("กรุณาระบุสถานะการเข้าร่วม");
       }
@@ -174,6 +184,7 @@ function TrainingDetail() {
       await createGuestRegistrationsFn({
         data: {
           training_ids: [id, ...electiveIds],
+          session_id: form.sessionId || null,
           institute_id: form.instituteId,
           guest_name: form.name.trim(),
           guest_email: form.email.trim(),
@@ -210,7 +221,7 @@ function TrainingDetail() {
           ? `ลงทะเบียนสำเร็จ! รวมหลักสูตรเสริมทักษะ ${r.electives} หลักสูตร — ส่งอีเมลยืนยันแล้ว`
           : "ลงทะเบียนสำเร็จ! ส่งอีเมลยืนยันแล้ว รอการยืนยันจากผู้ดูแล",
       );
-      setForm({ name: "", email: "", studentId: "", wantsSim: null, instituteId: "", gender: "", age: "", educationLevel: "", educationLevelOther: "", fieldOfStudy: "", participantStatus: "", participantStatusOther: "" });
+      setForm({ name: "", email: "", studentId: "", sessionId: "", wantsSim: null, instituteId: "", gender: "", age: "", educationLevel: "", educationLevelOther: "", fieldOfStudy: "", participantStatus: "", participantStatusOther: "" });
       setConsent(false);
       setSelectedElectives(new Set());
       qc.invalidateQueries({ queryKey: ["regCount", id] });
@@ -231,7 +242,10 @@ function TrainingDetail() {
     </div>
   );
 
-  const isFull = (regCount ?? 0) >= training.capacity;
+  const selectedSession = trainingSessions?.find((s: any) => s.id === form.sessionId);
+  const isFull = hasSessions
+    ? (trainingSessions ?? []).every((s: any) => s.reg_count >= s.capacity)
+    : (regCount ?? 0) >= training.capacity;
   const isElective = training.course_type === "elective";
   const isCore = training.course_type === "core";
   const prereqLabel = prereqTraining?.title || "หลักสูตรหลักใดก็ได้";
@@ -282,13 +296,41 @@ function TrainingDetail() {
             <Card className="p-6">
               <h2 className="text-lg font-semibold">รายละเอียด</h2>
               <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-                <div className="flex items-start gap-3"><Calendar className="mt-0.5 h-4 w-4 text-primary" /><div><div className="font-medium">เริ่ม</div><div className="text-muted-foreground">{formatDate(training.start_date)}</div></div></div>
-                <div className="flex items-start gap-3"><Clock className="mt-0.5 h-4 w-4 text-primary" /><div><div className="font-medium">สิ้นสุด</div><div className="text-muted-foreground">{formatDate(training.end_date)}</div></div></div>
-                {training.location && <div className="flex items-start gap-3"><MapPin className="mt-0.5 h-4 w-4 text-primary" /><div><div className="font-medium">สถานที่</div><div className="text-muted-foreground">{training.location}</div></div></div>}
+                <div className="flex items-start gap-3"><Calendar className="mt-0.5 h-4 w-4 text-primary" /><div><div className="font-medium">ช่วงโครงการ (เริ่ม)</div><div className="text-muted-foreground">{formatDate(training.start_date)}</div></div></div>
+                <div className="flex items-start gap-3"><Clock className="mt-0.5 h-4 w-4 text-primary" /><div><div className="font-medium">ช่วงโครงการ (สิ้นสุด)</div><div className="text-muted-foreground">{formatDate(training.end_date)}</div></div></div>
                 {training.instructor && <div className="flex items-start gap-3"><User className="mt-0.5 h-4 w-4 text-primary" /><div><div className="font-medium">วิทยากร</div><div className="text-muted-foreground">{training.instructor}</div></div></div>}
-                <div className="flex items-start gap-3"><Users className="mt-0.5 h-4 w-4 text-primary" /><div><div className="font-medium">ผู้ลงทะเบียน</div><div className="text-muted-foreground">{regCount ?? 0} / {training.capacity} คน</div></div></div>
+                {!hasSessions && <div className="flex items-start gap-3"><Users className="mt-0.5 h-4 w-4 text-primary" /><div><div className="font-medium">ผู้ลงทะเบียน</div><div className="text-muted-foreground">{regCount ?? 0} / {training.capacity} คน</div></div></div>}
               </div>
             </Card>
+
+            {hasSessions && (
+              <Card className="p-6">
+                <h2 className="flex items-center gap-2 text-lg font-semibold">
+                  <Calendar className="h-5 w-5 text-primary" />รอบการสอนแยกตามภาค
+                </h2>
+                <div className="mt-4 space-y-3">
+                  {trainingSessions!.map((s: any) => {
+                    const seatsLeft = Math.max(s.capacity - s.reg_count, 0);
+                    const full = s.reg_count >= s.capacity;
+                    return (
+                      <div key={s.id} className="rounded-lg border p-4 text-sm">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-primary">{s.region}</span>
+                          {full ? <Badge variant="destructive" className="text-xs">เต็มแล้ว</Badge>
+                               : <Badge variant="outline" className="text-xs">เหลือ {seatsLeft} ที่นั่ง</Badge>}
+                        </div>
+                        <div className="mt-2 grid gap-1 text-muted-foreground sm:grid-cols-2">
+                          <div className="flex items-center gap-1"><Calendar className="h-3 w-3" />{formatDate(s.start_datetime)}</div>
+                          <div className="flex items-center gap-1"><Clock className="h-3 w-3" />{formatDate(s.end_datetime)}</div>
+                          {s.location && <div className="flex items-center gap-1"><MapPin className="h-3 w-3" />{s.location}</div>}
+                          <div className="flex items-center gap-1"><Users className="h-3 w-3" />{s.reg_count}/{s.capacity} คน</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+            )}
 
             {(() => {
               const attachments = [
@@ -470,6 +512,49 @@ function TrainingDetail() {
                       <p className="mt-1 text-xs text-muted-foreground">ยังไม่มีรายการสถาบันในระบบ</p>
                     )}
                   </div>
+                  {hasSessions && (
+                    <div>
+                      <Label className="text-sm font-medium">ภาคที่ต้องการเรียน *</Label>
+                      <RadioGroup
+                        className="mt-2 space-y-2"
+                        value={form.sessionId}
+                        onValueChange={(v) => setForm({ ...form, sessionId: v })}
+                      >
+                        {trainingSessions!.map((s: any) => {
+                          const seatsLeft = Math.max(s.capacity - s.reg_count, 0);
+                          const full = s.reg_count >= s.capacity;
+                          const selected = form.sessionId === s.id;
+                          return (
+                            <label
+                              key={s.id}
+                              htmlFor={`session-${s.id}`}
+                              className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm transition-colors ${
+                                full
+                                  ? "cursor-not-allowed border-muted bg-muted/30 opacity-60"
+                                  : selected
+                                    ? "border-primary bg-primary/5"
+                                    : "hover:bg-muted/40"
+                              }`}
+                            >
+                              <RadioGroupItem id={`session-${s.id}`} value={s.id} disabled={full} className="mt-0.5" />
+                              <div className="flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="font-semibold text-primary">{s.region}</span>
+                                  {full
+                                    ? <Badge variant="destructive" className="text-xs">เต็มแล้ว</Badge>
+                                    : <Badge variant="outline" className="text-xs">เหลือ {seatsLeft} ที่นั่ง</Badge>}
+                                </div>
+                                <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                                  <div><Calendar className="mr-1 inline h-3 w-3" />{formatDate(s.start_datetime)} – {formatDate(s.end_datetime)}</div>
+                                  {s.location && <div><MapPin className="mr-1 inline h-3 w-3" />{s.location}</div>}
+                                </div>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </RadioGroup>
+                    </div>
+                  )}
                   <div>
                     <Label htmlFor="studentId">รหัสนักศึกษา</Label>
                     <Input id="studentId" value={form.studentId} onChange={(e) => setForm({ ...form, studentId: e.target.value })} />

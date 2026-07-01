@@ -110,6 +110,9 @@ function AdvisorDashboardPage() {
                       {r.student_id && (
                         <div className="text-xs text-muted-foreground">รหัสนักศึกษา: {r.student_id}</div>
                       )}
+                      {r.session_region && (
+                        <div className="text-xs text-primary font-medium">{r.session_region}</div>
+                      )}
                       <div className="mt-1 text-sm">
                         <span className="text-muted-foreground">หลักสูตร:</span>{' '}
                         <span className="font-medium text-foreground">{r.training_title ?? '—'}</span>

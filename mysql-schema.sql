@@ -34,9 +34,23 @@ CREATE TABLE IF NOT EXISTS institutes_tab (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS training_sessions (
+  id CHAR(36) NOT NULL PRIMARY KEY,
+  training_id CHAR(36) NOT NULL,
+  region VARCHAR(50) NOT NULL,
+  start_datetime DATETIME NOT NULL,
+  end_datetime DATETIME NOT NULL,
+  location VARCHAR(255),
+  online_url VARCHAR(500),
+  capacity INT NOT NULL DEFAULT 30,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (training_id) REFERENCES trainings(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS registrations (
   id CHAR(36) NOT NULL PRIMARY KEY,
   training_id CHAR(36) NOT NULL,
+  session_id CHAR(36) DEFAULT NULL,
   institute_id CHAR(36),
   guest_name VARCHAR(255),
   guest_email VARCHAR(255),
@@ -58,6 +72,7 @@ CREATE TABLE IF NOT EXISTS registrations (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (training_id) REFERENCES trainings(id) ON DELETE CASCADE,
+  FOREIGN KEY (session_id) REFERENCES training_sessions(id) ON DELETE SET NULL,
   FOREIGN KEY (institute_id) REFERENCES institutes_tab(id) ON DELETE SET NULL,
   UNIQUE KEY uq_registration (training_id, guest_email(191))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

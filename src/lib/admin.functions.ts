@@ -28,10 +28,12 @@ export const getAdminTrainings = createServerFn({ method: 'GET' }).handler(async
 export const getAdminRegistrations = createServerFn({ method: 'GET' }).handler(async () => {
   const pool = (await import('@/lib/db.server')).default;
   const [rows] = await pool.query(`
-    SELECT r.*, t.title as training_title, i.institute as institute_name
+    SELECT r.*, t.title as training_title, i.institute as institute_name,
+           ts.region as session_region
     FROM registrations r
     LEFT JOIN trainings t ON t.id = r.training_id
     LEFT JOIN institutes_tab i ON i.id = r.institute_id
+    LEFT JOIN training_sessions ts ON ts.id = r.session_id
     ORDER BY r.created_at DESC
   `);
   return rows as any[];

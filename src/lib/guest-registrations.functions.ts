@@ -7,6 +7,7 @@ const GuestRegistrationsInput = z.object({
   institute_id: z.string().uuid(),
   guest_name: z.string().trim().min(1).max(255),
   guest_email: z.string().trim().toLowerCase().email().max(255),
+  session_id: z.string().uuid().nullable().optional(),
   student_id: z.string().trim().max(50).nullable().optional(),
   wants_sim: z.boolean().nullable().optional(),
   gender: z.string().trim().min(1).max(50),
@@ -84,6 +85,22 @@ export const createGuestRegistrations = createServerFn({ method: 'POST' })
       }
     }
 
+    // Validate session and check session capacity
+    if (data.session_id) {
+      const [sessRows] = await pool.query(
+        `SELECT ts.id, ts.capacity, ts.training_id, COUNT(r.id) AS reg_count
+         FROM training_sessions ts
+         LEFT JOIN registrations r ON r.session_id = ts.id
+         WHERE ts.id = ?
+         GROUP BY ts.id`,
+        [data.session_id]
+      );
+      const sess = (sessRows as any[])[0];
+      if (!sess) throw new Error('ไม่พบรอบการสอนที่เลือก');
+      if (sess.training_id !== data.training_ids[0]) throw new Error('รอบการสอนไม่ตรงกับหลักสูตรที่เลือก');
+      if (sess.reg_count >= sess.capacity) throw new Error('รอบการสอนนี้เต็มแล้ว กรุณาเลือกรอบอื่น');
+    }
+
     // Block duplicate registrations (same email + training)
     const [dupRegRows] = await pool.query(
       `SELECT r.training_id, t.title
@@ -104,13 +121,14 @@ export const createGuestRegistrations = createServerFn({ method: 'POST' })
       try {
         await pool.query(
           `INSERT INTO registrations (
-            id, training_id, institute_id, guest_name, guest_email,
+            id, training_id, session_id, institute_id, guest_name, guest_email,
             student_id, wants_sim, gender, age, education_level, education_level_other, field_of_study,
             participant_status, participant_status_other,
             pdpa_consent, pdpa_consent_at, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
           [
-            id, tid, data.institute_id, data.guest_name, data.guest_email,
+            id, tid, tid === data.training_ids[0] ? (data.session_id ?? null) : null,
+            data.institute_id, data.guest_name, data.guest_email,
             data.student_id ?? null,
             data.wants_sim == null ? null : data.wants_sim ? 1 : 0,
             data.gender, data.age, data.education_level, data.education_level_other ?? null,
