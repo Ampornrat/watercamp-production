@@ -87,6 +87,7 @@ function TrainingDetail() {
   const [form, setForm] = useState({
     name: "",
     email: "",
+    studentId: "",
     instituteId: "",
     gender: "",
     age: "",
@@ -174,6 +175,7 @@ function TrainingDetail() {
           institute_id: form.instituteId,
           guest_name: form.name.trim(),
           guest_email: form.email.trim(),
+          student_id: form.studentId.trim() || null,
           gender: form.gender,
           age: ageNum,
           education_level: form.educationLevel,
@@ -203,7 +205,7 @@ function TrainingDetail() {
           ? `ลงทะเบียนสำเร็จ! รวมหลักสูตรเสริมทักษะ ${r.electives} หลักสูตร — ส่งอีเมลยืนยันแล้ว`
           : "ลงทะเบียนสำเร็จ! ส่งอีเมลยืนยันแล้ว รอการยืนยันจากผู้ดูแล",
       );
-      setForm({ name: "", email: "", instituteId: "", gender: "", age: "", educationLevel: "", educationLevelOther: "", fieldOfStudy: "", participantStatus: "", participantStatusOther: "" });
+      setForm({ name: "", email: "", studentId: "", instituteId: "", gender: "", age: "", educationLevel: "", educationLevelOther: "", fieldOfStudy: "", participantStatus: "", participantStatusOther: "" });
       setConsent(false);
       setSelectedElectives(new Set());
       qc.invalidateQueries({ queryKey: ["regCount", id] });
@@ -462,6 +464,10 @@ function TrainingDetail() {
                     {!institutesLoading && !institutesError && institutes && (institutes as any[]).length === 0 && (
                       <p className="mt-1 text-xs text-muted-foreground">ยังไม่มีรายการสถาบันในระบบ</p>
                     )}
+                  </div>
+                  <div>
+                    <Label htmlFor="studentId">รหัสนักศึกษา</Label>
+                    <Input id="studentId" value={form.studentId} onChange={(e) => setForm({ ...form, studentId: e.target.value })} />
                   </div>
                   <div>
                     <Label htmlFor="name">ชื่อ-นามสกุล *</Label>

@@ -7,6 +7,7 @@ const GuestRegistrationsInput = z.object({
   institute_id: z.string().uuid(),
   guest_name: z.string().trim().min(1).max(255),
   guest_email: z.string().trim().toLowerCase().email().max(255),
+  student_id: z.string().trim().max(50).nullable().optional(),
   gender: z.string().trim().min(1).max(50),
   age: z.number().int().min(1).max(120),
   education_level: z.string().trim().min(1).max(100),
@@ -103,12 +104,13 @@ export const createGuestRegistrations = createServerFn({ method: 'POST' })
         await pool.query(
           `INSERT INTO registrations (
             id, training_id, institute_id, guest_name, guest_email,
-            gender, age, education_level, education_level_other, field_of_study,
+            student_id, gender, age, education_level, education_level_other, field_of_study,
             participant_status, participant_status_other,
             pdpa_consent, pdpa_consent_at, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
           [
             id, tid, data.institute_id, data.guest_name, data.guest_email,
+            data.student_id ?? null,
             data.gender, data.age, data.education_level, data.education_level_other ?? null,
             data.field_of_study ?? null, data.participant_status,
             data.participant_status_other ?? null, stampedAt, stampedAt,

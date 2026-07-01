@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS registrations (
   institute_id CHAR(36),
   guest_name VARCHAR(255),
   guest_email VARCHAR(255),
+  student_id VARCHAR(50),
   gender VARCHAR(50),
   age INT,
   education_level VARCHAR(100),
