@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS registrations (
   guest_name VARCHAR(255),
   guest_email VARCHAR(255),
   student_id VARCHAR(50),
+  wants_sim TINYINT(1) DEFAULT NULL,
   gender VARCHAR(50),
   age INT,
   education_level VARCHAR(100),

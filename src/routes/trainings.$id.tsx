@@ -88,6 +88,7 @@ function TrainingDetail() {
     name: "",
     email: "",
     studentId: "",
+    wantsSim: null as boolean | null,
     instituteId: "",
     gender: "",
     age: "",
@@ -176,6 +177,7 @@ function TrainingDetail() {
           guest_name: form.name.trim(),
           guest_email: form.email.trim(),
           student_id: form.studentId.trim() || null,
+          wants_sim: form.wantsSim,
           gender: form.gender,
           age: ageNum,
           education_level: form.educationLevel,
@@ -206,7 +208,7 @@ function TrainingDetail() {
           ? `ลงทะเบียนสำเร็จ! รวมหลักสูตรเสริมทักษะ ${r.electives} หลักสูตร — ส่งอีเมลยืนยันแล้ว`
           : "ลงทะเบียนสำเร็จ! ส่งอีเมลยืนยันแล้ว รอการยืนยันจากผู้ดูแล",
       );
-      setForm({ name: "", email: "", studentId: "", instituteId: "", gender: "", age: "", educationLevel: "", educationLevelOther: "", fieldOfStudy: "", participantStatus: "", participantStatusOther: "" });
+      setForm({ name: "", email: "", studentId: "", wantsSim: null, instituteId: "", gender: "", age: "", educationLevel: "", educationLevelOther: "", fieldOfStudy: "", participantStatus: "", participantStatusOther: "" });
       setConsent(false);
       setSelectedElectives(new Set());
       qc.invalidateQueries({ queryKey: ["regCount", id] });
@@ -538,6 +540,21 @@ function TrainingDetail() {
                   <div>
                     <Label htmlFor="email">อีเมล *</Label>
                     <Input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+                  </div>
+                  <div>
+                    <Label>โครงการมี SIM โทรศัพท์แจกฟรี ท่านต้องการหรือไม่</Label>
+                    <RadioGroup
+                      className="mt-2 flex gap-6"
+                      value={form.wantsSim === null ? "" : form.wantsSim ? "yes" : "no"}
+                      onValueChange={(v) => setForm({ ...form, wantsSim: v === "yes" })}
+                    >
+                      {[{ value: "yes", label: "ต้องการ" }, { value: "no", label: "ไม่ต้องการ" }].map(({ value, label }) => (
+                        <div key={value} className="flex items-center gap-2">
+                          <RadioGroupItem id={`sim-${value}`} value={value} />
+                          <Label htmlFor={`sim-${value}`} className="font-normal">{label}</Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
                   </div>
                   {selectedElectives.size > 0 && (
                     <div className="rounded-md border border-primary/40 bg-primary/5 p-3 text-xs text-foreground">
