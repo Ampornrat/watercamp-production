@@ -198,6 +198,7 @@ function TrainingDetail() {
           guest_name: form.name.trim(),
           guest_email: form.email.trim(),
           student_id: form.studentId.trim() || null,
+          wants_sim: form.wantsSim,
         },
       }).catch((err) => console.error('Failed to send registration emails:', err?.message));
 

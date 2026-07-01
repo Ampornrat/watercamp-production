@@ -7,6 +7,7 @@ export const notifyRegistration = createServerFn({ method: 'POST' })
     guest_name: string
     guest_email: string
     student_id?: string | null
+    wants_sim?: boolean | null
   })
   .handler(async ({ data }) => {
     const pool = (await import('@/lib/db.server')).default
@@ -41,6 +42,7 @@ export const notifyRegistration = createServerFn({ method: 'POST' })
           <p style="color:#334155;line-height:1.6">
             ระบบได้รับการลงทะเบียนของท่านเรียบร้อยแล้ว กำลังรอการอนุมัติจากอาจารย์ที่ปรึกษาของสถาบัน
           </p>
+          ${data.wants_sim != null ? `<p style="color:#334155;font-size:13px;margin:0 0 16px">SIM Internet แจกฟรี: <strong>${data.wants_sim ? 'ต้องการใช้' : 'ไม่ต้องการ'}</strong></p>` : ''}
           <p style="color:#334155;font-weight:600">หลักสูตรที่ลงทะเบียน:</p>
           <ul style="color:#334155;line-height:1.8">${trainingListHtml}</ul>
           <p style="color:#64748b;font-size:13px;margin-top:24px">
@@ -56,7 +58,7 @@ export const notifyRegistration = createServerFn({ method: 'POST' })
           <p style="color:#94a3b8;font-size:12px">ศูนย์ฝึกอบรม คลังข้อมูลน้ำแห่งชาติ</p>
         </div>
       `,
-      text: `เรียนคุณ ${data.guest_name}${data.student_id ? ` (รหัสนักศึกษา: ${data.student_id})` : ''}\n\nระบบได้รับการลงทะเบียนของท่านแล้ว รอการอนุมัติจากอาจารย์ที่ปรึกษา\n\nหลักสูตรที่ลงทะเบียน:\n${trainingListText}\n\nดูประวัติการเรียน: ${profileUrl}`,
+      text: `เรียนคุณ ${data.guest_name}${data.student_id ? ` (รหัสนักศึกษา: ${data.student_id})` : ''}\n\nระบบได้รับการลงทะเบียนของท่านแล้ว รอการอนุมัติจากอาจารย์ที่ปรึกษา\n${data.wants_sim != null ? `SIM Internet แจกฟรี: ${data.wants_sim ? 'ต้องการใช้' : 'ไม่ต้องการ'}\n` : ''}\nหลักสูตรที่ลงทะเบียน:\n${trainingListText}\n\nดูประวัติการเรียน: ${profileUrl}`,
     })
 
     // Find advisors for this institute
@@ -80,6 +82,7 @@ export const notifyRegistration = createServerFn({ method: 'POST' })
               <tr><td style="color:#64748b;padding:4px 0;width:120px">ชื่อนักศึกษา</td><td style="color:#0f172a;font-weight:600">${data.guest_name}</td></tr>
               ${data.student_id ? `<tr><td style="color:#64748b;padding:4px 0">รหัสนักศึกษา</td><td style="color:#0f172a">${data.student_id}</td></tr>` : ''}
               <tr><td style="color:#64748b;padding:4px 0">อีเมล</td><td style="color:#0f172a">${data.guest_email}</td></tr>
+              ${data.wants_sim != null ? `<tr><td style="color:#64748b;padding:4px 0">SIM Internet</td><td style="color:#0f172a">${data.wants_sim ? 'ต้องการใช้' : 'ไม่ต้องการ'}</td></tr>` : ''}
             </table>
             <p style="color:#334155;font-weight:600">หลักสูตรที่ลงทะเบียน:</p>
             <ul style="color:#334155;line-height:1.8">${trainingListHtml}</ul>
