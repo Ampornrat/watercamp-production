@@ -116,6 +116,10 @@ function StudentDashboardPage() {
               </h2>
               <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
                 <div>
+                  <span className="text-xs text-muted-foreground">รหัสนักศึกษา</span>
+                  <p className="font-medium">{profile.student_id || '—'}</p>
+                </div>
+                <div>
                   <span className="text-xs text-muted-foreground">ชื่อ-นามสกุล</span>
                   <p className="font-medium">{profile.full_name || '—'}</p>
                 </div>
