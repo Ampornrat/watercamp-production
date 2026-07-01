@@ -22,7 +22,7 @@ export const getAdvisorRegistrations = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     const pool = (await import('@/lib/db.server')).default
     const [rows] = await pool.query(
-      `SELECT r.id, r.guest_name, r.guest_email, r.approval_status, r.created_at,
+      `SELECT r.id, r.guest_name, r.guest_email, r.student_id, r.approval_status, r.created_at,
               t.title AS training_title, t.start_date
        FROM registrations r
        JOIN trainings t ON t.id = r.training_id
@@ -32,7 +32,7 @@ export const getAdvisorRegistrations = createServerFn({ method: 'GET' })
     )
     return rows as {
       id: string; guest_name: string | null; guest_email: string | null;
-      approval_status: string; created_at: string;
+      student_id: string | null; approval_status: string; created_at: string;
       training_title: string; start_date: string;
     }[]
   })

@@ -107,6 +107,9 @@ function AdvisorDashboardPage() {
                         {status === 'rejected' && <Badge variant="destructive"><XCircle className="mr-1 h-3 w-3" />ปฏิเสธ</Badge>}
                       </div>
                       <div className="mt-1 text-sm text-muted-foreground">{r.guest_email}</div>
+                      {r.student_id && (
+                        <div className="text-xs text-muted-foreground">รหัสนักศึกษา: {r.student_id}</div>
+                      )}
                       <div className="mt-1 text-sm">
                         <span className="text-muted-foreground">หลักสูตร:</span>{' '}
                         <span className="font-medium text-foreground">{r.training_title ?? '—'}</span>
