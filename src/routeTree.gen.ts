@@ -33,6 +33,7 @@ import { Route as AdvisorRegisterRouteImport } from './routes/advisor.register'
 import { Route as AdvisorQueueRouteImport } from './routes/advisor.queue'
 import { Route as AdvisorDashboardRouteImport } from './routes/advisor.dashboard'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as ApiEmailImagesNameRouteImport } from './routes/api/email-images/$name'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -160,6 +161,11 @@ const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   path: '/lovable/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiEmailImagesNameRoute = ApiEmailImagesNameRouteImport.update({
+  id: '/api/email-images/$name',
+  path: '/api/email-images/$name',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -219,6 +225,7 @@ export interface FileRoutesByFullPath {
   '/trainings/$id': typeof TrainingsIdRoute
   '/contest/': typeof ContestIndexRoute
   '/trainings/': typeof TrainingsIndexRoute
+  '/api/email-images/$name': typeof ApiEmailImagesNameRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/trainings/notify-registration': typeof ApiPublicTrainingsNotifyRegistrationRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -251,6 +258,7 @@ export interface FileRoutesByTo {
   '/trainings/$id': typeof TrainingsIdRoute
   '/contest': typeof ContestIndexRoute
   '/trainings': typeof TrainingsIndexRoute
+  '/api/email-images/$name': typeof ApiEmailImagesNameRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/trainings/notify-registration': typeof ApiPublicTrainingsNotifyRegistrationRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -284,6 +292,7 @@ export interface FileRoutesById {
   '/trainings/$id': typeof TrainingsIdRoute
   '/contest/': typeof ContestIndexRoute
   '/trainings/': typeof TrainingsIndexRoute
+  '/api/email-images/$name': typeof ApiEmailImagesNameRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/trainings/notify-registration': typeof ApiPublicTrainingsNotifyRegistrationRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -318,6 +327,7 @@ export interface FileRouteTypes {
     | '/trainings/$id'
     | '/contest/'
     | '/trainings/'
+    | '/api/email-images/$name'
     | '/lovable/email/suppression'
     | '/api/public/trainings/notify-registration'
     | '/lovable/email/auth/preview'
@@ -350,6 +360,7 @@ export interface FileRouteTypes {
     | '/trainings/$id'
     | '/contest'
     | '/trainings'
+    | '/api/email-images/$name'
     | '/lovable/email/suppression'
     | '/api/public/trainings/notify-registration'
     | '/lovable/email/auth/preview'
@@ -382,6 +393,7 @@ export interface FileRouteTypes {
     | '/trainings/$id'
     | '/contest/'
     | '/trainings/'
+    | '/api/email-images/$name'
     | '/lovable/email/suppression'
     | '/api/public/trainings/notify-registration'
     | '/lovable/email/auth/preview'
@@ -415,6 +427,7 @@ export interface RootRouteChildren {
   TrainingsIdRoute: typeof TrainingsIdRoute
   ContestIndexRoute: typeof ContestIndexRoute
   TrainingsIndexRoute: typeof TrainingsIndexRoute
+  ApiEmailImagesNameRoute: typeof ApiEmailImagesNameRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicTrainingsNotifyRegistrationRoute: typeof ApiPublicTrainingsNotifyRegistrationRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -594,6 +607,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/email-images/$name': {
+      id: '/api/email-images/$name'
+      path: '/api/email-images/$name'
+      fullPath: '/api/email-images/$name'
+      preLoaderRoute: typeof ApiEmailImagesNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
       path: '/lovable/email/transactional/send'
@@ -663,6 +683,7 @@ const rootRouteChildren: RootRouteChildren = {
   TrainingsIdRoute: TrainingsIdRoute,
   ContestIndexRoute: ContestIndexRoute,
   TrainingsIndexRoute: TrainingsIndexRoute,
+  ApiEmailImagesNameRoute: ApiEmailImagesNameRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicTrainingsNotifyRegistrationRoute:
     ApiPublicTrainingsNotifyRegistrationRoute,

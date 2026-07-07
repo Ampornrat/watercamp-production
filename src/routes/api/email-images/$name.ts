@@ -8,7 +8,7 @@ const ALLOWED: Record<string, string> = {
   'banner-googleplay.png': 'image/png',
 }
 
-export const Route = createFileRoute('/email-images/$name')({
+export const Route = createFileRoute('/api/email-images/$name')({
   server: {
     handlers: {
       GET: async ({ params }) => {

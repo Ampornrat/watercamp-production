@@ -27,9 +27,9 @@ const RegistrationConfirmationEmail = ({
   electivesCount,
   siteUrl = DEFAULT_SITE,
 }: RegistrationConfirmationProps) => {
-  const qrUrl = `${siteUrl}/email-images/qr-line-openchat.jpg`
-  const appStoreUrl = `${siteUrl}/email-images/banner-appstore.png`
-  const googlePlayUrl = `${siteUrl}/email-images/banner-googleplay.png`
+  const qrUrl = `${siteUrl}/api/email-images/qr-line-openchat.jpg`
+  const appStoreUrl = `${siteUrl}/api/email-images/banner-appstore.png`
+  const googlePlayUrl = `${siteUrl}/api/email-images/banner-googleplay.png`
 
   return (
     <Html lang="th" dir="ltr">
