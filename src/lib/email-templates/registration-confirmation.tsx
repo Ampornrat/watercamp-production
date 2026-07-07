@@ -15,6 +15,9 @@ interface RegistrationConfirmationProps {
   location?: string
   electivesCount?: number
   siteUrl?: string
+  qrUrl?: string
+  appStoreUrl?: string
+  googlePlayUrl?: string
 }
 
 const RegistrationConfirmationEmail = ({
@@ -26,10 +29,13 @@ const RegistrationConfirmationEmail = ({
   location,
   electivesCount,
   siteUrl = DEFAULT_SITE,
+  qrUrl,
+  appStoreUrl,
+  googlePlayUrl,
 }: RegistrationConfirmationProps) => {
-  const qrUrl = `${siteUrl}/api/email-images/qr-line-openchat.jpg`
-  const appStoreUrl = `${siteUrl}/api/email-images/banner-appstore.png`
-  const googlePlayUrl = `${siteUrl}/api/email-images/banner-googleplay.png`
+  const resolvedQrUrl = qrUrl ?? `${siteUrl}/api/email-images/qr-line-openchat.jpg`
+  const resolvedAppStoreUrl = appStoreUrl ?? `${siteUrl}/api/email-images/banner-appstore.png`
+  const resolvedGooglePlayUrl = googlePlayUrl ?? `${siteUrl}/api/email-images/banner-googleplay.png`
 
   return (
     <Html lang="th" dir="ltr">
@@ -87,7 +93,7 @@ const RegistrationConfirmationEmail = ({
             <Text style={communityTitle}>เข้าร่วม Line Open Chat เพื่อแลกเปลี่ยนเรียนรู้</Text>
             <Text style={communityDesc}>สแกน QR Code เพื่อเข้าร่วมกลุ่มแลกเปลี่ยนเรียนรู้</Text>
             <Img
-              src={qrUrl}
+              src={resolvedQrUrl}
               width="180"
               height="180"
               alt="QR Code Line Open Chat"
@@ -101,7 +107,7 @@ const RegistrationConfirmationEmail = ({
               <Column align="center">
                 <Link href="https://apps.apple.com/th/app/thaiwater/id1097487200?l=th">
                   <Img
-                    src={appStoreUrl}
+                    src={resolvedAppStoreUrl}
                     width="140"
                     height="42"
                     alt="Download on the App Store"
@@ -112,7 +118,7 @@ const RegistrationConfirmationEmail = ({
               <Column align="center">
                 <Link href="https://play.google.com/store/apps/details?id=mobile.nhc.thaiwater&hl=th">
                   <Img
-                    src={googlePlayUrl}
+                    src={resolvedGooglePlayUrl}
                     width="140"
                     height="42"
                     alt="Get it on Google Play"

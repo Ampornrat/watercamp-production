@@ -1,6 +1,20 @@
 import { createServerFn } from '@tanstack/react-start'
 import * as React from 'react'
 import { render } from '@react-email/components'
+import { join } from 'path'
+
+const EMAIL_IMG_DIR = () => join(process.cwd(), 'public', 'email-images')
+
+const IMAGE_ATTACHMENTS = [
+  { filename: 'qr-line-openchat.jpg', path: '', cid: 'qr-line-openchat' },
+  { filename: 'banner-appstore.png', path: '', cid: 'banner-appstore' },
+  { filename: 'banner-googleplay.png', path: '', cid: 'banner-googleplay' },
+]
+
+function getAttachments() {
+  const dir = EMAIL_IMG_DIR()
+  return IMAGE_ATTACHMENTS.map((a) => ({ ...a, path: join(dir, a.filename) }))
+}
 
 export const notifyRegistration = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => d as {
@@ -31,8 +45,9 @@ export const notifyRegistration = createServerFn({ method: 'POST' })
 
     const siteUrl = process.env.SITE_URL ?? 'https://watercamp.kwunjai.com'
     const dashboardUrl = `${siteUrl}/advisor/dashboard`
+    const attachments = getAttachments()
 
-    // Email to student using React template
+    // Email to student using React template with CID image attachments
     const studentHtml = await render(
       React.createElement(confirmTemplate.component, {
         name: data.guest_name,
@@ -42,14 +57,16 @@ export const notifyRegistration = createServerFn({ method: 'POST' })
         endDate: fmt(mainTraining?.end_date),
         location: mainTraining?.location || undefined,
         electivesCount: electivesCount > 0 ? electivesCount : undefined,
-        siteUrl,
+        qrUrl: 'cid:qr-line-openchat',
+        appStoreUrl: 'cid:banner-appstore',
+        googlePlayUrl: 'cid:banner-googleplay',
       })
     )
     const studentSubject = typeof confirmTemplate.subject === 'function'
       ? confirmTemplate.subject({ trainingTitle: mainTraining?.title })
       : confirmTemplate.subject
 
-    await sendMail({ to: data.guest_email, subject: studentSubject, html: studentHtml })
+    await sendMail({ to: data.guest_email, subject: studentSubject, html: studentHtml, attachments })
 
     // Find advisors for this institute
     const [advisorRows] = await pool.query(
@@ -103,7 +120,7 @@ export const notifyApproval = createServerFn({ method: 'POST' })
     const fmt = (d: string | null | undefined) =>
       d ? new Date(d).toLocaleString('th-TH', { dateStyle: 'long', timeStyle: 'short' }) : undefined
 
-    const siteUrl = process.env.SITE_URL ?? 'https://watercamp.kwunjai.com'
+    const attachments = data.status === 'approved' ? getAttachments() : []
 
     const approvalHtml = await render(
       React.createElement(approvalTemplate.component, {
@@ -113,14 +130,16 @@ export const notifyApproval = createServerFn({ method: 'POST' })
         endDate: fmt(reg.end_date),
         location: reg.location || undefined,
         status: data.status,
-        siteUrl,
+        qrUrl: 'cid:qr-line-openchat',
+        appStoreUrl: 'cid:banner-appstore',
+        googlePlayUrl: 'cid:banner-googleplay',
       })
     )
     const approvalSubject = typeof approvalTemplate.subject === 'function'
       ? approvalTemplate.subject({ status: data.status })
       : approvalTemplate.subject
 
-    await sendMail({ to: reg.guest_email, subject: approvalSubject, html: approvalHtml })
+    await sendMail({ to: reg.guest_email, subject: approvalSubject, html: approvalHtml, attachments })
 
     return { ok: true }
   })

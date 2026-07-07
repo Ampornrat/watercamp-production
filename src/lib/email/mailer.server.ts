@@ -1,5 +1,11 @@
 import nodemailer from 'nodemailer'
 
+export interface MailAttachment {
+  filename: string
+  path: string
+  cid: string
+}
+
 function createTransport() {
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST ?? 'smtp.gmail.com',
@@ -17,6 +23,7 @@ export async function sendMail(opts: {
   subject: string
   html: string
   text?: string
+  attachments?: MailAttachment[]
 }) {
   const transporter = createTransport()
   await transporter.sendMail({
@@ -25,5 +32,6 @@ export async function sendMail(opts: {
     subject: opts.subject,
     html: opts.html,
     text: opts.text,
+    attachments: opts.attachments,
   })
 }
