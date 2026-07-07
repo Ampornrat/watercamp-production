@@ -4,7 +4,7 @@ import {
 import type { TemplateEntry } from './registry'
 
 const SITE_NAME = 'ศูนย์ฝึกอบรม คลังข้อมูลน้ำแห่งชาติ'
-const DEFAULT_SITE = 'http://localhost:3000'
+const DEFAULT_SITE = 'https://watercamp.kwunjai.com'
 
 interface RegistrationConfirmationProps {
   name?: string

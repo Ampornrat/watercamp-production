@@ -29,7 +29,7 @@ export const notifyRegistration = createServerFn({ method: 'POST' })
     const fmt = (d: string | null | undefined) =>
       d ? new Date(d).toLocaleString('th-TH', { dateStyle: 'long', timeStyle: 'short' }) : undefined
 
-    const siteUrl = process.env.SITE_URL ?? 'http://localhost:3000'
+    const siteUrl = process.env.SITE_URL ?? 'https://watercamp.kwunjai.com'
     const dashboardUrl = `${siteUrl}/advisor/dashboard`
 
     // Email to student using React template
@@ -103,7 +103,7 @@ export const notifyApproval = createServerFn({ method: 'POST' })
     const fmt = (d: string | null | undefined) =>
       d ? new Date(d).toLocaleString('th-TH', { dateStyle: 'long', timeStyle: 'short' }) : undefined
 
-    const siteUrl = process.env.SITE_URL ?? 'http://localhost:3000'
+    const siteUrl = process.env.SITE_URL ?? 'https://watercamp.kwunjai.com'
 
     const approvalHtml = await render(
       React.createElement(approvalTemplate.component, {
