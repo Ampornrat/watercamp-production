@@ -1,7 +1,8 @@
 import {
-  Body, Container, Head, Heading, Html, Preview, Section, Text,
+  Body, Container, Head, Heading, Html, Img, Link, Preview, Row, Column, Section, Text,
 } from '@react-email/components'
 import type { TemplateEntry } from './registry'
+import { EMAIL_ASSETS } from './email-assets'
 
 const SITE_NAME = 'ศูนย์ฝึกอบรม คลังข้อมูลน้ำแห่งชาติ'
 
@@ -64,6 +65,51 @@ const RegistrationApprovalResultEmail = ({
               ? 'ขอแสดงความยินดี ท่านสามารถเข้าร่วมหลักสูตรได้ตามวันเวลาที่กำหนด ทีมงานจะติดต่อกลับหากมีรายละเอียดเพิ่มเติม'
               : 'หากท่านมีข้อสงสัยเกี่ยวกับผลการพิจารณา กรุณาติดต่ออาจารย์ที่ปรึกษาของท่านโดยตรง'}
           </Text>
+
+          {isApproved && (
+            <>
+              <Section style={communityCard}>
+                <Text style={communityTitle}>เข้าร่วม Line Open Chat เพื่อแลกเปลี่ยนเรียนรู้</Text>
+                <Text style={communityDesc}>สแกน QR Code เพื่อเข้าร่วมกลุ่มแลกเปลี่ยนเรียนรู้</Text>
+                <Img
+                  src={EMAIL_ASSETS.qrLineOpenChat}
+                  width="180"
+                  height="180"
+                  alt="QR Code Line Open Chat"
+                  style={qrStyle}
+                />
+              </Section>
+
+              <Section style={appSection}>
+                <Text style={communityTitle}>ดาวน์โหลดแอปพลิเคชัน ThaiWater</Text>
+                <Row>
+                  <Column align="center">
+                    <Link href="https://apps.apple.com/th/app/thaiwater/id1097487200?l=th">
+                      <Img
+                        src={EMAIL_ASSETS.bannerAppStore}
+                        width="140"
+                        height="42"
+                        alt="Download on the App Store"
+                        style={appBadgeStyle}
+                      />
+                    </Link>
+                  </Column>
+                  <Column align="center">
+                    <Link href="https://play.google.com/store/apps/details?id=mobile.nhc.thaiwater&hl=th">
+                      <Img
+                        src={EMAIL_ASSETS.bannerGooglePlay}
+                        width="140"
+                        height="42"
+                        alt="Get it on Google Play"
+                        style={appBadgeStyle}
+                      />
+                    </Link>
+                  </Column>
+                </Row>
+              </Section>
+            </>
+          )}
+
           <Text style={footer}>ขอแสดงความนับถือ<br />ทีมงาน {SITE_NAME}</Text>
         </Container>
       </Body>
@@ -113,3 +159,23 @@ const cardLabel = { fontSize: '12px', color: '#64748b', margin: '0 0 4px', textT
 const cardTitle = { fontSize: '18px', fontWeight: 'bold', color: '#0f172a', margin: '0 0 12px' }
 const detail = { fontSize: '13px', color: '#334155', margin: '4px 0' }
 const footer = { fontSize: '12px', color: '#94a3b8', margin: '28px 0 0' }
+const communityCard = {
+  backgroundColor: '#f0fdf4',
+  border: '1px solid #bbf7d0',
+  borderRadius: '8px',
+  padding: '16px 20px',
+  margin: '20px 0',
+  textAlign: 'center' as const,
+}
+const appSection = {
+  backgroundColor: '#f8fafc',
+  border: '1px solid #e2e8f0',
+  borderRadius: '8px',
+  padding: '16px 20px',
+  margin: '16px 0',
+  textAlign: 'center' as const,
+}
+const communityTitle = { fontSize: '15px', fontWeight: 'bold', color: '#0f172a', margin: '0 0 6px' }
+const communityDesc = { fontSize: '13px', color: '#475569', margin: '0 0 12px' }
+const qrStyle = { display: 'block', margin: '0 auto', borderRadius: '8px' }
+const appBadgeStyle = { display: 'block', margin: '4px auto' }
