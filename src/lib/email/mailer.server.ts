@@ -2,8 +2,10 @@ import nodemailer from 'nodemailer'
 
 export interface MailAttachment {
   filename: string
-  path: string
+  path?: string
+  content?: Buffer
   cid: string
+  contentDisposition?: 'inline' | 'attachment'
 }
 
 function createTransport() {

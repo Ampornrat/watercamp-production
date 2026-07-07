@@ -1,20 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
 import * as React from 'react'
 import { render } from '@react-email/components'
-import { join } from 'path'
-
-const EMAIL_IMG_DIR = () => join(process.cwd(), 'public', 'email-images')
-
-const IMAGE_ATTACHMENTS = [
-  { filename: 'qr-line-openchat.jpg', path: '', cid: 'qr-line-openchat' },
-  { filename: 'banner-appstore.png', path: '', cid: 'banner-appstore' },
-  { filename: 'banner-googleplay.png', path: '', cid: 'banner-googleplay' },
-]
-
-function getAttachments() {
-  const dir = EMAIL_IMG_DIR()
-  return IMAGE_ATTACHMENTS.map((a) => ({ ...a, path: join(dir, a.filename) }))
-}
 
 export const notifyRegistration = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => d as {
@@ -30,6 +16,7 @@ export const notifyRegistration = createServerFn({ method: 'POST' })
     const { sendMail } = await import('@/lib/email/mailer.server')
     const { template: confirmTemplate } = await import('./email-templates/registration-confirmation')
     const { template: advisorTemplate } = await import('./email-templates/advisor-approval-request')
+    const { getEmailImageAttachments } = await import('@/lib/email/email-images.server')
 
     const placeholders = data.training_ids.map(() => '?').join(',')
     const [trainingRows] = await pool.query(
@@ -45,9 +32,7 @@ export const notifyRegistration = createServerFn({ method: 'POST' })
 
     const siteUrl = process.env.SITE_URL ?? 'https://watercamp.kwunjai.com'
     const dashboardUrl = `${siteUrl}/advisor/dashboard`
-    const attachments = getAttachments()
 
-    // Email to student using React template with CID image attachments
     const studentHtml = await render(
       React.createElement(confirmTemplate.component, {
         name: data.guest_name,
@@ -66,9 +51,13 @@ export const notifyRegistration = createServerFn({ method: 'POST' })
       ? confirmTemplate.subject({ trainingTitle: mainTraining?.title })
       : confirmTemplate.subject
 
-    await sendMail({ to: data.guest_email, subject: studentSubject, html: studentHtml, attachments })
+    await sendMail({
+      to: data.guest_email,
+      subject: studentSubject,
+      html: studentHtml,
+      attachments: getEmailImageAttachments(),
+    })
 
-    // Find advisors for this institute
     const [advisorRows] = await pool.query(
       `SELECT full_name, email FROM advisors WHERE institute_id = ?`,
       [data.institute_id]
@@ -106,6 +95,7 @@ export const notifyApproval = createServerFn({ method: 'POST' })
     const pool = (await import('@/lib/db.server')).default
     const { sendMail } = await import('@/lib/email/mailer.server')
     const { template: approvalTemplate } = await import('./email-templates/registration-approval-result')
+    const { getEmailImageAttachments } = await import('@/lib/email/email-images.server')
 
     const [rows] = await pool.query(
       `SELECT r.guest_name, r.guest_email, t.title AS training_title, t.start_date, t.end_date, t.location
@@ -120,7 +110,7 @@ export const notifyApproval = createServerFn({ method: 'POST' })
     const fmt = (d: string | null | undefined) =>
       d ? new Date(d).toLocaleString('th-TH', { dateStyle: 'long', timeStyle: 'short' }) : undefined
 
-    const attachments = data.status === 'approved' ? getAttachments() : []
+    const isApproved = data.status === 'approved'
 
     const approvalHtml = await render(
       React.createElement(approvalTemplate.component, {
@@ -139,7 +129,12 @@ export const notifyApproval = createServerFn({ method: 'POST' })
       ? approvalTemplate.subject({ status: data.status })
       : approvalTemplate.subject
 
-    await sendMail({ to: reg.guest_email, subject: approvalSubject, html: approvalHtml, attachments })
+    await sendMail({
+      to: reg.guest_email,
+      subject: approvalSubject,
+      html: approvalHtml,
+      attachments: isApproved ? getEmailImageAttachments() : [],
+    })
 
     return { ok: true }
   })
