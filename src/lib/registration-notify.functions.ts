@@ -42,6 +42,7 @@ export const notifyRegistration = createServerFn({ method: 'POST' })
         endDate: fmt(mainTraining?.end_date),
         location: mainTraining?.location || undefined,
         electivesCount: electivesCount > 0 ? electivesCount : undefined,
+        siteUrl,
       })
     )
     const studentSubject = typeof confirmTemplate.subject === 'function'
@@ -102,6 +103,8 @@ export const notifyApproval = createServerFn({ method: 'POST' })
     const fmt = (d: string | null | undefined) =>
       d ? new Date(d).toLocaleString('th-TH', { dateStyle: 'long', timeStyle: 'short' }) : undefined
 
+    const siteUrl = process.env.SITE_URL ?? 'http://localhost:3000'
+
     const approvalHtml = await render(
       React.createElement(approvalTemplate.component, {
         name: reg.guest_name,
@@ -110,6 +113,7 @@ export const notifyApproval = createServerFn({ method: 'POST' })
         endDate: fmt(reg.end_date),
         location: reg.location || undefined,
         status: data.status,
+        siteUrl,
       })
     )
     const approvalSubject = typeof approvalTemplate.subject === 'function'

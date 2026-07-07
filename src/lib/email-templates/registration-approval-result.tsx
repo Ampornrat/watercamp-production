@@ -2,9 +2,9 @@ import {
   Body, Container, Head, Heading, Html, Img, Link, Preview, Row, Column, Section, Text,
 } from '@react-email/components'
 import type { TemplateEntry } from './registry'
-import { EMAIL_ASSETS } from './email-assets'
 
 const SITE_NAME = 'ศูนย์ฝึกอบรม คลังข้อมูลน้ำแห่งชาติ'
+const DEFAULT_SITE = 'http://localhost:3000'
 
 interface RegistrationApprovalResultProps {
   name?: string
@@ -16,6 +16,7 @@ interface RegistrationApprovalResultProps {
   totalAdvisors?: number
   approvals?: number
   rejections?: number
+  siteUrl?: string
 }
 
 const RegistrationApprovalResultEmail = ({
@@ -28,11 +29,17 @@ const RegistrationApprovalResultEmail = ({
   totalAdvisors,
   approvals,
   rejections,
+  siteUrl = DEFAULT_SITE,
 }: RegistrationApprovalResultProps) => {
   const isApproved = status === 'approved'
   const headline = isApproved
     ? 'การลงทะเบียนของท่านได้รับการอนุมัติแล้ว'
     : 'การลงทะเบียนของท่านไม่ได้รับการอนุมัติ'
+
+  const qrUrl = `${siteUrl}/email-images/qr-line-openchat.jpg`
+  const appStoreUrl = `${siteUrl}/email-images/banner-appstore.png`
+  const googlePlayUrl = `${siteUrl}/email-images/banner-googleplay.png`
+
   return (
     <Html lang="th" dir="ltr">
       <Head />
@@ -72,7 +79,7 @@ const RegistrationApprovalResultEmail = ({
                 <Text style={communityTitle}>เข้าร่วม Line Open Chat เพื่อแลกเปลี่ยนเรียนรู้</Text>
                 <Text style={communityDesc}>สแกน QR Code เพื่อเข้าร่วมกลุ่มแลกเปลี่ยนเรียนรู้</Text>
                 <Img
-                  src={EMAIL_ASSETS.qrLineOpenChat}
+                  src={qrUrl}
                   width="180"
                   height="180"
                   alt="QR Code Line Open Chat"
@@ -86,7 +93,7 @@ const RegistrationApprovalResultEmail = ({
                   <Column align="center">
                     <Link href="https://apps.apple.com/th/app/thaiwater/id1097487200?l=th">
                       <Img
-                        src={EMAIL_ASSETS.bannerAppStore}
+                        src={appStoreUrl}
                         width="140"
                         height="42"
                         alt="Download on the App Store"
@@ -97,7 +104,7 @@ const RegistrationApprovalResultEmail = ({
                   <Column align="center">
                     <Link href="https://play.google.com/store/apps/details?id=mobile.nhc.thaiwater&hl=th">
                       <Img
-                        src={EMAIL_ASSETS.bannerGooglePlay}
+                        src={googlePlayUrl}
                         width="140"
                         height="42"
                         alt="Get it on Google Play"
@@ -134,6 +141,7 @@ export const template = {
     totalAdvisors: 3,
     approvals: 3,
     rejections: 0,
+    siteUrl: 'http://localhost:3000',
   },
 } satisfies TemplateEntry
 

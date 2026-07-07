@@ -2,9 +2,9 @@ import {
   Body, Container, Head, Heading, Html, Img, Link, Preview, Row, Column, Section, Text,
 } from '@react-email/components'
 import type { TemplateEntry } from './registry'
-import { EMAIL_ASSETS } from './email-assets'
 
 const SITE_NAME = 'ศูนย์ฝึกอบรม คลังข้อมูลน้ำแห่งชาติ'
+const DEFAULT_SITE = 'http://localhost:3000'
 
 interface RegistrationConfirmationProps {
   name?: string
@@ -14,6 +14,7 @@ interface RegistrationConfirmationProps {
   endDate?: string
   location?: string
   electivesCount?: number
+  siteUrl?: string
 }
 
 const RegistrationConfirmationEmail = ({
@@ -24,103 +25,110 @@ const RegistrationConfirmationEmail = ({
   endDate,
   location,
   electivesCount,
-}: RegistrationConfirmationProps) => (
-  <Html lang="th" dir="ltr">
-    <Head />
-    <Preview>
-      {trainingTitle
-        ? `ยืนยันการลงทะเบียน: ${trainingTitle}`
-        : 'ยืนยันการลงทะเบียนหลักสูตรฝึกอบรม'}
-    </Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <Heading style={h1}>
-          {name ? `เรียนคุณ ${name}` : 'เรียนผู้ลงทะเบียน'}
-        </Heading>
-        {studentId && (
-          <Text style={studentIdStyle}>รหัสนักศึกษา: <strong>{studentId}</strong></Text>
-        )}
-        <Text style={text}>
-          ขอบคุณที่ลงทะเบียนเข้าร่วมหลักสูตรกับ {SITE_NAME} ระบบได้รับการลงทะเบียนของท่านเรียบร้อยแล้ว
-          และอยู่ระหว่างรอการยืนยันจากผู้ดูแล
-        </Text>
+  siteUrl = DEFAULT_SITE,
+}: RegistrationConfirmationProps) => {
+  const qrUrl = `${siteUrl}/email-images/qr-line-openchat.jpg`
+  const appStoreUrl = `${siteUrl}/email-images/banner-appstore.png`
+  const googlePlayUrl = `${siteUrl}/email-images/banner-googleplay.png`
 
-        {trainingTitle && (
-          <Section style={card}>
-            <Text style={cardLabel}>หลักสูตรที่ลงทะเบียน</Text>
-            <Text style={cardTitle}>{trainingTitle}</Text>
-            {startDate && (
-              <Text style={detail}>
-                <strong>เริ่ม:</strong> {startDate}
-              </Text>
-            )}
-            {endDate && (
-              <Text style={detail}>
-                <strong>สิ้นสุด:</strong> {endDate}
-              </Text>
-            )}
-            {location && (
-              <Text style={detail}>
-                <strong>สถานที่:</strong> {location}
-              </Text>
-            )}
-            {typeof electivesCount === 'number' && electivesCount > 0 && (
-              <Text style={detail}>
-                <strong>หลักสูตรเสริมทักษะที่ลงพร้อมกัน:</strong> {electivesCount} หลักสูตร
-              </Text>
-            )}
+  return (
+    <Html lang="th" dir="ltr">
+      <Head />
+      <Preview>
+        {trainingTitle
+          ? `ยืนยันการลงทะเบียน: ${trainingTitle}`
+          : 'ยืนยันการลงทะเบียนหลักสูตรฝึกอบรม'}
+      </Preview>
+      <Body style={main}>
+        <Container style={container}>
+          <Heading style={h1}>
+            {name ? `เรียนคุณ ${name}` : 'เรียนผู้ลงทะเบียน'}
+          </Heading>
+          {studentId && (
+            <Text style={studentIdStyle}>รหัสนักศึกษา: <strong>{studentId}</strong></Text>
+          )}
+          <Text style={text}>
+            ขอบคุณที่ลงทะเบียนเข้าร่วมหลักสูตรกับ {SITE_NAME} ระบบได้รับการลงทะเบียนของท่านเรียบร้อยแล้ว
+            และอยู่ระหว่างรอการยืนยันจากผู้ดูแล
+          </Text>
+
+          {trainingTitle && (
+            <Section style={card}>
+              <Text style={cardLabel}>หลักสูตรที่ลงทะเบียน</Text>
+              <Text style={cardTitle}>{trainingTitle}</Text>
+              {startDate && (
+                <Text style={detail}>
+                  <strong>เริ่ม:</strong> {startDate}
+                </Text>
+              )}
+              {endDate && (
+                <Text style={detail}>
+                  <strong>สิ้นสุด:</strong> {endDate}
+                </Text>
+              )}
+              {location && (
+                <Text style={detail}>
+                  <strong>สถานที่:</strong> {location}
+                </Text>
+              )}
+              {typeof electivesCount === 'number' && electivesCount > 0 && (
+                <Text style={detail}>
+                  <strong>หลักสูตรเสริมทักษะที่ลงพร้อมกัน:</strong> {electivesCount} หลักสูตร
+                </Text>
+              )}
+            </Section>
+          )}
+
+          <Text style={text}>
+            ทีมงานจะติดต่อกลับเพื่อยืนยันการเข้าร่วมและแจ้งรายละเอียดเพิ่มเติมทางอีเมลนี้
+          </Text>
+
+          <Section style={communityCard}>
+            <Text style={communityTitle}>เข้าร่วม Line Open Chat เพื่อแลกเปลี่ยนเรียนรู้</Text>
+            <Text style={communityDesc}>สแกน QR Code เพื่อเข้าร่วมกลุ่มแลกเปลี่ยนเรียนรู้</Text>
+            <Img
+              src={qrUrl}
+              width="180"
+              height="180"
+              alt="QR Code Line Open Chat"
+              style={qrStyle}
+            />
           </Section>
-        )}
 
-        <Text style={text}>
-          ทีมงานจะติดต่อกลับเพื่อยืนยันการเข้าร่วมและแจ้งรายละเอียดเพิ่มเติมทางอีเมลนี้
-        </Text>
+          <Section style={appSection}>
+            <Text style={communityTitle}>ดาวน์โหลดแอปพลิเคชัน ThaiWater</Text>
+            <Row>
+              <Column align="center">
+                <Link href="https://apps.apple.com/th/app/thaiwater/id1097487200?l=th">
+                  <Img
+                    src={appStoreUrl}
+                    width="140"
+                    height="42"
+                    alt="Download on the App Store"
+                    style={appBadgeStyle}
+                  />
+                </Link>
+              </Column>
+              <Column align="center">
+                <Link href="https://play.google.com/store/apps/details?id=mobile.nhc.thaiwater&hl=th">
+                  <Img
+                    src={googlePlayUrl}
+                    width="140"
+                    height="42"
+                    alt="Get it on Google Play"
+                    style={appBadgeStyle}
+                  />
+                </Link>
+              </Column>
+            </Row>
+          </Section>
 
-        <Section style={communityCard}>
-          <Text style={communityTitle}>เข้าร่วม Line Open Chat เพื่อแลกเปลี่ยนเรียนรู้</Text>
-          <Text style={communityDesc}>สแกน QR Code เพื่อเข้าร่วมกลุ่มแลกเปลี่ยนเรียนรู้</Text>
-          <Img
-            src={EMAIL_ASSETS.qrLineOpenChat}
-            width="180"
-            height="180"
-            alt="QR Code Line Open Chat"
-            style={qrStyle}
-          />
-        </Section>
-
-        <Section style={appSection}>
-          <Text style={communityTitle}>ดาวน์โหลดแอปพลิเคชัน ThaiWater</Text>
-          <Row>
-            <Column align="center">
-              <Link href="https://apps.apple.com/th/app/thaiwater/id1097487200?l=th">
-                <Img
-                  src={EMAIL_ASSETS.bannerAppStore}
-                  width="140"
-                  height="42"
-                  alt="Download on the App Store"
-                  style={appBadgeStyle}
-                />
-              </Link>
-            </Column>
-            <Column align="center">
-              <Link href="https://play.google.com/store/apps/details?id=mobile.nhc.thaiwater&hl=th">
-                <Img
-                  src={EMAIL_ASSETS.bannerGooglePlay}
-                  width="140"
-                  height="42"
-                  alt="Get it on Google Play"
-                  style={appBadgeStyle}
-                />
-              </Link>
-            </Column>
-          </Row>
-        </Section>
-
-        <Text style={footer}>ขอแสดงความนับถือ<br />ทีมงาน {SITE_NAME}</Text>
-      </Container>
-    </Body>
-  </Html>
-)
+          <Text style={footer}>ขอแสดงความนับถือ<br />ทีมงาน {SITE_NAME}</Text>
+        </Container>
+      </Body>
+    </Html>
+  )
+}
 
 export const template = {
   component: RegistrationConfirmationEmail,
@@ -137,6 +145,7 @@ export const template = {
     endDate: '15 มิถุนายน 2569 16:00 น.',
     location: 'อาคารคลังข้อมูลน้ำแห่งชาติ กรุงเทพฯ',
     electivesCount: 2,
+    siteUrl: 'http://localhost:3000',
   },
 } satisfies TemplateEntry
 
