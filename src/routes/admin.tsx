@@ -32,6 +32,7 @@ import {
   updateInstituteRegion,
 } from "@/lib/admin.functions";
 import { getSessionsForTraining, saveAdminSession, deleteAdminSession, REGIONS } from "@/lib/training-sessions.functions";
+import { notifyApproval } from "@/lib/registration-notify.functions";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "ผู้ดูแลระบบ" }] }),
@@ -102,6 +103,7 @@ function Admin() {
   const deleteSessionFn = useServerFn(deleteAdminSession);
   const getInstitutesFn = useServerFn(getAdminInstitutes);
   const updateInstituteRegionFn = useServerFn(updateInstituteRegion);
+  const notifyApprovalFn = useServerFn(notifyApproval);
 
   const trainings = useQuery({ queryKey: ["admin-trainings"], queryFn: () => getTrainingsFn() });
   const registrations = useQuery({ queryKey: ["admin-registrations"], queryFn: () => getRegsFn() });
@@ -134,8 +136,12 @@ function Admin() {
   const updateRegStatus = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) => updateStatusFn({ data: { id, status } }),
     onSuccess: (_d, v) => {
-      toast.success(v.status === "confirmed" ? "ยืนยันแล้ว" : "อัพเดทแล้ว");
+      toast.success(v.status === "approved" ? "ยืนยันแล้ว" : "อัพเดทแล้ว");
       qc.invalidateQueries({ queryKey: ["admin-registrations"] });
+      if (v.status === "approved") {
+        notifyApprovalFn({ data: { registration_id: v.id, status: "approved" } })
+          .catch((err) => console.error("Failed to send approval email:", err?.message))
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });
