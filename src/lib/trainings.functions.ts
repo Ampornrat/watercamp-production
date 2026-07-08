@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start';
 import pool from '@/lib/db.server';
 
 export const getPublishedTrainings = createServerFn({ method: 'GET' }).handler(async () => {
-  const [rows] = await pool.query(`SELECT * FROM trainings WHERE is_published = 1 ORDER BY start_date ASC`);
+  const [rows] = await pool.query(`SELECT * FROM trainings ORDER BY trainings.id DESC`);
   return rows as any[];
 });
 
