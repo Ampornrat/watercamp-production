@@ -24,7 +24,7 @@ export const getTrainingsCount = createServerFn({ method: 'GET' }).handler(async
 });
 
 export const getRegistrationsCount = createServerFn({ method: 'GET' }).handler(async () => {
-  const [rows] = await pool.query(`SELECT COUNT(*) as cnt FROM registrations`);
+  const [rows] = await pool.query(`SELECT COUNT(DISTINCT guest_email) as cnt FROM registrations`);
   return Number((rows as any[])[0]?.cnt ?? 0);
 });
 
