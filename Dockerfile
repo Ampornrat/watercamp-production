@@ -32,6 +32,10 @@ ENV HOST=0.0.0.0
 
 COPY --from=builder /app/.output ./.output
 
+# Persist uploaded files across container restarts
+RUN mkdir -p .output/public/uploads
+VOLUME ["/app/.output/public/uploads"]
+
 EXPOSE 3000
 
 CMD ["node", ".output/server/index.mjs"]

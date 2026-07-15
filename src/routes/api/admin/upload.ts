@@ -33,7 +33,13 @@ export const Route = createFileRoute('/api/admin/upload')({
         const MAX_SIZE = 50 * 1024 * 1024
         if (file.size > MAX_SIZE) return Response.json({ error: 'ไฟล์ต้องไม่เกิน 50MB' }, { status: 400 })
 
-        const uploadsDir = join(process.cwd(), 'public', 'uploads')
+        // In Docker production, only .output/ exists — serve uploads from there.
+        // In dev, Vite serves from public/ directly.
+        const uploadsBase = process.env.UPLOAD_DIR
+          ?? (process.env.NODE_ENV === 'production'
+            ? join(process.cwd(), '.output', 'public', 'uploads')
+            : join(process.cwd(), 'public', 'uploads'))
+        const uploadsDir = uploadsBase
         await mkdir(uploadsDir, { recursive: true })
 
         const safeName = `${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
