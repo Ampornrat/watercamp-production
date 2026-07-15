@@ -32,6 +32,9 @@ dist-ssr
 adminer.php
 mcp-server/
 
+# Uploaded files (now stored in Supabase Storage, not local disk)
+public/uploads/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
