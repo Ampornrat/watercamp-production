@@ -3,7 +3,7 @@ import { LogIn, LogOut, User } from "lucide-react";
 import hiiLogo from "@/assets/hii-logo-transparent.png";
 import unLogo from "@/assets/un-global-compact-transparent.png";
 import dctLogo from "@/assets/dct-logo.png";
-import nsaLogo from "@/assets/aov-logo.png";
+import nsaLogo from "@/assets/nsa-logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 
