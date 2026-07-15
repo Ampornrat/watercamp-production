@@ -2,8 +2,8 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { getSession } from "@/lib/auth.server";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
-import { Plus, Pencil, Trash2, Send, ArrowUpDown, ArrowUp, ArrowDown, Download } from "lucide-react";
+import { useState, useRef } from "react";
+import { Plus, Pencil, Trash2, Send, ArrowUpDown, ArrowUp, ArrowDown, Download, Loader2, Paperclip, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -85,6 +85,27 @@ function Admin() {
   const [sendDialog, setSendDialog] = useState<null | { id: string; email: string; name: string; training_id: string; training_title: string }>(null);
   const [pickedSurvey, setPickedSurvey] = useState<string>("__default__");
   const [regSort, setRegSort] = useState<{ col: 'guest_name' | 'training_title' | 'institute_name'; dir: 'asc' | 'desc' } | null>(null);
+
+  const [uploadingField, setUploadingField] = useState<string | null>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const attachInputRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
+
+  async function uploadFile(file: File, field: string): Promise<{ url: string; name: string } | null> {
+    setUploadingField(field);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+      const json = await res.json();
+      if (!res.ok) { toast.error(json.error ?? 'อัปโหลดไม่สำเร็จ'); return null; }
+      return json as { url: string; name: string };
+    } catch {
+      toast.error('อัปโหลดไม่สำเร็จ');
+      return null;
+    } finally {
+      setUploadingField(null);
+    }
+  }
 
   const emptySessionForm = { region: '' as typeof REGIONS[number], start_datetime: '', end_datetime: '', location: '', online_url: '', capacity: 30 };
   const [sessionForm, setSessionForm] = useState(emptySessionForm);
@@ -517,8 +538,27 @@ function Admin() {
               <div className="flex items-center gap-2"><input type="checkbox" id="req-contest" checked={form.required_for_contest} onChange={(e) => setForm({ ...form, required_for_contest: e.target.checked })} /><Label htmlFor="req-contest">หลักสูตรที่ต้องผ่านสำหรับการประกวด</Label></div>
             </div>
             <div className="md:col-span-2">
-              <Label>รูปหน้าปก (URL)</Label>
-              <Input value={form.cover_image_url} onChange={(e) => setForm({ ...form, cover_image_url: e.target.value })} placeholder="https://..." />
+              <Label>รูปหน้าปก</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                  const file = e.target.files?.[0]; if (!file) return;
+                  const res = await uploadFile(file, 'cover');
+                  if (res) setForm((f) => ({ ...f, cover_image_url: res.url }));
+                  e.target.value = '';
+                }} />
+                <Button type="button" variant="outline" size="sm" disabled={uploadingField === 'cover'} onClick={() => coverInputRef.current?.click()} className="gap-1.5">
+                  {uploadingField === 'cover' ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
+                  เลือกรูป
+                </Button>
+                {form.cover_image_url && (
+                  <a href={form.cover_image_url} target="_blank" rel="noopener noreferrer" className="text-xs text-teal underline truncate max-w-xs">
+                    {form.cover_image_url.split('/').pop()}
+                  </a>
+                )}
+                {form.cover_image_url && (
+                  <Button type="button" variant="ghost" size="sm" className="text-xs text-destructive px-1" onClick={() => setForm((f) => ({ ...f, cover_image_url: '' }))}>ลบ</Button>
+                )}
+              </div>
             </div>
             <div className="md:col-span-2">
               <Label>Link สำหรับเข้าเรียน Online (URL)</Label>
@@ -529,16 +569,27 @@ function Admin() {
               {([1, 2, 3] as const).map((n) => {
                 const urlKey = `attachment_${n}_url` as keyof TrainingForm;
                 const nameKey = `attachment_${n}_name` as keyof TrainingForm;
+                const fieldKey = `attach${n}`;
                 return (
-                  <div key={n} className="grid gap-2 md:grid-cols-2">
-                    <div>
-                      <Label className="text-xs text-muted-foreground">เอกสาร {n} — ชื่อไฟล์</Label>
-                      <Input value={form[nameKey] as string} onChange={(e) => setForm({ ...form, [nameKey]: e.target.value })} placeholder={`เช่น คู่มือ${n}.pdf`} />
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">เอกสาร {n} — URL</Label>
-                      <Input value={form[urlKey] as string} onChange={(e) => setForm({ ...form, [urlKey]: e.target.value })} placeholder="https://..." />
-                    </div>
+                  <div key={n} className="flex items-center gap-2">
+                    <input ref={attachInputRefs[n - 1]} type="file" className="hidden" onChange={async (e) => {
+                      const file = e.target.files?.[0]; if (!file) return;
+                      const res = await uploadFile(file, fieldKey);
+                      if (res) setForm((f) => ({ ...f, [urlKey]: res.url, [nameKey]: res.name }));
+                      e.target.value = '';
+                    }} />
+                    <Button type="button" variant="outline" size="sm" disabled={uploadingField === fieldKey} onClick={() => attachInputRefs[n - 1].current?.click()} className="gap-1.5 shrink-0">
+                      {uploadingField === fieldKey ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+                      เอกสาร {n}
+                    </Button>
+                    {form[nameKey] ? (
+                      <span className="text-xs text-muted-foreground truncate max-w-xs">{form[nameKey] as string}</span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground/50">ยังไม่ได้แนบไฟล์</span>
+                    )}
+                    {form[nameKey] && (
+                      <Button type="button" variant="ghost" size="sm" className="text-xs text-destructive px-1 shrink-0" onClick={() => setForm((f) => ({ ...f, [urlKey]: '', [nameKey]: '' }))}>ลบ</Button>
+                    )}
                   </div>
                 );
               })}
