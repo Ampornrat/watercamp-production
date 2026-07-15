@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { GraduationCap } from "lucide-react";
-import nsaLogo from "@/assets/nsa-logo.png";
+import nsaLogo from "@/assets/aov-logo.png";
 import unLogo from "@/assets/un-global-compact-transparent.png";
 import dctLogo from "@/assets/dct-logo.png";
 import hiiLogo from "@/assets/hii-logo-transparent.png";
