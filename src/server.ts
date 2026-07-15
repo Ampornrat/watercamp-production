@@ -47,6 +47,8 @@ function applyCacheControl(response: Response, url: URL): Response {
 
   if (pathname.startsWith("/api/")) {
     cacheControl = "no-store";
+  } else if (pathname.startsWith("/uploads/")) {
+    cacheControl = "public, max-age=86400, must-revalidate";
   } else if (
     pathname.match(/\.(js|css|woff2?|ttf|eot)$/) ||
     pathname.startsWith("/_assets/") ||

@@ -1,15 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { createClient } from '@supabase/supabase-js'
+import { writeFile, mkdir } from 'fs/promises'
+import { join } from 'path'
 import pool from '@/lib/db.server'
-
-const BUCKET = 'uploads'
-
-function getStorageClient() {
-  const url = process.env.SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key) throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required')
-  return createClient(url, key)
-}
 
 export const Route = createFileRoute('/api/admin/upload')({
   server: {
@@ -41,29 +33,14 @@ export const Route = createFileRoute('/api/admin/upload')({
         const MAX_SIZE = 50 * 1024 * 1024
         if (file.size > MAX_SIZE) return Response.json({ error: 'ไฟล์ต้องไม่เกิน 50MB' }, { status: 400 })
 
+        const uploadsDir = join(process.cwd(), 'public', 'uploads')
+        await mkdir(uploadsDir, { recursive: true })
+
         const safeName = `${Date.now()}-${file.name.replace(/[^\w.\-]/g, '_')}`
         const buffer = Buffer.from(await file.arrayBuffer())
+        await writeFile(join(uploadsDir, safeName), buffer)
 
-        let supabase: ReturnType<typeof createClient>
-        try {
-          supabase = getStorageClient()
-        } catch {
-          return Response.json({ error: 'Storage not configured' }, { status: 500 })
-        }
-
-        const { error } = await supabase.storage.from(BUCKET).upload(safeName, buffer, {
-          contentType: file.type || 'application/octet-stream',
-          upsert: false,
-        })
-
-        if (error) {
-          console.error('Supabase Storage upload error:', error)
-          return Response.json({ error: 'อัปโหลดไฟล์ไม่สำเร็จ' }, { status: 500 })
-        }
-
-        const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(safeName)
-
-        return Response.json({ url: publicUrl, name: file.name })
+        return Response.json({ url: `/uploads/${safeName}`, name: file.name })
       },
     },
   },
