@@ -1,9 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { LogIn, LogOut, User } from "lucide-react";
 import hiiLogo from "@/assets/hii-logo-transparent.png";
-import unLogo from "@/assets/un-global-compact-transparent.png";
-import dctLogo from "@/assets/dct-logo.png";
 import nsaLogo from "@/assets/nsa-logo.png";
+import gcntLogo from "@/assets/gcnt-logo.png";
+import dldLogo from "@/assets/dld-logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 
@@ -16,8 +16,8 @@ export function SiteHeader() {
         <Link to="/" className="flex flex-col items-start leading-tight">
           <div className="mb-2 flex items-center gap-3 px-3 py-1.5">
             <img src={hiiLogo} alt="HII" className="h-10 w-10 object-contain" />
-            <img src={unLogo} alt="UN Global Compact" className="h-10 w-auto object-contain" />
-            <img src={dctLogo} alt="DCT" className="h-10 w-auto object-contain" />
+            <img src={gcntLogo} alt="Global Compact Network Thailand" className="h-10 w-auto object-contain" />
+            <img src={dldLogo} alt="DLD" className="h-10 w-auto object-contain" />
             <img src={nsaLogo} alt="NSA" className="h-10 w-auto object-contain" />
           </div>
           <span className="font-heading text-lg font-extrabold uppercase tracking-tight text-white">
