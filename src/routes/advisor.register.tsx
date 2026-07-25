@@ -175,7 +175,7 @@ function AdvisorRegisterPage() {
         </Link>
 
         <div className="mx-auto max-w-2xl">
-          <h1 className="text-2xl font-bold text-foreground md:text-3xl">ลงทะเบียนสถาบัน</h1>
+          <h1 className="text-xl font-bold text-foreground md:text-2xl lg:text-3xl">ลงทะเบียนสถาบัน</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             เลือกสถาบันของท่านและยืนยันการเข้าร่วมโครงการ
           </p>

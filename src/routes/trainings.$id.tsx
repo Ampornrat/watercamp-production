@@ -272,7 +272,7 @@ function TrainingDetail() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <SiteHeader />
-      <div className="container mx-auto flex-1 px-4 py-8">
+      <div className="container mx-auto flex-1 px-4 py-6 md:py-8">
         <Link to="/trainings" className="mb-4 inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="mr-1 h-4 w-4" />กลับไปรายการหลักสูตร
         </Link>
@@ -286,14 +286,14 @@ function TrainingDetail() {
               ) : (
                 <div className="h-48 bg-gradient-primary md:h-64" />
               )}
-              <div className="p-6 md:p-8">
+              <div className="p-4 md:p-6 lg:p-8">
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                   {isCore
                     ? <Badge>หลักสูตรหลัก</Badge>
                     : <Badge variant="outline">หลักสูตรเสริมทักษะ</Badge>}
                   {training.category && <Badge variant="secondary">{training.category}</Badge>}
                 </div>
-                <h1 className="text-2xl font-bold text-foreground md:text-3xl">{training.title}</h1>
+                <h1 className="text-xl font-bold text-foreground md:text-2xl lg:text-3xl">{training.title}</h1>
                 {isElective && (
                   <p className="mt-3 text-sm text-muted-foreground">
                     <Lock className="mr-1 inline h-3.5 w-3.5" />

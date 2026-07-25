@@ -43,11 +43,11 @@ function TrainingsList() {
       <SiteHeader />
       <div className="container mx-auto flex-1 px-4 py-10">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">หลักสูตรฝึกอบรม</h1>
+          <h1 className="text-2xl font-bold text-foreground md:text-3xl">หลักสูตรฝึกอบรม</h1>
           <p className="mt-1 text-muted-foreground">เลือกหลักสูตรที่สนใจและลงทะเบียนเข้าร่วม</p>
         </div>
 
-        <div className="relative mb-6 max-w-md">
+        <div className="relative mb-6 w-full md:max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="ค้นหาหลักสูตร..." value={q} onChange={(e) => setQ(e.target.value)} className="pl-9" />
         </div>

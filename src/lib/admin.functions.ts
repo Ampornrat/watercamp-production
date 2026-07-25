@@ -141,9 +141,10 @@ export const updateAdminCompletion = createServerFn({ method: 'POST' })
 export const getAdminInstitutes = createServerFn({ method: 'GET' }).handler(async () => {
   const pool = (await import('@/lib/db.server')).default;
   const [rows] = await pool.query(
-    `SELECT id, COALESCE(institute, name) AS name, region FROM institutes_tab ORDER BY COALESCE(institute, name) ASC`
+    `SELECT id, COALESCE(institute, name) AS name, region, coordinator_name, link_url, link_url_logo
+     FROM institutes_tab ORDER BY COALESCE(institute, name) ASC`
   );
-  return rows as { id: string; name: string; region: string | null }[];
+  return rows as { id: string; name: string; region: string | null; coordinator_name: string | null; link_url: string | null; link_url_logo: string | null }[];
 });
 
 export const updateInstituteRegion = createServerFn({ method: 'POST' })
@@ -151,5 +152,43 @@ export const updateInstituteRegion = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const pool = (await import('@/lib/db.server')).default;
     await pool.query(`UPDATE institutes_tab SET region = ? WHERE id = ?`, [data.region || null, data.id]);
+    return { ok: true };
+  });
+
+const InstituteFormSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().min(1).max(500),
+  region: z.string().nullable(),
+  coordinator_name: z.string().max(255).nullable().optional(),
+  link_url: z.string().max(2000).nullable().optional(),
+  link_url_logo: z.string().max(2000).nullable().optional(),
+});
+
+export const saveAdminInstitute = createServerFn({ method: 'POST' })
+  .inputValidator((input: unknown) => InstituteFormSchema.parse(input))
+  .handler(async ({ data }) => {
+    const pool = (await import('@/lib/db.server')).default;
+    if (data.id) {
+      await pool.query(
+        `UPDATE institutes_tab SET institute=?, region=?, coordinator_name=?, link_url=?, link_url_logo=?, updated_at=NOW() WHERE id=?`,
+        [data.name, data.region || null, data.coordinator_name || null, data.link_url || null, data.link_url_logo || null, data.id]
+      );
+      return { id: data.id };
+    } else {
+      const id = randomUUID();
+      await pool.query(
+        `INSERT INTO institutes_tab (id, institute, region, coordinator_name, link_url, link_url_logo, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        [id, data.name, data.region || null, data.coordinator_name || null, data.link_url || null, data.link_url_logo || null]
+      );
+      return { id };
+    }
+  });
+
+export const deleteAdminInstitute = createServerFn({ method: 'POST' })
+  .inputValidator((id: unknown) => id as string)
+  .handler(async ({ data: id }) => {
+    const pool = (await import('@/lib/db.server')).default;
+    await pool.query(`DELETE FROM institutes_tab WHERE id = ?`, [id]);
     return { ok: true };
   });

@@ -27,18 +27,18 @@ function ContestRulesPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main className="container mx-auto px-4 py-10">
+      <main className="container mx-auto px-4 py-8 md:py-10">
         <div className="mx-auto max-w-5xl">
-          <div className="mb-8 text-center">
+          <div className="mb-6 text-center md:mb-8">
             <div className="inline-flex items-center gap-2 rounded-full bg-teal/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-teal">
               <Trophy className="h-4 w-4" /> #ThaiWaterChallenge
             </div>
-            <h1 className="mt-3 font-heading text-4xl font-extrabold text-foreground">การประกวดสื่อ ThaiWater Challenge</h1>
+            <h1 className="mt-3 font-heading text-2xl font-extrabold text-foreground md:text-3xl lg:text-4xl">การประกวดสื่อ ThaiWater Challenge</h1>
             <p className="mt-2 text-muted-foreground">เปลี่ยนผู้ผ่านการอบรมให้เป็น Water Challenge ประจำภูมิภาค ส่งต่อความรู้ผ่านวิดีโอสั้น</p>
           </div>
 
-          <Card className="mb-6 p-6">
-            <h2 className="mb-4 font-heading text-2xl font-bold">กฎเกณฑ์และกติการ่วมกิจกรรม</h2>
+          <Card className="mb-6 p-4 md:p-6">
+            <h2 className="mb-4 font-heading text-xl font-bold md:text-2xl">กฎเกณฑ์และกติการ่วมกิจกรรม</h2>
             <div className="grid gap-4 md:grid-cols-2">
               {RULES.map((r) => (
                 <div key={r.title} className="flex gap-3 rounded-lg border bg-muted/30 p-4">
@@ -52,9 +52,9 @@ function ContestRulesPage() {
             </div>
           </Card>
 
-          <Card className="mb-8 p-6">
-            <h2 className="mb-4 font-heading text-2xl font-bold">เกณฑ์การตัดสิน</h2>
-            <div className="grid gap-4 md:grid-cols-3">
+          <Card className="mb-6 p-4 md:mb-8 md:p-6">
+            <h2 className="mb-4 font-heading text-xl font-bold md:text-2xl">เกณฑ์การตัดสิน</h2>
+            <div className="grid gap-4 sm:grid-cols-3">
               {CRITERIA.map((c) => (
                 <div key={c.label} className="rounded-lg border bg-gradient-to-br from-navy/5 to-teal/10 p-5 text-center">
                   <div className="font-heading text-4xl font-extrabold text-teal">{c.pct}%</div>
@@ -65,7 +65,7 @@ function ContestRulesPage() {
             </div>
           </Card>
 
-          <Card className="border-teal/40 bg-gradient-to-br from-navy/5 to-teal/10 p-6">
+          <Card className="border-teal/40 bg-gradient-to-br from-navy/5 to-teal/10 p-4 md:p-6">
             <h3 className="font-heading text-xl font-bold">เงื่อนไขผู้สมัคร</h3>
             <p className="mt-2 text-sm text-muted-foreground">
               เปิดรับเฉพาะผู้ที่ผ่านการฝึกอบรมในโครงการแล้วเท่านั้น โดยจัดทีมร่วมกับสมาชิกที่ผ่านการอบรมจากสถาบันเดียวกัน

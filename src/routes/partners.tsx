@@ -81,10 +81,10 @@ function PartnersPage() {
       style={{ background: "linear-gradient(180deg, oklch(0.9 0.07 215), oklch(0.86 0.08 190))" }}
     >
       <SiteHeader />
-      <main className="container mx-auto max-w-6xl px-4 py-12">
-        <header className="mb-10 space-y-3">
+      <main className="container mx-auto max-w-6xl px-4 py-8 md:py-12">
+        <header className="mb-8 space-y-3 md:mb-10">
           <p className="text-xs font-semibold uppercase tracking-wider text-teal">PARTNERS</p>
-          <h1 className="font-heading text-3xl font-bold text-navy md:text-4xl">
+          <h1 className="font-heading text-2xl font-bold text-navy md:text-3xl lg:text-4xl">
             กรอบความร่วมมือการดำเนินการกิจกรรม "สอนน้องรู้น้ำ"
           </h1>
           <p className="max-w-3xl text-base leading-relaxed text-muted-foreground">

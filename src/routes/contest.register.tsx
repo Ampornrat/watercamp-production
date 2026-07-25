@@ -112,14 +112,14 @@ function ContestRegisterPage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main className="container mx-auto px-4 py-10">
+      <main className="container mx-auto px-4 py-8 md:py-10">
         <div className="mx-auto max-w-3xl">
           <Link to="/contest" className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" /> กลับไปกติกา
           </Link>
 
-          <Card className="p-6">
-            <div className="mb-6 flex items-center gap-3">
+          <Card className="p-4 md:p-6">
+            <div className="mb-5 flex items-center gap-3 md:mb-6">
               <div className="rounded-lg bg-teal/15 p-2 text-teal"><Users className="h-6 w-6" /></div>
               <div>
                 <h1 className="font-heading text-2xl font-extrabold">ลงทะเบียนทีมส่งผลงาน</h1>

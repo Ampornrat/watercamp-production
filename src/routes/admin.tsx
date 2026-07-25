@@ -30,6 +30,8 @@ import {
   updateAdminCompletion,
   getAdminInstitutes,
   updateInstituteRegion,
+  saveAdminInstitute,
+  deleteAdminInstitute,
 } from "@/lib/admin.functions";
 import { getSessionsForTraining, saveAdminSession, deleteAdminSession, REGIONS } from "@/lib/training-sessions.functions";
 import { notifyApproval } from "@/lib/registration-notify.functions";
@@ -90,6 +92,12 @@ function Admin() {
   const coverInputRef = useRef<HTMLInputElement>(null);
   const attachInputRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
 
+  type InstituteForm = { id?: string; name: string; region: string; coordinator_name: string; link_url: string; link_url_logo: string };
+  const emptyInstitute: InstituteForm = { name: "", region: "", coordinator_name: "", link_url: "", link_url_logo: "" };
+  const [instituteDialog, setInstituteDialog] = useState(false);
+  const [instituteForm, setInstituteForm] = useState<InstituteForm>(emptyInstitute);
+  const [instituteSearch, setInstituteSearch] = useState("");
+
   async function uploadFile(file: File, field: string): Promise<{ url: string; name: string } | null> {
     setUploadingField(field);
     try {
@@ -124,6 +132,8 @@ function Admin() {
   const deleteSessionFn = useServerFn(deleteAdminSession);
   const getInstitutesFn = useServerFn(getAdminInstitutes);
   const updateInstituteRegionFn = useServerFn(updateInstituteRegion);
+  const saveInstituteFn = useServerFn(saveAdminInstitute);
+  const deleteInstituteFn = useServerFn(deleteAdminInstitute);
   const notifyApprovalFn = useServerFn(notifyApproval);
 
   const trainings = useQuery({ queryKey: ["admin-trainings"], queryFn: () => getTrainingsFn() });
@@ -190,6 +200,23 @@ function Admin() {
   const deleteSession = useMutation({
     mutationFn: (id: string) => deleteSessionFn({ data: { id } }),
     onSuccess: () => { toast.success("ลบรอบแล้ว"); qc.invalidateQueries({ queryKey: ["admin-sessions", form.id] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const saveInstitute = useMutation({
+    mutationFn: (f: InstituteForm) => saveInstituteFn({ data: { ...f, region: f.region || null, coordinator_name: f.coordinator_name || null, link_url: f.link_url || null, link_url_logo: f.link_url_logo || null } }),
+    onSuccess: () => {
+      toast.success("บันทึกแล้ว");
+      setInstituteDialog(false);
+      setInstituteForm(emptyInstitute);
+      qc.invalidateQueries({ queryKey: ["admin-institutes"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteInstitute = useMutation({
+    mutationFn: (id: string) => deleteInstituteFn({ data: id }),
+    onSuccess: () => { toast.success("ลบแล้ว"); qc.invalidateQueries({ queryKey: ["admin-institutes"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -443,22 +470,48 @@ function Admin() {
           </TabsContent>
 
           <TabsContent value="institutes" className="mt-4">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="relative w-full sm:max-w-xs">
+                <Input
+                  placeholder="ค้นหาสถาบัน..."
+                  value={instituteSearch}
+                  onChange={(e) => setInstituteSearch(e.target.value)}
+                  className="pl-4"
+                />
+              </div>
+              <Button
+                onClick={() => { setInstituteForm(emptyInstitute); setInstituteDialog(true); }}
+                className="bg-gradient-primary shrink-0"
+              >
+                <Plus className="mr-1 h-4 w-4" />เพิ่มสถาบัน
+              </Button>
+            </div>
             <Card className="p-0">
-              <div className="border-b px-6 py-4">
-                <h2 className="font-semibold">สถาบัน ({(institutes.data ?? []).length})</h2>
-                <p className="mt-1 text-xs text-muted-foreground">กำหนดภาคของแต่ละสถาบันเพื่อให้ระบบแสดงรอบการเรียนที่ตรงกัน</p>
+              <div className="border-b px-6 py-3 flex items-center justify-between">
+                <div>
+                  <h2 className="font-semibold">สถาบันทั้งหมด ({(institutes.data ?? []).length})</h2>
+                  <p className="mt-0.5 text-xs text-muted-foreground">จัดการสถาบันในเครือข่าย เพิ่ม แก้ไข และลบข้อมูล</p>
+                </div>
               </div>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>ชื่อสถาบัน</TableHead>
-                    <TableHead className="w-48">ภาค</TableHead>
+                    <TableHead>ผู้ประสานงาน</TableHead>
+                    <TableHead className="w-44">ภาค</TableHead>
+                    <TableHead className="w-24 text-right"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(institutes.data ?? []).map((inst: any) => (
+                  {(institutes.data ?? [])
+                    .filter((inst: any) =>
+                      !instituteSearch || inst.name?.toLowerCase().includes(instituteSearch.toLowerCase()) ||
+                      inst.coordinator_name?.toLowerCase().includes(instituteSearch.toLowerCase())
+                    )
+                    .map((inst: any) => (
                     <TableRow key={inst.id}>
                       <TableCell className="font-medium">{inst.name}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{inst.coordinator_name || "-"}</TableCell>
                       <TableCell>
                         <Select
                           value={inst.region ?? "__none__"}
@@ -483,8 +536,43 @@ function Admin() {
                           </SelectContent>
                         </Select>
                       </TableCell>
+                      <TableCell className="text-right space-x-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setInstituteForm({
+                              id: inst.id,
+                              name: inst.name ?? "",
+                              region: inst.region ?? "",
+                              coordinator_name: inst.coordinator_name ?? "",
+                              link_url: inst.link_url ?? "",
+                              link_url_logo: inst.link_url_logo ?? "",
+                            });
+                            setInstituteDialog(true);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => {
+                            if (confirm(`ลบสถาบัน "${inst.name}" ?\n(จะไม่สามารถลบได้หากมีข้อมูลที่เชื่อมโยงอยู่)`))
+                              deleteInstitute.mutate(inst.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
+                  {(institutes.data ?? []).length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">ยังไม่มีสถาบัน</TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </Card>
@@ -503,6 +591,83 @@ function Admin() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Institute Add/Edit Dialog */}
+      <Dialog open={instituteDialog} onOpenChange={(o) => { if (!o) { setInstituteDialog(false); setInstituteForm(emptyInstitute); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{instituteForm.id ? "แก้ไขสถาบัน" : "เพิ่มสถาบัน"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-2">
+            <div>
+              <Label htmlFor="inst-name">ชื่อสถาบัน *</Label>
+              <Input
+                id="inst-name"
+                value={instituteForm.name}
+                onChange={(e) => setInstituteForm({ ...instituteForm, name: e.target.value })}
+                placeholder="เช่น มหาวิทยาลัยเชียงใหม่"
+              />
+            </div>
+            <div>
+              <Label htmlFor="inst-region">ภาค</Label>
+              <Select
+                value={instituteForm.region || "__none__"}
+                onValueChange={(v) => setInstituteForm({ ...instituteForm, region: v === "__none__" ? "" : v })}
+              >
+                <SelectTrigger id="inst-region">
+                  <SelectValue placeholder="ไม่ระบุ" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">ไม่ระบุ</SelectItem>
+                  {REGIONS.map((r) => (
+                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="inst-coordinator">ผู้ประสานงาน</Label>
+              <Input
+                id="inst-coordinator"
+                value={instituteForm.coordinator_name}
+                onChange={(e) => setInstituteForm({ ...instituteForm, coordinator_name: e.target.value })}
+                placeholder="ชื่อผู้ประสานงานของสถาบัน"
+              />
+            </div>
+            <div>
+              <Label htmlFor="inst-url">เว็บไซต์สถาบัน (URL)</Label>
+              <Input
+                id="inst-url"
+                value={instituteForm.link_url}
+                onChange={(e) => setInstituteForm({ ...instituteForm, link_url: e.target.value })}
+                placeholder="https://..."
+              />
+            </div>
+            <div>
+              <Label htmlFor="inst-logo">URL โลโก้</Label>
+              <Input
+                id="inst-logo"
+                value={instituteForm.link_url_logo}
+                onChange={(e) => setInstituteForm({ ...instituteForm, link_url_logo: e.target.value })}
+                placeholder="https://...logo.png"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setInstituteDialog(false); setInstituteForm(emptyInstitute); }}>ยกเลิก</Button>
+            <Button
+              onClick={() => {
+                if (!instituteForm.name.trim()) { toast.error("กรุณากรอกชื่อสถาบัน"); return; }
+                saveInstitute.mutate(instituteForm);
+              }}
+              disabled={saveInstitute.isPending}
+              className="bg-gradient-primary"
+            >
+              {saveInstitute.isPending ? "กำลังบันทึก..." : "บันทึก"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!sendDialog} onOpenChange={(o) => !o && setSendDialog(null)}>
         <DialogContent>

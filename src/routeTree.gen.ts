@@ -20,6 +20,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TrainingsIndexRouteImport } from './routes/trainings.index'
 import { Route as ContestIndexRouteImport } from './routes/contest.index'
+import { Route as UploadsNameRouteImport } from './routes/uploads.$name'
 import { Route as TrainingsIdRouteImport } from './routes/trainings.$id'
 import { Route as SurveyTokenRouteImport } from './routes/survey.$token'
 import { Route as StudentProfileRouteImport } from './routes/student.profile'
@@ -95,6 +96,11 @@ const TrainingsIndexRoute = TrainingsIndexRouteImport.update({
 const ContestIndexRoute = ContestIndexRouteImport.update({
   id: '/contest/',
   path: '/contest/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UploadsNameRoute = UploadsNameRouteImport.update({
+  id: '/uploads/$name',
+  path: '/uploads/$name',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TrainingsIdRoute = TrainingsIdRouteImport.update({
@@ -229,6 +235,7 @@ export interface FileRoutesByFullPath {
   '/student/profile': typeof StudentProfileRoute
   '/survey/$token': typeof SurveyTokenRoute
   '/trainings/$id': typeof TrainingsIdRoute
+  '/uploads/$name': typeof UploadsNameRoute
   '/contest/': typeof ContestIndexRoute
   '/trainings/': typeof TrainingsIndexRoute
   '/api/admin/upload': typeof ApiAdminUploadRoute
@@ -263,6 +270,7 @@ export interface FileRoutesByTo {
   '/student/profile': typeof StudentProfileRoute
   '/survey/$token': typeof SurveyTokenRoute
   '/trainings/$id': typeof TrainingsIdRoute
+  '/uploads/$name': typeof UploadsNameRoute
   '/contest': typeof ContestIndexRoute
   '/trainings': typeof TrainingsIndexRoute
   '/api/admin/upload': typeof ApiAdminUploadRoute
@@ -298,6 +306,7 @@ export interface FileRoutesById {
   '/student/profile': typeof StudentProfileRoute
   '/survey/$token': typeof SurveyTokenRoute
   '/trainings/$id': typeof TrainingsIdRoute
+  '/uploads/$name': typeof UploadsNameRoute
   '/contest/': typeof ContestIndexRoute
   '/trainings/': typeof TrainingsIndexRoute
   '/api/admin/upload': typeof ApiAdminUploadRoute
@@ -334,6 +343,7 @@ export interface FileRouteTypes {
     | '/student/profile'
     | '/survey/$token'
     | '/trainings/$id'
+    | '/uploads/$name'
     | '/contest/'
     | '/trainings/'
     | '/api/admin/upload'
@@ -368,6 +378,7 @@ export interface FileRouteTypes {
     | '/student/profile'
     | '/survey/$token'
     | '/trainings/$id'
+    | '/uploads/$name'
     | '/contest'
     | '/trainings'
     | '/api/admin/upload'
@@ -402,6 +413,7 @@ export interface FileRouteTypes {
     | '/student/profile'
     | '/survey/$token'
     | '/trainings/$id'
+    | '/uploads/$name'
     | '/contest/'
     | '/trainings/'
     | '/api/admin/upload'
@@ -437,6 +449,7 @@ export interface RootRouteChildren {
   StudentProfileRoute: typeof StudentProfileRoute
   SurveyTokenRoute: typeof SurveyTokenRoute
   TrainingsIdRoute: typeof TrainingsIdRoute
+  UploadsNameRoute: typeof UploadsNameRoute
   ContestIndexRoute: typeof ContestIndexRoute
   TrainingsIndexRoute: typeof TrainingsIndexRoute
   ApiAdminUploadRoute: typeof ApiAdminUploadRoute
@@ -527,6 +540,13 @@ declare module '@tanstack/react-router' {
       path: '/contest'
       fullPath: '/contest/'
       preLoaderRoute: typeof ContestIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/uploads/$name': {
+      id: '/uploads/$name'
+      path: '/uploads/$name'
+      fullPath: '/uploads/$name'
+      preLoaderRoute: typeof UploadsNameRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/trainings/$id': {
@@ -701,6 +721,7 @@ const rootRouteChildren: RootRouteChildren = {
   StudentProfileRoute: StudentProfileRoute,
   SurveyTokenRoute: SurveyTokenRoute,
   TrainingsIdRoute: TrainingsIdRoute,
+  UploadsNameRoute: UploadsNameRoute,
   ContestIndexRoute: ContestIndexRoute,
   TrainingsIndexRoute: TrainingsIndexRoute,
   ApiAdminUploadRoute: ApiAdminUploadRoute,

@@ -51,10 +51,10 @@ function AboutPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       <SiteHeader />
-      <main className="container mx-auto px-4 py-10">
-        <header className="mb-10 max-w-4xl">
+      <main className="container mx-auto px-4 py-8 md:py-10">
+        <header className="mb-8 max-w-4xl md:mb-10">
           <p className="text-sm font-semibold uppercase tracking-wider text-teal">เกี่ยวกับโครงการ</p>
-          <h1 className="mt-2 font-heading text-4xl font-extrabold text-navy md:text-5xl">
+          <h1 className="mt-2 font-heading text-3xl font-extrabold text-navy md:text-4xl lg:text-5xl">
             โครงการ Thai Water Challenge
           </h1>
           <p className="mt-4 text-lg text-muted-foreground">
@@ -66,7 +66,7 @@ function AboutPage() {
         </header>
 
         <div className="grid gap-8 lg:grid-cols-[1fr_280px]">
-          <Card className="space-y-10 p-8">
+          <Card className="space-y-8 p-5 md:space-y-10 md:p-8">
             <Section title="1. หลักการและเหตุผล">
               <p>
                 ประเทศไทยเผชิญปัญหาด้านน้ำอย่างต่อเนื่อง ทั้งน้ำท่วม ภัยแล้ง น้ำเสีย

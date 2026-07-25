@@ -39,7 +39,7 @@ function Index() {
       <SiteHeader />
 
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-hero pb-44 pt-24">
+      <section className="relative overflow-hidden bg-gradient-hero pb-32 pt-16 md:pb-44 md:pt-24">
         {/* Decorative wave */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 opacity-20">
           <svg viewBox="0 0 1440 320" className="h-full w-full text-teal" fill="currentColor">
@@ -48,27 +48,27 @@ function Index() {
         </div>
 
         <div className="container relative mx-auto px-4 text-center">
-          <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-teal/30 bg-teal/10 px-4 py-1.5">
+          <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-teal/30 bg-teal/10 px-3 py-1.5 md:px-4">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-teal" />
             </span>
-            <span className="text-xs font-bold uppercase tracking-widest text-teal">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-teal md:text-xs">
               National Hydroinformatics Data Center
             </span>
           </div>
 
-          <h1 className="mx-auto mt-8 max-w-4xl font-heading text-5xl font-extrabold leading-[1.1] text-navy md:text-7xl">
+          <h1 className="mx-auto mt-6 max-w-4xl font-heading text-3xl font-extrabold leading-[1.1] text-navy md:mt-8 md:text-5xl lg:text-7xl">
             พัฒนาทักษะด้าน
             <br />
             <span className="text-gradient-teal">ข้อมูลน้ำระดับชาติ</span>
           </h1>
 
-          <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-teal md:text-xl">
+          <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-teal md:mt-8 md:text-lg lg:text-xl">
             ลงทะเบียนเข้าร่วมหลักสูตรฝึกอบรมด้านเทคโนโลยีคลังข้อมูลน้ำ การวิเคราะห์ และการพยากรณ์ จากผู้เชี่ยวชาญระดับประเทศ เพื่ออนาคตที่ยั่งยืน
           </p>
 
-          <div className="mt-10 flex flex-wrap justify-center gap-4">
+          <div className="mt-8 flex flex-wrap justify-center gap-4 md:mt-10">
             <Link to="/trainings">
               <Button
                 size="lg"
@@ -83,7 +83,7 @@ function Index() {
       </section>
 
       {/* Floating stats */}
-      <section className="container relative z-10 mx-auto -mt-24 px-4">
+      <section className="container relative z-10 mx-auto -mt-16 px-4 md:-mt-24">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {[
             { icon: BookOpen, label: "หลักสูตรที่เปิดรับสมัคร", value: `${trainingsCount ?? 0}` },
@@ -107,10 +107,10 @@ function Index() {
       </section>
 
       {/* Featured trainings */}
-      <section className="container mx-auto px-4 pb-24 pt-24">
-        <div className="mb-12 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+      <section className="container mx-auto px-4 pb-16 pt-16 md:pb-24 md:pt-24">
+        <div className="mb-8 flex flex-col gap-4 md:mb-12 md:flex-row md:items-end md:justify-between">
           <div className="space-y-2">
-            <h2 className="font-heading text-3xl font-extrabold tracking-tight text-foreground md:text-4xl">
+            <h2 className="font-heading text-2xl font-extrabold tracking-tight text-foreground md:text-3xl lg:text-4xl">
               หลักสูตรที่เปิดรับสมัคร
             </h2>
             <p className="text-muted-foreground">เลือกหลักสูตรที่ตรงกับความสนใจและยกระดับทักษะของคุณ</p>
