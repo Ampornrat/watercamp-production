@@ -46,6 +46,9 @@ export function SiteHeader() {
           {isAdmin && (
             <Link to="/admin" className="text-sm font-medium text-teal transition-colors hover:text-teal/80">ผู้ดูแลระบบ</Link>
           )}
+          {isAdmin && (
+            <Link to="/report" className="text-sm font-medium text-teal transition-colors hover:text-teal/80">รายงานการลงทะเบียน</Link>
+          )}
           {isStudent && (
             <Link to="/student/dashboard" className="text-sm font-medium text-teal transition-colors hover:text-teal/80">แดชบอร์ดนักเรียน</Link>
           )}
@@ -109,6 +112,9 @@ export function SiteHeader() {
             )}
             {isAdmin && (
               <Link to="/admin" onClick={close} className="rounded-md px-3 py-2 text-sm font-medium text-teal hover:bg-white/10">ผู้ดูแลระบบ</Link>
+            )}
+            {isAdmin && (
+              <Link to="/report" onClick={close} className="rounded-md px-3 py-2 text-sm font-medium text-teal hover:bg-white/10">รายงานการลงทะเบียน</Link>
             )}
             {isStudent && (
               <Link to="/student/dashboard" onClick={close} className="rounded-md px-3 py-2 text-sm font-medium text-teal hover:bg-white/10">แดชบอร์ดนักเรียน</Link>
