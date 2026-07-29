@@ -20,6 +20,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SurveyDashboard } from "@/components/SurveyDashboard";
 import { SurveyBuilder } from "@/components/SurveyBuilder";
 import { CustomSurveyDashboard } from "@/components/CustomSurveyDashboard";
+import { ReportContent } from "@/routes/report";
 import {
   getAdminTrainings,
   getAdminRegistrations,
@@ -291,6 +292,7 @@ function Admin() {
             <TabsTrigger value="survey-builder">สร้างแบบสำรวจ</TabsTrigger>
             <TabsTrigger value="surveys">ผลสำรวจ (มาตรฐาน)</TabsTrigger>
             <TabsTrigger value="custom-surveys">ผลแบบสำรวจที่สร้าง</TabsTrigger>
+            <TabsTrigger value="report">รายงานการลงทะเบียน</TabsTrigger>
           </TabsList>
 
           <TabsContent value="trainings" className="mt-4">
@@ -588,6 +590,10 @@ function Admin() {
 
           <TabsContent value="custom-surveys" className="mt-4">
             <CustomSurveyDashboard />
+          </TabsContent>
+
+          <TabsContent value="report" className="mt-4">
+            <ReportContent />
           </TabsContent>
         </Tabs>
       </div>
