@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SetPasswordRouteImport } from './routes/set-password'
+import { Route as ReportRouteImport } from './routes/report'
 import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -56,6 +57,11 @@ const SignupRoute = SignupRouteImport.update({
 const SetPasswordRoute = SetPasswordRouteImport.update({
   id: '/set-password',
   path: '/set-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportRoute = ReportRouteImport.update({
+  id: '/report',
+  path: '/report',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PartnersRoute = PartnersRouteImport.update({
@@ -220,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/partners': typeof PartnersRoute
+  '/report': typeof ReportRoute
   '/set-password': typeof SetPasswordRoute
   '/signup': typeof SignupRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -255,6 +262,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/partners': typeof PartnersRoute
+  '/report': typeof ReportRoute
   '/set-password': typeof SetPasswordRoute
   '/signup': typeof SignupRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -291,6 +299,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/partners': typeof PartnersRoute
+  '/report': typeof ReportRoute
   '/set-password': typeof SetPasswordRoute
   '/signup': typeof SignupRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -328,6 +337,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/partners'
+    | '/report'
     | '/set-password'
     | '/signup'
     | '/unsubscribe'
@@ -363,6 +373,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/partners'
+    | '/report'
     | '/set-password'
     | '/signup'
     | '/unsubscribe'
@@ -398,6 +409,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/partners'
+    | '/report'
     | '/set-password'
     | '/signup'
     | '/unsubscribe'
@@ -434,6 +446,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   PartnersRoute: typeof PartnersRoute
+  ReportRoute: typeof ReportRoute
   SetPasswordRoute: typeof SetPasswordRoute
   SignupRoute: typeof SignupRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
@@ -484,6 +497,13 @@ declare module '@tanstack/react-router' {
       path: '/set-password'
       fullPath: '/set-password'
       preLoaderRoute: typeof SetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/report': {
+      id: '/report'
+      path: '/report'
+      fullPath: '/report'
+      preLoaderRoute: typeof ReportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/partners': {
@@ -706,6 +726,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   PartnersRoute: PartnersRoute,
+  ReportRoute: ReportRoute,
   SetPasswordRoute: SetPasswordRoute,
   SignupRoute: SignupRoute,
   UnsubscribeRoute: UnsubscribeRoute,
