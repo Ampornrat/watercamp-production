@@ -12,7 +12,7 @@ export type ReportFilter = z.infer<typeof FilterSchema>
 export interface ReportData {
   summary: { total: number; approved: number; pending: number; institutesCount: number }
   byCourse: { title: string; count: number }[]
-  byRegion: { region: string; count: number }[]
+  byRegion: { region: string; count: number; approved: number; pending: number; institutesCount: number }[]
   byStatus: { status: string; count: number }[]
   byInstitute: { institute_name: string; region: string; total: number; approved: number; pending: number }[]
 }
@@ -72,7 +72,12 @@ export const getReportData = createServerFn({ method: 'GET' })
     }))
 
     const [regionRows] = await pool.query(
-      `SELECT COALESCE(i.region, 'ไม่ระบุ') AS region, COUNT(r.id) AS count
+      `SELECT
+         COALESCE(i.region, 'ไม่ระบุ') AS region,
+         COUNT(r.id) AS count,
+         SUM(r.approval_status = 'approved') AS approved,
+         SUM(r.approval_status = 'pending') AS pending,
+         COUNT(DISTINCT r.institute_id) AS institutesCount
        FROM registrations r
        LEFT JOIN institutes_tab i ON i.id = r.institute_id
        ${where}
@@ -83,6 +88,9 @@ export const getReportData = createServerFn({ method: 'GET' })
     const byRegion = (regionRows as any[]).map((row) => ({
       region: row.region ?? 'ไม่ระบุ',
       count: Number(row.count),
+      approved: Number(row.approved ?? 0),
+      pending: Number(row.pending ?? 0),
+      institutesCount: Number(row.institutesCount ?? 0),
     }))
 
     const [statusRows] = await pool.query(

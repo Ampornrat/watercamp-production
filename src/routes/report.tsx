@@ -251,6 +251,41 @@ export function ReportContent() {
             </Card>
           </div>
 
+          {/* Region Table */}
+          <Card className="mb-6 p-5">
+            <h2 className="mb-4 text-sm font-semibold text-foreground">สรุปรายงานรายภาค</h2>
+            {data.byRegion.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">ไม่มีข้อมูล</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12 text-center">ลำดับ</TableHead>
+                      <TableHead>ภาค</TableHead>
+                      <TableHead className="text-right">จำนวนสถาบัน</TableHead>
+                      <TableHead className="text-right">จำนวนผู้ลงทะเบียน</TableHead>
+                      <TableHead className="text-right">อนุมัติแล้ว</TableHead>
+                      <TableHead className="text-right">รอการอนุมัติ</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.byRegion.map((row, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="text-center">{i + 1}</TableCell>
+                        <TableCell className="font-medium">{row.region}</TableCell>
+                        <TableCell className="text-right">{row.institutesCount}</TableCell>
+                        <TableCell className="text-right">{row.count}</TableCell>
+                        <TableCell className="text-right text-green-600">{row.approved}</TableCell>
+                        <TableCell className="text-right text-amber-600">{row.pending}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </Card>
+
           {/* Institute Table */}
           <Card className="p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
