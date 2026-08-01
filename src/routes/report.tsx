@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
 import { useQuery } from '@tanstack/react-query'
 import { useState, useCallback } from 'react'
-import { Loader2, Download, FileSpreadsheet, BarChart2 } from 'lucide-react'
+import { Loader2, Download, FileSpreadsheet, BarChart2, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -18,6 +18,7 @@ import { SiteHeader } from '@/components/SiteHeader'
 import { SiteFooter } from '@/components/SiteFooter'
 import { getSession } from '@/lib/auth.server'
 import { getReportData, getTrainingsForFilter, type ReportData } from '@/lib/report.functions'
+import { getAdvisorsReport, type AdvisorReportRow } from '@/lib/advisors.functions'
 
 export const Route = createFileRoute('/report')({
   head: () => ({ meta: [{ title: 'รายงานสถิติ' }] }),
@@ -332,6 +333,132 @@ export function ReportContent() {
           </Card>
         </>
       )}
+    </div>
+  )
+}
+
+export function AdvisorsReportContent() {
+  const getAdvisorsFn = useServerFn(getAdvisorsReport)
+  const [search, setSearch] = useState('')
+
+  const { data: advisors = [], isLoading } = useQuery({
+    queryKey: ['advisors-report'],
+    queryFn: () => getAdvisorsFn(),
+  })
+
+  const filtered = advisors.filter((a) => {
+    if (!search) return true
+    const q = search.toLowerCase()
+    return (
+      a.institute_name.toLowerCase().includes(q) ||
+      a.full_name.toLowerCase().includes(q) ||
+      a.faculty.toLowerCase().includes(q) ||
+      a.email.toLowerCase().includes(q)
+    )
+  })
+
+  const exportCSV = () => {
+    const rows = [
+      ['ลำดับ', 'ชื่อมหาวิทยาลัย/สถาบัน', 'ตำแหน่ง', 'ชื่อ-นามสกุล', 'คณะ/หน่วยงาน', 'อีเมล', 'เบอร์โทรศัพท์'],
+      ...filtered.map((a, i) => [
+        i + 1, a.institute_name, a.position, a.full_name, a.faculty, a.email, a.phone ?? '',
+      ]),
+    ]
+    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `รายงานอาจารย์ที่ปรึกษา_${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const exportExcel = async () => {
+    const XLSX = await import('xlsx')
+    const wb = XLSX.utils.book_new()
+    const ws = XLSX.utils.json_to_sheet(
+      filtered.map((a, i) => ({
+        ลำดับ: i + 1,
+        'ชื่อมหาวิทยาลัย/สถาบัน': a.institute_name,
+        ตำแหน่ง: a.position,
+        'ชื่อ-นามสกุล': a.full_name,
+        'คณะ/หน่วยงาน': a.faculty,
+        อีเมล: a.email,
+        เบอร์โทรศัพท์: a.phone ?? '',
+      }))
+    )
+    XLSX.utils.book_append_sheet(wb, ws, 'อาจารย์ที่ปรึกษา')
+    XLSX.writeFile(wb, `รายงานอาจารย์ที่ปรึกษา_${new Date().toISOString().slice(0, 10)}.xlsx`)
+  }
+
+  return (
+    <div>
+      <Card className="p-5">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-primary" />
+            <h2 className="text-sm font-semibold text-foreground">
+              รายชื่ออาจารย์ที่ปรึกษา ({filtered.length.toLocaleString()} คน)
+            </h2>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              placeholder="ค้นหา..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-52"
+            />
+            <Button size="sm" variant="outline" onClick={exportCSV} disabled={filtered.length === 0}>
+              <Download className="mr-1.5 h-4 w-4" />Export CSV
+            </Button>
+            <Button size="sm" variant="outline" onClick={exportExcel} disabled={filtered.length === 0}>
+              <FileSpreadsheet className="mr-1.5 h-4 w-4" />Export Excel
+            </Button>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <p className="py-10 text-center text-sm text-muted-foreground">ไม่มีข้อมูล</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12 text-center">ลำดับ</TableHead>
+                  <TableHead>ชื่อมหาวิทยาลัย/สถาบัน</TableHead>
+                  <TableHead>ตำแหน่ง</TableHead>
+                  <TableHead>ชื่อ-นามสกุล</TableHead>
+                  <TableHead>คณะ/หน่วยงาน</TableHead>
+                  <TableHead>อีเมล</TableHead>
+                  <TableHead>เบอร์โทรศัพท์</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((a, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="text-center">{i + 1}</TableCell>
+                    <TableCell className="font-medium">{a.institute_name}</TableCell>
+                    <TableCell>{a.position}</TableCell>
+                    <TableCell>{a.full_name}</TableCell>
+                    <TableCell>{a.faculty}</TableCell>
+                    <TableCell>
+                      <a href={`mailto:${a.email}`} className="text-blue-600 hover:underline">
+                        {a.email}
+                      </a>
+                    </TableCell>
+                    <TableCell>{a.phone ?? '-'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </Card>
     </div>
   )
 }

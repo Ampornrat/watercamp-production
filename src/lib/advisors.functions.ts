@@ -2,6 +2,39 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { randomUUID } from 'crypto'
 
+export type AdvisorReportRow = {
+  institute_name: string
+  position: string
+  full_name: string
+  faculty: string
+  email: string
+  phone: string | null
+}
+
+export const getAdvisorsReport = createServerFn({ method: 'GET' }).handler(async (): Promise<AdvisorReportRow[]> => {
+  const pool = (await import('@/lib/db.server')).default
+  const [rows] = await pool.query(
+    `SELECT
+       COALESCE(i.institute, 'ไม่ระบุ') AS institute_name,
+       a.position,
+       a.full_name,
+       a.faculty,
+       a.email,
+       a.phone
+     FROM advisors a
+     LEFT JOIN institutes_tab i ON i.id = a.institute_id
+     ORDER BY i.institute ASC, a.full_name ASC`
+  )
+  return (rows as any[]).map((r) => ({
+    institute_name: r.institute_name ?? 'ไม่ระบุ',
+    position: r.position ?? '',
+    full_name: r.full_name ?? '',
+    faculty: r.faculty ?? '',
+    email: r.email ?? '',
+    phone: r.phone ?? null,
+  }))
+})
+
 export const getAdvisorByEmail = createServerFn({ method: 'GET' })
   .inputValidator((d: unknown) => d as { email: string })
   .handler(async ({ data }) => {
