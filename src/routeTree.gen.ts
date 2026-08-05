@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
+import { Route as SimRegisterRouteImport } from './routes/sim-register'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SetPasswordRouteImport } from './routes/set-password'
 import { Route as ReportRouteImport } from './routes/report'
@@ -47,6 +48,11 @@ import { Route as ApiPublicTrainingsNotifyRegistrationRouteImport } from './rout
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
   path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SimRegisterRoute = SimRegisterRouteImport.update({
+  id: '/sim-register',
+  path: '/sim-register',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignupRoute = SignupRouteImport.update({
@@ -229,6 +235,7 @@ export interface FileRoutesByFullPath {
   '/report': typeof ReportRoute
   '/set-password': typeof SetPasswordRoute
   '/signup': typeof SignupRoute
+  '/sim-register': typeof SimRegisterRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/advisor/dashboard': typeof AdvisorDashboardRoute
   '/advisor/queue': typeof AdvisorQueueRoute
@@ -265,6 +272,7 @@ export interface FileRoutesByTo {
   '/report': typeof ReportRoute
   '/set-password': typeof SetPasswordRoute
   '/signup': typeof SignupRoute
+  '/sim-register': typeof SimRegisterRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/advisor/dashboard': typeof AdvisorDashboardRoute
   '/advisor/queue': typeof AdvisorQueueRoute
@@ -302,6 +310,7 @@ export interface FileRoutesById {
   '/report': typeof ReportRoute
   '/set-password': typeof SetPasswordRoute
   '/signup': typeof SignupRoute
+  '/sim-register': typeof SimRegisterRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/advisor/dashboard': typeof AdvisorDashboardRoute
   '/advisor/queue': typeof AdvisorQueueRoute
@@ -340,6 +349,7 @@ export interface FileRouteTypes {
     | '/report'
     | '/set-password'
     | '/signup'
+    | '/sim-register'
     | '/unsubscribe'
     | '/advisor/dashboard'
     | '/advisor/queue'
@@ -376,6 +386,7 @@ export interface FileRouteTypes {
     | '/report'
     | '/set-password'
     | '/signup'
+    | '/sim-register'
     | '/unsubscribe'
     | '/advisor/dashboard'
     | '/advisor/queue'
@@ -412,6 +423,7 @@ export interface FileRouteTypes {
     | '/report'
     | '/set-password'
     | '/signup'
+    | '/sim-register'
     | '/unsubscribe'
     | '/advisor/dashboard'
     | '/advisor/queue'
@@ -449,6 +461,7 @@ export interface RootRouteChildren {
   ReportRoute: typeof ReportRoute
   SetPasswordRoute: typeof SetPasswordRoute
   SignupRoute: typeof SignupRoute
+  SimRegisterRoute: typeof SimRegisterRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   AdvisorDashboardRoute: typeof AdvisorDashboardRoute
   AdvisorQueueRoute: typeof AdvisorQueueRoute
@@ -483,6 +496,13 @@ declare module '@tanstack/react-router' {
       path: '/unsubscribe'
       fullPath: '/unsubscribe'
       preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sim-register': {
+      id: '/sim-register'
+      path: '/sim-register'
+      fullPath: '/sim-register'
+      preLoaderRoute: typeof SimRegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signup': {
@@ -729,6 +749,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReportRoute: ReportRoute,
   SetPasswordRoute: SetPasswordRoute,
   SignupRoute: SignupRoute,
+  SimRegisterRoute: SimRegisterRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   AdvisorDashboardRoute: AdvisorDashboardRoute,
   AdvisorQueueRoute: AdvisorQueueRoute,

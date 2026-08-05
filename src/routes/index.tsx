@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Calendar, MapPin, Users, ArrowRight, Droplets, BookOpen, Award } from "lucide-react";
+import { Calendar, MapPin, Users, ArrowRight, Droplets, BookOpen, Award, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -76,6 +76,16 @@ function Index() {
               >
                 ดูหลักสูตรทั้งหมด
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+              </Button>
+            </Link>
+            <Link to="/sim-register">
+              <Button
+                size="lg"
+                variant="outline"
+                className="group rounded-2xl border-teal/40 px-8 py-6 text-base font-bold text-teal transition-all hover:-translate-y-0.5 hover:border-teal hover:bg-teal/10"
+              >
+                <Smartphone className="mr-2 h-5 w-5" />
+                ลงทะเบียนขอ SIM
               </Button>
             </Link>
           </div>
