@@ -39,6 +39,9 @@ export function SiteHeader() {
           <Link to="/about" className="text-sm font-medium text-white/70 transition-colors hover:text-teal">เกี่ยวกับโครงการ</Link>
           <Link to="/advisor/register" className="text-sm font-medium text-white/70 transition-colors hover:text-teal">ลงทะเบียนสถาบัน</Link>
           <Link to="/trainings" className="text-sm font-medium text-white/70 transition-colors hover:text-teal">เยาวชนเข้าร่วมโครงการ</Link>
+          {(isAdmin || isAdvisor) && (
+            <Link to="/sim-distribute" className="text-sm font-medium text-white/70 transition-colors hover:text-teal">แจก SIM</Link>
+          )}
           <Link to="/contest" className="text-sm font-medium text-white/70 transition-colors hover:text-teal">ประกวดชิงรางวัล</Link>
           {isAdvisor && (
             <Link to="/advisor/dashboard" className="text-sm font-medium text-teal transition-colors hover:text-teal/80">ระบบอนุมัติ</Link>
@@ -103,6 +106,9 @@ export function SiteHeader() {
             <Link to="/about" onClick={close} className="rounded-md px-3 py-2 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-teal">เกี่ยวกับโครงการ</Link>
             <Link to="/advisor/register" onClick={close} className="rounded-md px-3 py-2 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-teal">ลงทะเบียนสถาบัน</Link>
             <Link to="/trainings" onClick={close} className="rounded-md px-3 py-2 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-teal">เยาวชนเข้าร่วมโครงการ</Link>
+            {(isAdmin || isAdvisor) && (
+              <Link to="/sim-distribute" onClick={close} className="rounded-md px-3 py-2 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-teal">แจก SIM</Link>
+            )}
             <Link to="/contest" onClick={close} className="rounded-md px-3 py-2 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-teal">ประกวดชิงรางวัล</Link>
             {isAdvisor && (
               <Link to="/advisor/dashboard" onClick={close} className="rounded-md px-3 py-2 text-sm font-medium text-teal hover:bg-white/10">ระบบอนุมัติ</Link>

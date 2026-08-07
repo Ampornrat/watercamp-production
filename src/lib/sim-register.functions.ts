@@ -34,11 +34,30 @@ export const createSimRequest = createServerFn({ method: 'POST' })
       )
     `);
 
+    // Duplicate checks
+    const [dupEmail] = await pool.query(
+      `SELECT id FROM sim_requests WHERE email = ? LIMIT 1`,
+      [data.email.toLowerCase()]
+    );
+    if ((dupEmail as any[]).length > 0) throw new Error('อีเมลนี้ได้ลงทะเบียนขอ SIM ไปแล้ว');
+
+    const [dupStudentId] = await pool.query(
+      `SELECT id FROM sim_requests WHERE student_id = ? LIMIT 1`,
+      [data.student_id.trim()]
+    );
+    if ((dupStudentId as any[]).length > 0) throw new Error('รหัสนักศึกษานี้ได้ลงทะเบียนขอ SIM ไปแล้ว');
+
+    const [dupName] = await pool.query(
+      `SELECT id FROM sim_requests WHERE full_name = ? LIMIT 1`,
+      [data.full_name.trim()]
+    );
+    if ((dupName as any[]).length > 0) throw new Error('ชื่อ-นามสกุลนี้ได้ลงทะเบียนขอ SIM ไปแล้ว');
+
     const id = randomUUID();
     await pool.query(
       `INSERT INTO sim_requests (id, institute_id, student_id, full_name, gender, age, education_level, field_of_study, email)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, data.institute_id, data.student_id, data.full_name, data.gender, data.age, data.education_level, data.field_of_study, data.email]
+      [id, data.institute_id, data.student_id, data.full_name, data.gender, data.age, data.education_level, data.field_of_study, data.email.toLowerCase()]
     );
 
     return { id };

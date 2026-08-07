@@ -116,8 +116,8 @@ function SimRegisterPage() {
         },
       });
       setSubmitted(true);
-    } catch {
-      toast.error("เกิดข้อผิดพลาด กรุณาลองใหม่");
+    } catch (err: any) {
+      toast.error(err?.message ?? "เกิดข้อผิดพลาด กรุณาลองใหม่");
     } finally {
       setSubmitting(false);
     }
