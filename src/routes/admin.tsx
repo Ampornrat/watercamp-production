@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth.server";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useRef } from "react";
-import { Plus, Pencil, Trash2, Send, ArrowUpDown, ArrowUp, ArrowDown, Download, Loader2, Paperclip, ImageIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, Send, ArrowUpDown, ArrowUp, ArrowDown, Download, Loader2, Paperclip, ImageIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import { SurveyDashboard } from "@/components/SurveyDashboard";
 import { SurveyBuilder } from "@/components/SurveyBuilder";
 import { CustomSurveyDashboard } from "@/components/CustomSurveyDashboard";
 import { ReportContent, AdvisorsReportContent } from "@/routes/report";
+import { SimDistributeContent } from "@/routes/sim-distribute";
 import {
   getAdminTrainings,
   getAdminRegistrations,
@@ -88,6 +89,8 @@ function Admin() {
   const [sendDialog, setSendDialog] = useState<null | { id: string; email: string; name: string; training_id: string; training_title: string }>(null);
   const [pickedSurvey, setPickedSurvey] = useState<string>("__default__");
   const [regSort, setRegSort] = useState<{ col: 'guest_name' | 'training_title' | 'institute_name'; dir: 'asc' | 'desc' } | null>(null);
+  const [regPage, setRegPage] = useState(1);
+  const REG_PAGE_SIZE = 100;
 
   const [uploadingField, setUploadingField] = useState<string | null>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -294,6 +297,7 @@ function Admin() {
             <TabsTrigger value="custom-surveys">ผลแบบสำรวจที่สร้าง</TabsTrigger>
             <TabsTrigger value="report">รายงานการลงทะเบียน</TabsTrigger>
             <TabsTrigger value="advisors-report">รายงานอาจารย์ที่ปรึกษา</TabsTrigger>
+            <TabsTrigger value="sim-distribute">แจก SIM</TabsTrigger>
           </TabsList>
 
           <TabsContent value="trainings" className="mt-4">
@@ -342,17 +346,17 @@ function Admin() {
               <Table>
                 <TableHeader><TableRow>
                   <TableHead>
-                    <button className="flex items-center gap-1 hover:text-foreground" onClick={() => setRegSort(s => s?.col === 'guest_name' ? { col: 'guest_name', dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col: 'guest_name', dir: 'asc' })}>
+                    <button className="flex items-center gap-1 hover:text-foreground" onClick={() => { setRegSort(s => s?.col === 'guest_name' ? { col: 'guest_name', dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col: 'guest_name', dir: 'asc' }); setRegPage(1); }}>
                       ผู้ลงทะเบียน {regSort?.col === 'guest_name' ? (regSort.dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
                     </button>
                   </TableHead>
                   <TableHead>
-                    <button className="flex items-center gap-1 hover:text-foreground" onClick={() => setRegSort(s => s?.col === 'training_title' ? { col: 'training_title', dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col: 'training_title', dir: 'asc' })}>
+                    <button className="flex items-center gap-1 hover:text-foreground" onClick={() => { setRegSort(s => s?.col === 'training_title' ? { col: 'training_title', dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col: 'training_title', dir: 'asc' }); setRegPage(1); }}>
                       หลักสูตร {regSort?.col === 'training_title' ? (regSort.dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
                     </button>
                   </TableHead>
                   <TableHead>
-                    <button className="flex items-center gap-1 hover:text-foreground" onClick={() => setRegSort(s => s?.col === 'institute_name' ? { col: 'institute_name', dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col: 'institute_name', dir: 'asc' })}>
+                    <button className="flex items-center gap-1 hover:text-foreground" onClick={() => { setRegSort(s => s?.col === 'institute_name' ? { col: 'institute_name', dir: s.dir === 'asc' ? 'desc' : 'asc' } : { col: 'institute_name', dir: 'asc' }); setRegPage(1); }}>
                       สถาบัน {regSort?.col === 'institute_name' ? (regSort.dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
                     </button>
                   </TableHead>
@@ -362,12 +366,17 @@ function Admin() {
                   <TableHead>ผลการเรียน</TableHead><TableHead></TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
-                  {([...(registrations.data ?? [])].sort((a: any, b: any) => {
-                    if (!regSort) return 0;
-                    const av = (a[regSort.col] ?? '').toString().toLowerCase();
-                    const bv = (b[regSort.col] ?? '').toString().toLowerCase();
-                    return regSort.dir === 'asc' ? av.localeCompare(bv, 'th') : bv.localeCompare(av, 'th');
-                  })).map((r: any) => {
+                  {(() => {
+                    const sorted = [...(registrations.data ?? [])].sort((a: any, b: any) => {
+                      if (!regSort) return 0;
+                      const av = (a[regSort.col] ?? '').toString().toLowerCase();
+                      const bv = (b[regSort.col] ?? '').toString().toLowerCase();
+                      return regSort.dir === 'asc' ? av.localeCompare(bv, 'th') : bv.localeCompare(av, 'th');
+                    });
+                    const totalPages = Math.max(1, Math.ceil(sorted.length / REG_PAGE_SIZE));
+                    const safePage = Math.min(regPage, totalPages);
+                    return sorted.slice((safePage - 1) * REG_PAGE_SIZE, safePage * REG_PAGE_SIZE);
+                  })().map((r: any) => {
                     const cs: string = r.completion_status ?? "enrolled";
                     return (
                       <TableRow key={r.id}>
@@ -434,6 +443,38 @@ function Admin() {
                   })}
                 </TableBody>
               </Table>
+              {(() => {
+                const total = registrations.data?.length ?? 0;
+                const totalPages = Math.max(1, Math.ceil(total / REG_PAGE_SIZE));
+                const safePage = Math.min(regPage, totalPages);
+                if (totalPages <= 1) return null;
+                return (
+                  <div className="flex items-center justify-between border-t px-4 py-3">
+                    <span className="text-sm text-muted-foreground">
+                      หน้า {safePage} / {totalPages} ({total} รายการ)
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <Button variant="outline" size="sm" className="h-8 w-8 p-0" disabled={safePage <= 1} onClick={() => setRegPage(p => Math.max(1, p - 1))}>
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter(p => p === 1 || p === totalPages || Math.abs(p - safePage) <= 2)
+                        .reduce<(number | '…')[]>((acc, p, idx, arr) => {
+                          if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('…');
+                          acc.push(p);
+                          return acc;
+                        }, [])
+                        .map((p, idx) => p === '…'
+                          ? <span key={`e${idx}`} className="px-1 text-muted-foreground">…</span>
+                          : <Button key={p} variant={p === safePage ? 'default' : 'outline'} size="sm" className="h-8 w-8 p-0" onClick={() => setRegPage(p as number)}>{p}</Button>
+                        )}
+                      <Button variant="outline" size="sm" className="h-8 w-8 p-0" disabled={safePage >= totalPages} onClick={() => setRegPage(p => Math.min(totalPages, p + 1))}>
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })()}
             </Card>
           </TabsContent>
 
@@ -599,6 +640,10 @@ function Admin() {
 
           <TabsContent value="advisors-report" className="mt-4">
             <AdvisorsReportContent />
+          </TabsContent>
+
+          <TabsContent value="sim-distribute" className="mt-4">
+            <SimDistributeContent />
           </TabsContent>
         </Tabs>
       </div>

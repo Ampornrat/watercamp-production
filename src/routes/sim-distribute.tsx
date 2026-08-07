@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth.server";
 import { useState, useEffect, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Smartphone, X, Download, Search } from "lucide-react";
+import { Smartphone, X, Download, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -44,7 +44,23 @@ function formatDate(s: string) {
   });
 }
 
+export function SimDistributeContent() {
+  return <SimDistributeInner />;
+}
+
 function SimDistributePage() {
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <SiteHeader />
+      <main className="container mx-auto flex-1 px-4 py-12">
+        <SimDistributeInner />
+      </main>
+      <SiteFooter />
+    </div>
+  );
+}
+
+function SimDistributeInner() {
   const searchFn = useServerFn(searchSimRequests);
   const distributeFn = useServerFn(createSimDistribution);
   const getDistributionsFn = useServerFn(getSimDistributions);
@@ -72,6 +88,10 @@ function SimDistributePage() {
   });
 
   const showDropdown = focused && !selected;
+
+  // Pagination
+  const PAGE_SIZE = 50;
+  const [page, setPage] = useState(1);
 
   // Form state
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -135,6 +155,7 @@ function SimDistributePage() {
       setPhoneNumber("");
       setNote("");
       setPhoneError("");
+      setPage(1);
       refetch();
     } catch (err: any) {
       toast.error(err?.message ?? "เกิดข้อผิดพลาด กรุณาลองใหม่");
@@ -162,11 +183,7 @@ function SimDistributePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <SiteHeader />
-
-      <main className="container mx-auto flex-1 px-4 py-12">
-        <div className="mx-auto max-w-3xl space-y-8">
+    <div className="mx-auto max-w-3xl space-y-8 py-4">
           <div className="flex items-center gap-3">
             <Smartphone className="h-8 w-8 text-primary" />
             <h1 className="font-heading text-2xl font-extrabold text-foreground md:text-3xl">
@@ -297,51 +314,108 @@ function SimDistributePage() {
           </Card>
 
           {/* History */}
-          <Card className="rounded-3xl shadow-soft">
-            <CardHeader className="flex flex-row items-center justify-between gap-4">
-              <CardTitle className="text-base font-semibold text-muted-foreground">
-                ประวัติการแจก SIM ({distributions.length} รายการ)
-              </CardTitle>
-              {distributions.length > 0 && (
-                <Button variant="outline" size="sm" onClick={exportExcel} className="gap-2 rounded-xl">
-                  <Download className="h-4 w-4" />
-                  Export Excel
-                </Button>
-              )}
-            </CardHeader>
-            <CardContent className="overflow-x-auto p-0">
-              {distributions.length === 0 ? (
-                <p className="px-6 py-8 text-center text-sm text-muted-foreground">ยังไม่มีประวัติการแจก SIM</p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12 text-center">ลำดับ</TableHead>
-                      <TableHead>ชื่อนักศึกษา</TableHead>
-                      <TableHead>มหาวิทยาลัย</TableHead>
-                      <TableHead>เบอร์ SIM</TableHead>
-                      <TableHead>วันที่แจก</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {distributions.map((d, i) => (
-                      <TableRow key={d.id}>
-                        <TableCell className="text-center text-muted-foreground">{i + 1}</TableCell>
-                        <TableCell className="font-medium">{d.student_name}</TableCell>
-                        <TableCell className="text-muted-foreground">{d.institute_name}</TableCell>
-                        <TableCell className="font-mono">{d.phone_number}</TableCell>
-                        <TableCell className="text-muted-foreground">{formatDate(d.distributed_at)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </main>
+          {(() => {
+            const totalPages = Math.max(1, Math.ceil(distributions.length / PAGE_SIZE));
+            const safePage = Math.min(page, totalPages);
+            const pageItems = distributions.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+            return (
+              <Card className="rounded-3xl shadow-soft">
+                <CardHeader className="flex flex-row items-center justify-between gap-4">
+                  <CardTitle className="text-base font-semibold text-muted-foreground">
+                    ประวัติการแจก SIM ({distributions.length} รายการ)
+                  </CardTitle>
+                  {distributions.length > 0 && (
+                    <Button variant="outline" size="sm" onClick={exportExcel} className="gap-2 rounded-xl">
+                      <Download className="h-4 w-4" />
+                      Export Excel
+                    </Button>
+                  )}
+                </CardHeader>
+                <CardContent className="overflow-x-auto p-0">
+                  {distributions.length === 0 ? (
+                    <p className="px-6 py-8 text-center text-sm text-muted-foreground">ยังไม่มีประวัติการแจก SIM</p>
+                  ) : (
+                    <>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-12 text-center">ลำดับ</TableHead>
+                            <TableHead>ชื่อนักศึกษา</TableHead>
+                            <TableHead>มหาวิทยาลัย</TableHead>
+                            <TableHead>เบอร์ SIM</TableHead>
+                            <TableHead>วันที่แจก</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {pageItems.map((d, i) => (
+                            <TableRow key={d.id}>
+                              <TableCell className="text-center text-muted-foreground">
+                                {(safePage - 1) * PAGE_SIZE + i + 1}
+                              </TableCell>
+                              <TableCell className="font-medium">{d.student_name}</TableCell>
+                              <TableCell className="text-muted-foreground">{d.institute_name}</TableCell>
+                              <TableCell className="font-mono">{d.phone_number}</TableCell>
+                              <TableCell className="text-muted-foreground">{formatDate(d.distributed_at)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
 
-      <SiteFooter />
+                      {totalPages > 1 && (
+                        <div className="flex items-center justify-between border-t border-border px-6 py-3">
+                          <span className="text-sm text-muted-foreground">
+                            หน้า {safePage} / {totalPages}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 rounded-lg p-0"
+                              disabled={safePage <= 1}
+                              onClick={() => setPage((p) => Math.max(1, p - 1))}
+                            >
+                              <ChevronLeft className="h-4 w-4" />
+                            </Button>
+                            {Array.from({ length: totalPages }, (_, i) => i + 1)
+                              .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 2)
+                              .reduce<(number | "…")[]>((acc, p, idx, arr) => {
+                                if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push("…");
+                                acc.push(p);
+                                return acc;
+                              }, [])
+                              .map((p, idx) =>
+                                p === "…" ? (
+                                  <span key={`ellipsis-${idx}`} className="px-1 text-muted-foreground">…</span>
+                                ) : (
+                                  <Button
+                                    key={p}
+                                    variant={p === safePage ? "default" : "outline"}
+                                    size="sm"
+                                    className="h-8 w-8 rounded-lg p-0"
+                                    onClick={() => setPage(p as number)}
+                                  >
+                                    {p}
+                                  </Button>
+                                )
+                              )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 rounded-lg p-0"
+                              disabled={safePage >= totalPages}
+                              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })()}
     </div>
   );
 }
