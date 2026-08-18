@@ -1,90 +1,313 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { Video, Smartphone, Lightbulb, Megaphone, Hash, Trophy, ArrowRight, Upload } from "lucide-react";
 
 export const Route = createFileRoute("/contest/")({
-  component: ContestRulesPage,
+  component: ContestPage,
 });
 
-const RULES = [
-  { icon: Video, title: "รูปแบบ", desc: "วิดีโอสั้น (1-3 นาที) บน TikTok, Reels หรือ YouTube Shorts" },
-  { icon: Smartphone, title: "เนื้อหา", desc: "สาธิตฟีเจอร์แอป ThaiWater เช่น การดูเรดาร์ฝน เช็คระดับน้ำ และติดตามสถานการณ์น้ำ" },
-  { icon: Lightbulb, title: "แนวทาง", desc: "นำเสนอแบบ \"Edutainment\" (สนุกและได้ความรู้) เช่น คลิป POV หรือรีวิวแอปแนววัยรุ่น" },
-  { icon: Megaphone, title: "Call to Action", desc: "ช่วงท้ายต้องเชิญชวนให้ดาวน์โหลดแอป ThaiWater" },
-  { icon: Hash, title: "การโพสต์", desc: "ตั้งค่าสาธารณะ พร้อมติดแฮชแท็ก #Thaiwater #วัยรุ่นรู้ทันน้ำ #thaiwaterambassador และ #สสน" },
+const PRELIM_CRITERIA = [
+  { pct: 35, title: "STEM (35 คะแนน)", desc: "ประยุกต์ใช้ STEM ในการคิด วิเคราะห์ และวางแผนอย่างเป็นระบบเพื่อความยั่งยืน" },
+  { pct: 30, title: "เนื้อหา (30 คะแนน)", desc: "ถูกต้อง ชัดเจน อธิบายการใช้แอฟพลิเคชัน และแปลผลข้อมูลน้ำถูกต้อง เข้าใจง่าย" },
+  { pct: 35, title: "สร้างสรรค์ (35 คะแนน)", desc: "เทคนิค การเล่าเรื่องน่าสนใจ ตัดต่อดี มีไอเดียแปลกใหม่ ความยาวไม่เกิน 3 นาที" },
 ];
 
-const CRITERIA = [
-  { pct: 40, label: "เนื้อหาถูกต้องและชัดเจน", desc: "อธิบายการใช้แอปพลิเคชันและแปลผลข้อมูลน้ำได้ถูกต้อง เข้าใจง่าย" },
-  { pct: 30, label: "ความคิดสร้างสรรค์", desc: "เทคนิคการเล่าเรื่องน่าสนใจ ตัดต่อดี มีไอเดียแปลกใหม่ดึงดูดคนรุ่นใหม่" },
-  { pct: 30, label: "ยอดการมีส่วนร่วม", desc: "วัดจากยอด View, Like, Share และ Comment ณ วันตัดรอบกิจกรรม" },
+const FINAL_CRITERIA = [
+  { pct: 30, title: "STEM (30 คะแนน)", desc: "ประยุกต์ใช้ STEM ในการคิด วิเคราะห์ และวางแผนอย่างเป็นระบบเพื่อความยั่งยืน" },
+  { pct: 30, title: "เนื้อหา (30 คะแนน)", desc: "ถูกต้อง ชัดเจน อธิบายการใช้แอฟพลิเคชัน และแปลผลข้อมูลน้ำถูกต้อง เข้าใจง่าย" },
+  { pct: 30, title: "สร้างสรรค์ (30 คะแนน)", desc: "เทคนิค การเล่าเรื่องน่าสนใจ ตัดต่อดี มีไอเดียแปลกใหม่ ความยาวไม่เกิน 3 นาที" },
+  { pct: 10, title: "ยอดการมีส่วนร่วม (10 คะแนน)", desc: "วัดจากยอด View/ Like/ Share และ Comment ณ วันตัดสินรอบกิจกรรม" },
 ];
 
-function ContestRulesPage() {
+const HASHTAGS = ["#Thaiwater", "#วัยรุ่นรู้ทันน้ำ", "#thaiwaterambassador", "#สสน"];
+
+const LOGOS_ROW1 = [
+  { src: "/uploads/logo_mhesi.png", alt: "กระทรวงการอุดมศึกษา วิทยาศาสตร์ วิจัยและนวัตกรรม", h: 44 },
+  { src: "/uploads/logo_ssn.jpg", alt: "สสน", h: 44 },
+  { src: "/uploads/logo_ungc.png", alt: "UN Global Compact Network Thailand", h: 40 },
+  { src: "/uploads/logo_dct.png", alt: "DCT", h: 40 },
+  { src: "/uploads/logo_kyf.webp", alt: "กองทุนเงินให้กู้ยืมเพื่อการศึกษา", h: 44 },
+];
+
+const LOGOS_ROW2 = [
+  { src: "/uploads/logo_true.png", alt: "True", h: 32 },
+  { src: "/uploads/logo_thaibev.png", alt: "ThaiBev", h: 32 },
+  { src: "/uploads/logo_kabinburi.png", alt: "Kabinburi Industrial Zone", h: 32 },
+  { src: "/uploads/logo_tcp.png", alt: "TCP", h: 32 },
+  { src: "/uploads/logo_scgc.png", alt: "SCGC", h: 32 },
+  { src: "/uploads/logo_aiat.png", alt: "AIAT", h: 32 },
+  { src: "/uploads/logo_mk.png", alt: "MK Restaurants", h: 32 },
+];
+
+function ScoreRing({ pct }: { pct: number }) {
   return (
-    <div className="min-h-screen bg-background">
+    <div
+      className="flex flex-shrink-0 items-center justify-center rounded-full"
+      style={{
+        width: 52,
+        height: 52,
+        background: `conic-gradient(#0f7fa3 ${pct}%, #dcedf3 0)`,
+      }}
+    >
+      <span
+        className="flex items-center justify-center rounded-full bg-white font-heading font-bold"
+        style={{ width: "70%", height: "70%", fontSize: 11, color: "#0b3d63" }}
+      >
+        {pct}%
+      </span>
+    </div>
+  );
+}
+
+function SectionPill({ label }: { label: string }) {
+  return (
+    <span
+      className="mb-5 inline-block rounded-full font-heading font-semibold text-white"
+      style={{ background: "#0f7fa3", padding: "9px 22px", fontSize: 16 }}
+    >
+      {label}
+    </span>
+  );
+}
+
+function ContestPage() {
+  return (
+    <div className="min-h-screen" style={{ background: "#f4f9fb", fontFamily: "'Noto Sans Thai', sans-serif", color: "#123047" }}>
       <SiteHeader />
-      <main className="container mx-auto px-4 py-8 md:py-10">
-        <div className="mx-auto max-w-5xl">
-          <div className="mb-6 text-center md:mb-8">
-            <div className="inline-flex items-center gap-2 rounded-full bg-teal/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-teal">
-              <Trophy className="h-4 w-4" /> #ThaiWaterChallenge
+
+      <div className="mx-auto" style={{ maxWidth: 1200 }}>
+
+        {/* HERO */}
+        <section
+          className="relative overflow-hidden"
+          style={{
+            background: "linear-gradient(180deg,#0b3d63 0%,#0e4d78 100%)",
+            padding: "28px 32px 0",
+          }}
+        >
+          <div
+            className="absolute inset-0"
+            style={{ background: "radial-gradient(circle at 85% 10%,rgba(255,255,255,0.06),transparent 55%)" }}
+          />
+
+          {/* Logo card */}
+          <div
+            className="relative flex flex-col items-center gap-2.5 rounded-2xl bg-white"
+            style={{ padding: "14px 20px" }}
+          >
+            <div className="flex flex-wrap items-center justify-center gap-7">
+              {LOGOS_ROW1.map((l) => (
+                <img key={l.alt} src={l.src} alt={l.alt} style={{ height: l.h, width: "auto" }} />
+              ))}
             </div>
-            <h1 className="mt-3 font-heading text-2xl font-extrabold text-foreground md:text-3xl lg:text-4xl">การประกวดสื่อ ThaiWater Challenge</h1>
-            <p className="mt-2 text-muted-foreground">เปลี่ยนผู้ผ่านการอบรมให้เป็น Water Challenge ประจำภูมิภาค ส่งต่อความรู้ผ่านวิดีโอสั้น</p>
+            <div className="flex flex-wrap items-center justify-center gap-5">
+              {LOGOS_ROW2.map((l) => (
+                <img key={l.alt} src={l.src} alt={l.alt} style={{ height: l.h, width: "auto" }} />
+              ))}
+            </div>
           </div>
 
-          <Card className="mb-6 p-4 md:p-6">
-            <h2 className="mb-4 font-heading text-xl font-bold md:text-2xl">กฎเกณฑ์และกติการ่วมกิจกรรม</h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              {RULES.map((r) => (
-                <div key={r.title} className="flex gap-3 rounded-lg border bg-muted/30 p-4">
-                  <r.icon className="h-6 w-6 flex-shrink-0 text-teal" />
+          {/* Hero content */}
+          <div
+            className="relative grid items-center gap-6"
+            style={{ gridTemplateColumns: "1.15fr 0.85fr", padding: "36px 8px 0" }}
+          >
+            <div>
+              <h1 className="font-heading" style={{ margin: "0 0 6px", fontSize: 40, lineHeight: 1.25, color: "#fff", fontWeight: 700 }}>
+                ประกวดสื่อสร้างสรรค์
+              </h1>
+              <h1 className="font-heading" style={{ margin: "0 0 6px", fontSize: 40, lineHeight: 1.2, color: "#7fd9ef", fontWeight: 800, letterSpacing: "0.5px" }}>
+                THAIWATER CHALLENGE
+              </h1>
+              <h2 className="font-heading" style={{ margin: "0 0 22px", fontSize: 24, lineHeight: 1.3, color: "#eaf6fb", fontWeight: 600 }}>
+                สำหรับนักเรียน นักศึกษา
+              </h2>
+              <div className="mb-6 flex flex-wrap gap-3">
+                <span className="font-heading font-semibold" style={{ background: "#0a2d4d", color: "#fff", padding: "10px 22px", borderRadius: 999, fontSize: 16, border: "1px solid rgba(255,255,255,0.25)" }}>
+                  Water Challenge ประจำภูมิภาค
+                </span>
+                <span className="font-heading font-semibold" style={{ background: "#0a2d4d", color: "#fff", padding: "10px 22px", borderRadius: 999, fontSize: 16, border: "1px solid rgba(255,255,255,0.25)" }}>
+                  Edutainment
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-3.5">
+                <Link
+                  to="/contest/submit"
+                  className="font-heading font-bold"
+                  style={{ background: "#ffb703", color: "#12314f", padding: "14px 28px", borderRadius: 10, fontSize: 17, textDecoration: "none", display: "inline-block" }}
+                >
+                  สมัครเข้าร่วมประกวด
+                </Link>
+                <a
+                  href="#judging"
+                  className="font-heading font-semibold"
+                  style={{ background: "transparent", color: "#fff", padding: "14px 28px", borderRadius: 10, fontSize: 17, textDecoration: "none", border: "1.5px solid rgba(255,255,255,0.5)", display: "inline-block" }}
+                >
+                  ดูเกณฑ์การตัดสิน
+                </a>
+              </div>
+            </div>
+            <img src="/uploads/students_hero.png" alt="นักเรียนนักศึกษา" style={{ width: "100%", height: "auto", display: "block" }} />
+          </div>
+        </section>
+
+        {/* FORMAT + APPROACH */}
+        <section style={{ padding: "56px 32px 20px" }}>
+          <div className="grid gap-6" style={{ gridTemplateColumns: "1fr 1fr" }}>
+            <div style={{ background: "#fff", border: "1.5px solid #b9e2ee", borderRadius: 16, padding: 28 }}>
+              <SectionPill label="รูปแบบวิดีโอ" />
+              <div className="flex items-center" style={{ gap: 18 }}>
+                <div className="flex" style={{ gap: 10 }}>
+                  {/* TikTok */}
+                  <div className="flex items-center justify-center rounded-xl" style={{ width: 48, height: 48, background: "#000" }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff">
+                      <path d="M16.5 3c.4 2.3 1.9 3.9 4.5 4.1v3.1c-1.6 0-3-.5-4.3-1.4v6.6c0 3.4-2.2 6-5.7 6-3.3 0-5.9-2.7-5.9-6 0-3.4 2.9-6.1 6.4-5.9v3.2c-.3-.1-.6-.1-1-.1-1.5 0-2.7 1.2-2.7 2.7 0 1.6 1.2 2.8 2.7 2.8 1.6 0 3-1.2 3-2.9V3h3z" />
+                    </svg>
+                  </div>
+                  {/* YouTube */}
+                  <div className="flex items-center justify-center rounded-xl" style={{ width: 48, height: 48, background: "#ff0000" }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
+                </div>
+                <p className="font-heading font-semibold" style={{ margin: 0, fontSize: 20, color: "#0b3d63" }}>
+                  วิดีโอสั้น (1-3 นาที)
+                </p>
+              </div>
+            </div>
+
+            <div style={{ background: "#fff", border: "1.5px solid #b9e2ee", borderRadius: 16, padding: 28 }}>
+              <SectionPill label="แนวทาง" />
+              <div className="flex items-center" style={{ gap: 18 }}>
+                <img src="/uploads/edutainment_icons.png" alt="ไอคอนแนวทาง Edutainment" style={{ height: 56, width: "auto", flexShrink: 0 }} />
+                <p style={{ margin: 0, fontSize: 16, lineHeight: 1.7, color: "#274a63" }}>
+                  แนวทาง <strong>"Edutainment"</strong> (สนุกและได้ความรู้) เช่น คลิป POV หรือรีวิวแอพ
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* APP SHOWCASE */}
+        <section style={{ padding: "20px 32px" }}>
+          <div style={{ background: "#fff", border: "1.5px solid #b9e2ee", borderRadius: 16, padding: 28, textAlign: "center" }}>
+            <SectionPill label="เนื้อหา" />
+            <img
+              src="/uploads/app_screens.png"
+              alt="ตัวอย่างฟังก์ชันแอปพลิเคชัน ThaiWater"
+              style={{ maxWidth: "100%", height: "auto", display: "block", margin: "0 auto 18px" }}
+            />
+            <p className="font-heading font-semibold" style={{ margin: 0, fontSize: 17, color: "#0b3d63", lineHeight: 1.6 }}>
+              สาธิตฟังก์ชันการทำงานแอพพลิเคชัน ThaiWater:<br />
+              เช่น ดูเรดาร์ ดูระดับน้ำ ติดตามสถานการณ์น้ำ
+            </p>
+          </div>
+        </section>
+
+        {/* POSTING */}
+        <section style={{ padding: "20px 32px" }}>
+          <div style={{ background: "#fff", border: "1.5px solid #b9e2ee", borderRadius: 16, padding: 28 }}>
+            <SectionPill label="การโพสต์" />
+            <p style={{ margin: "0 0 16px", fontSize: 16, lineHeight: 1.7, color: "#274a63" }}>
+              ตั้งค่าสาธารณะ, ติดแฮชแท็ก:
+            </p>
+            <div className="flex flex-wrap gap-2.5">
+              {HASHTAGS.map((tag) => (
+                <span
+                  key={tag}
+                  className="font-heading font-semibold"
+                  style={{ background: "#e6f5fa", color: "#0f7fa3", padding: "8px 16px", borderRadius: 999, fontSize: 15 }}
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* JUDGING CRITERIA */}
+        <section id="judging" style={{ padding: "36px 32px 20px" }}>
+          <h2 className="font-heading" style={{ textAlign: "center", fontSize: 26, color: "#0b3d63", margin: "0 0 26px" }}>
+            เกณฑ์การตัดสิน
+          </h2>
+          <div className="grid gap-6" style={{ gridTemplateColumns: "1fr 1fr" }}>
+
+            {/* Prelim */}
+            <div style={{ background: "#fff", border: "1.5px solid #b9e2ee", borderRadius: 16, padding: 26 }}>
+              <SectionPill label="เกณฑ์การตัดสินรอบคัดเลือก" />
+              <p style={{ margin: "0 0 18px", fontSize: 14, color: "#5a7c92", fontWeight: 600 }}>
+                รอบคัดเลือกส่งผลงานในรูปแบบ Story Board
+              </p>
+              {PRELIM_CRITERIA.map((c) => (
+                <div
+                  key={c.title}
+                  className="flex items-center gap-4"
+                  style={{ padding: "12px 0", borderTop: "1px solid #eaf3f7" }}
+                >
+                  <ScoreRing pct={c.pct} />
                   <div>
-                    <p className="font-semibold">{r.title}</p>
-                    <p className="text-sm text-muted-foreground">{r.desc}</p>
+                    <p className="font-heading font-semibold" style={{ margin: "0 0 4px", fontSize: 16, color: "#0b3d63" }}>{c.title}</p>
+                    <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, color: "#5a7c92" }}>{c.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
-          </Card>
 
-          <Card className="mb-6 p-4 md:mb-8 md:p-6">
-            <h2 className="mb-4 font-heading text-xl font-bold md:text-2xl">เกณฑ์การตัดสิน</h2>
-            <div className="grid gap-4 sm:grid-cols-3">
-              {CRITERIA.map((c) => (
-                <div key={c.label} className="rounded-lg border bg-gradient-to-br from-navy/5 to-teal/10 p-5 text-center">
-                  <div className="font-heading text-4xl font-extrabold text-teal">{c.pct}%</div>
-                  <p className="mt-2 font-semibold">{c.label}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{c.desc}</p>
+            {/* Final */}
+            <div style={{ background: "#fff", border: "1.5px solid #b9e2ee", borderRadius: 16, padding: 26 }}>
+              <SectionPill label="เกณฑ์การตัดสินรอบตัดสิน" />
+              <p style={{ margin: "0 0 18px", fontSize: 14, color: "#5a7c92", fontWeight: 600 }}>
+                ส่ง Clip VDO บน YouTube/TikTok
+              </p>
+              {FINAL_CRITERIA.map((c) => (
+                <div
+                  key={c.title}
+                  className="flex items-center gap-4"
+                  style={{ padding: "12px 0", borderTop: "1px solid #eaf3f7" }}
+                >
+                  <ScoreRing pct={c.pct} />
+                  <div>
+                    <p className="font-heading font-semibold" style={{ margin: "0 0 4px", fontSize: 16, color: "#0b3d63" }}>{c.title}</p>
+                    <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, color: "#5a7c92" }}>{c.desc}</p>
+                  </div>
                 </div>
               ))}
             </div>
-          </Card>
 
-          <Card className="border-teal/40 bg-gradient-to-br from-navy/5 to-teal/10 p-4 md:p-6">
-            <h3 className="font-heading text-xl font-bold">เงื่อนไขผู้สมัคร</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              เปิดรับเฉพาะผู้ที่ผ่านการฝึกอบรมในโครงการแล้วเท่านั้น โดยจัดทีมร่วมกับสมาชิกที่ผ่านการอบรมจากสถาบันเดียวกัน
+          </div>
+        </section>
+
+        {/* CONDITIONS + SUBMISSION */}
+        <section style={{ padding: "20px 32px 56px" }}>
+          <div style={{ background: "linear-gradient(180deg,#0b3d63,#0e4d78)", borderRadius: 20, padding: 36 }}>
+            <h3 className="font-heading font-bold" style={{ margin: "0 0 14px", fontSize: 22, color: "#fff" }}>
+              เงื่อนไข
+            </h3>
+            <p style={{ margin: "0 0 22px", fontSize: 16, lineHeight: 1.8, color: "#dfeef5" }}>
+              เข้าร่วมเป็นทีมอย่างน้อย 5 คนขึ้นไป โดยสามารถเรียนวิธีการทำสื่อผ่าน Zoom วันที่ 7 ก.ย. 69
             </p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link to="/contest/register">
-                <Button size="lg" className="bg-teal font-bold text-navy hover:bg-teal/90">
-                  สมัครชิงรางวัล <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link to="/contest/submit">
-                <Button size="lg" variant="outline">
-                  <Upload className="h-4 w-4" /> ส่งผลงานของทีม
-                </Button>
+            <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 14, padding: "18px 22px", marginBottom: 22 }}>
+              <p className="font-heading font-semibold" style={{ margin: "0 0 4px", fontSize: 17, color: "#7fd9ef" }}>
+                เริ่มส่งผลงานตั้งแต่วันที่ 1-30 กันยายน 69 ได้ที่
+              </p>
+              <Link
+                to="/contest/submit"
+                style={{ color: "#fff", fontSize: 15, textDecoration: "underline" }}
+              >
+                watercamp.kwunjai.com/contest/submit
               </Link>
             </div>
-          </Card>
-        </div>
-      </main>
+            <div className="flex flex-wrap items-center gap-4">
+              <img src="/uploads/download_thaiwater.png" alt="Download ThaiWater" style={{ height: 52, width: "auto" }} />
+              <img src="/uploads/badge_googleplay.png" alt="Get it on Google Play" style={{ height: 42, width: "auto" }} />
+              <img src="/uploads/badge_appstore.png" alt="Download on the App Store" style={{ height: 42, width: "auto" }} />
+            </div>
+          </div>
+        </section>
+
+      </div>
+
       <SiteFooter />
     </div>
   );
