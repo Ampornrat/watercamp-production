@@ -29,12 +29,13 @@ export const Route = createFileRoute("/sim-distribute")({
 });
 
 type SearchResult = {
-  id: string;
+  id: string; // registration id
   full_name: string;
   student_id: string;
   institute_id: string;
   institute_name: string;
   email: string;
+  sim_request_id: string | null;
 };
 
 function formatDate(s: string) {
@@ -145,7 +146,7 @@ function SimDistributeInner() {
     try {
       await distributeFn({
         data: {
-          sim_request_id: selected.id,
+          registration_id: selected.id,
           phone_number: phoneNumber,
           note: note.trim() || undefined,
         },

@@ -62,22 +62,25 @@ export const searchSimRequests = createServerFn({ method: 'POST' })
     const pool = await getPool();
     const q = (data.q ?? '').trim();
     const sql = `
-      SELECT r.id, r.full_name, r.student_id, r.institute_id, r.email,
-             COALESCE(i.institute, i.name) AS institute_name
-      FROM sim_requests r
+      SELECT r.id, r.guest_name AS full_name, r.student_id, r.institute_id, r.guest_email AS email,
+             COALESCE(i.institute, i.name) AS institute_name,
+             sr.id AS sim_request_id
+      FROM registrations r
       JOIN institutes_tab i ON r.institute_id = i.id
-      WHERE r.status = 'pending'
-        ${q ? `AND r.full_name LIKE CONCAT('%', ?, '%')` : ''}
-      ORDER BY r.full_name ASC
+      LEFT JOIN sim_requests sr ON sr.student_id = r.student_id
+      WHERE r.guest_name IS NOT NULL
+        AND (sr.id IS NULL OR sr.status = 'pending')
+        ${q ? `AND r.guest_name LIKE CONCAT('%', ?, '%')` : ''}
+      ORDER BY r.guest_name ASC
       LIMIT 20
     `;
     const params = q ? [q] : [];
     const [rows] = await pool.query(sql, params);
-    return rows as { id: string; full_name: string; student_id: string; institute_id: string; email: string; institute_name: string }[];
+    return rows as { id: string; full_name: string; student_id: string; institute_id: string; email: string; institute_name: string; sim_request_id: string | null }[];
   });
 
 const DistributeInput = z.object({
-  sim_request_id: z.string().min(1),
+  registration_id: z.string().min(1),
   phone_number: z.string().regex(/^0\d{9}$/, 'เบอร์โทรต้องเป็นตัวเลข 10 หลัก เริ่มต้นด้วย 0'),
   note: z.string().max(1000).optional(),
 });
@@ -88,15 +91,50 @@ export const createSimDistribution = createServerFn({ method: 'POST' })
     const pool = await getPool();
     await ensureTables(pool);
 
-    const [reqRows] = await pool.query(
-      `SELECT r.id, r.full_name, r.institute_id, COALESCE(i.institute, i.name) AS institute_name
-       FROM sim_requests r
+    // ดึงข้อมูลจาก registrations
+    const [regRows] = await pool.query(
+      `SELECT r.id, r.guest_name AS full_name, r.student_id, r.institute_id, r.guest_email AS email,
+              r.gender, r.age, r.education_level, r.field_of_study,
+              COALESCE(i.institute, i.name) AS institute_name
+       FROM registrations r
        JOIN institutes_tab i ON r.institute_id = i.id
-       WHERE r.id = ? AND r.distributed_at IS NULL`,
-      [data.sim_request_id],
+       WHERE r.id = ?`,
+      [data.registration_id],
     );
-    const req = (reqRows as any[])[0];
-    if (!req) throw new Error('ไม่พบรายการขอ SIM หรือได้รับการแจกไปแล้ว');
+    const reg = (regRows as any[])[0];
+    if (!reg) throw new Error('ไม่พบข้อมูลการลงทะเบียน');
+
+    // ค้นหา sim_request ที่มีอยู่แล้วจาก student_id
+    const [simRows] = await pool.query(
+      `SELECT id, status FROM sim_requests WHERE student_id = ?`,
+      [reg.student_id],
+    );
+    let simReq = (simRows as any[])[0];
+
+    if (simReq && simReq.status === 'distributed') {
+      throw new Error('นักศึกษาคนนี้ได้รับ SIM ไปแล้ว');
+    }
+
+    // ถ้าไม่มี sim_request ให้สร้างใหม่จากข้อมูล registration
+    if (!simReq) {
+      const newSimId = randomUUID();
+      await pool.query(
+        `INSERT INTO sim_requests (id, institute_id, student_id, full_name, gender, age, education_level, field_of_study, email, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+        [
+          newSimId,
+          reg.institute_id,
+          reg.student_id,
+          reg.full_name,
+          reg.gender ?? '',
+          reg.age ?? 0,
+          reg.education_level ?? '',
+          reg.field_of_study ?? '',
+          reg.email ?? '',
+        ],
+      );
+      simReq = { id: newSimId, status: 'pending' };
+    }
 
     const distributedBy = await getCurrentUserLabel(pool);
     const id = randomUUID();
@@ -104,12 +142,12 @@ export const createSimDistribution = createServerFn({ method: 'POST' })
     await pool.query(
       `INSERT INTO sim_distributions (id, sim_request_id, student_name, institute_id, institute_name, phone_number, distributed_by, note)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, data.sim_request_id, req.full_name, req.institute_id, req.institute_name, data.phone_number, distributedBy, data.note ?? null],
+      [id, simReq.id, reg.full_name, reg.institute_id, reg.institute_name, data.phone_number, distributedBy, data.note ?? null],
     );
 
     await pool.query(
       `UPDATE sim_requests SET distributed_at = NOW(), distributed_phone = ?, status = 'distributed' WHERE id = ?`,
-      [data.phone_number, data.sim_request_id],
+      [data.phone_number, simReq.id],
     );
 
     return { ok: true };
