@@ -43,6 +43,9 @@ export function SiteHeader() {
           {isAdvisor && (
             <Link to="/advisor/dashboard" className="text-sm font-medium text-teal transition-colors hover:text-teal/80">ระบบอนุมัติ</Link>
           )}
+          {isAdvisor && (
+            <Link to="/sim-distribute" className="text-sm font-medium text-teal transition-colors hover:text-teal/80">แจก SIM</Link>
+          )}
           {isAdmin && (
             <Link to="/admin" className="text-sm font-medium text-teal transition-colors hover:text-teal/80">ผู้ดูแลระบบ</Link>
           )}
@@ -106,6 +109,9 @@ export function SiteHeader() {
             <Link to="/contest" onClick={close} className="rounded-md px-3 py-2 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-teal">ประกวดชิงรางวัล</Link>
             {isAdvisor && (
               <Link to="/advisor/dashboard" onClick={close} className="rounded-md px-3 py-2 text-sm font-medium text-teal hover:bg-white/10">ระบบอนุมัติ</Link>
+            )}
+            {isAdvisor && (
+              <Link to="/sim-distribute" onClick={close} className="rounded-md px-3 py-2 text-sm font-medium text-teal hover:bg-white/10">แจก SIM</Link>
             )}
             {isAdmin && (
               <Link to="/admin" onClick={close} className="rounded-md px-3 py-2 text-sm font-medium text-teal hover:bg-white/10">ผู้ดูแลระบบ</Link>

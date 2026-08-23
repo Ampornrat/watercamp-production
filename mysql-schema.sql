@@ -220,6 +220,9 @@ CREATE TABLE IF NOT EXISTS users (
   full_name VARCHAR(255),
   role ENUM('admin', 'advisor', 'student') NOT NULL DEFAULT 'student',
   is_active TINYINT(1) NOT NULL DEFAULT 1,
+  reset_password_token VARCHAR(64) NULL,
+  reset_password_expires_at DATETIME NULL,
+  reset_token_used TINYINT(1) NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_users_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

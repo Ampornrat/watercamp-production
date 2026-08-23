@@ -57,26 +57,28 @@ async function getCurrentUserLabel(pool: Awaited<ReturnType<typeof getPool>>): P
 }
 
 export const searchSimRequests = createServerFn({ method: 'POST' })
-  .inputValidator((raw: unknown) => (raw as { q: string }))
+  .inputValidator((raw: unknown) => (raw as { q: string; institute_id?: string }))
   .handler(async ({ data }) => {
     const pool = await getPool();
     const q = (data.q ?? '').trim();
+    const instituteId = data.institute_id?.trim() ?? '';
+    const conditions: string[] = [`r.guest_name IS NOT NULL`];
+    const params: string[] = [];
+    if (q) { conditions.push(`r.guest_name LIKE CONCAT('%', ?, '%')`); params.push(q); }
+    if (instituteId) { conditions.push(`r.institute_id = ?`); params.push(instituteId); }
     const sql = `
       SELECT r.id, r.guest_name AS full_name, r.student_id, r.institute_id, r.guest_email AS email,
              COALESCE(i.institute, i.name) AS institute_name,
-             sr.id AS sim_request_id
+             NULL AS sim_request_id,
+             r.wants_sim
       FROM registrations r
       JOIN institutes_tab i ON r.institute_id = i.id
-      LEFT JOIN sim_requests sr ON sr.student_id = r.student_id
-      WHERE r.guest_name IS NOT NULL
-        AND (sr.id IS NULL OR sr.status = 'pending')
-        ${q ? `AND r.guest_name LIKE CONCAT('%', ?, '%')` : ''}
-      ORDER BY r.guest_name ASC
+      WHERE ${conditions.join(' AND ')}
+      ORDER BY r.wants_sim ASC, r.guest_name ASC
       LIMIT 20
     `;
-    const params = q ? [q] : [];
     const [rows] = await pool.query(sql, params);
-    return rows as { id: string; full_name: string; student_id: string; institute_id: string; email: string; institute_name: string; sim_request_id: string | null }[];
+    return rows as { id: string; full_name: string; student_id: string; institute_id: string; email: string; institute_name: string; sim_request_id: string | null; wants_sim: number }[];
   });
 
 const DistributeInput = z.object({
@@ -148,6 +150,11 @@ export const createSimDistribution = createServerFn({ method: 'POST' })
     await pool.query(
       `UPDATE sim_requests SET distributed_at = NOW(), distributed_phone = ?, status = 'distributed' WHERE id = ?`,
       [data.phone_number, simReq.id],
+    );
+
+    await pool.query(
+      `UPDATE registrations SET wants_sim = 2 WHERE id = ?`,
+      [data.registration_id],
     );
 
     return { ok: true };

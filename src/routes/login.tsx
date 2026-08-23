@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, redirect, useNavigate, Link } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -67,7 +67,15 @@ function LoginPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="password">รหัสผ่าน</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">รหัสผ่าน</Label>
+              <Link
+                to="/forgot-password"
+                className="text-xs text-primary hover:underline"
+              >
+                ลืมรหัสผ่าน?
+              </Link>
+            </div>
             <Input
               id="password"
               type="password"

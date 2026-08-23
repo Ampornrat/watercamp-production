@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth.server";
 import { useState, useEffect, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Smartphone, X, Download, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Smartphone, X, Download, Search, ChevronLeft, ChevronRight, Lock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -13,7 +13,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { searchSimRequests, createSimDistribution, getSimDistributions } from "@/lib/sim-distribute.functions";
+import { getAllInstitutes } from "@/lib/trainings.functions";
+import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/sim-distribute")({
   head: () => ({
@@ -24,6 +27,7 @@ export const Route = createFileRoute("/sim-distribute")({
     if (!user || (user.role !== 'admin' && user.role !== 'advisor')) {
       throw redirect({ to: '/login' });
     }
+    return { user };
   },
   component: SimDistributePage,
 });
@@ -36,6 +40,7 @@ type SearchResult = {
   institute_name: string;
   email: string;
   sim_request_id: string | null;
+  wants_sim: number;
 };
 
 function formatDate(s: string) {
@@ -46,30 +51,51 @@ function formatDate(s: string) {
 }
 
 export function SimDistributeContent() {
-  return <SimDistributeInner />;
+  const { user, loading } = useAuth();
+  if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+  if (!user) return null;
+  return <SimDistributeInner user={user} />;
 }
 
 function SimDistributePage() {
+  const { user } = Route.useRouteContext();
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <SiteHeader />
       <main className="container mx-auto flex-1 px-4 py-12">
-        <SimDistributeInner />
+        <SimDistributeInner user={user} />
       </main>
       <SiteFooter />
     </div>
   );
 }
 
-function SimDistributeInner() {
+function SimDistributeInner({ user }: { user: { role: string; institute_id: string | null; institute_name: string | null } }) {
+  const isAdvisor = user.role === 'advisor';
+
   const searchFn = useServerFn(searchSimRequests);
   const distributeFn = useServerFn(createSimDistribution);
   const getDistributionsFn = useServerFn(getSimDistributions);
+  const getAllInstitutesFn = useServerFn(getAllInstitutes);
   const queryClient = useQueryClient();
 
+  // Institute selection — advisor: locked to own institute, admin: free choice
+  const [selectedInstituteId, setSelectedInstituteId] = useState<string>(
+    isAdvisor && user.institute_id ? user.institute_id : ""
+  );
+  const [selectedInstituteName, setSelectedInstituteName] = useState<string>(
+    isAdvisor && user.institute_name ? user.institute_name : ""
+  );
+
+  const { data: institutes = [] } = useQuery({
+    queryKey: ["institutes"],
+    queryFn: () => getAllInstitutesFn(),
+    enabled: !isAdvisor,
+  });
+
   // Search autocomplete state
-  const [query, setQuery] = useState("");           // displayed in input (immediate)
-  const [debouncedQuery, setDebouncedQuery] = useState(""); // actual search term (debounced)
+  const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [focused, setFocused] = useState(false);
   const [selected, setSelected] = useState<SearchResult | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -80,11 +106,11 @@ function SimDistributeInner() {
     return () => clearTimeout(t);
   }, [query]);
 
-  // Fetch results via useQuery — enabled only when dropdown is open and nothing is selected
+  // Fetch results via useQuery — enabled only when institute selected, dropdown open, nothing selected
   const { data: results = [] } = useQuery({
-    queryKey: ["sim-search", debouncedQuery],
-    queryFn: () => searchFn({ data: { q: debouncedQuery } }),
-    enabled: focused && !selected,
+    queryKey: ["sim-search", debouncedQuery, selectedInstituteId],
+    queryFn: () => searchFn({ data: { q: debouncedQuery, institute_id: selectedInstituteId || undefined } }),
+    enabled: focused && !selected && !!selectedInstituteId,
     staleTime: 0,
   });
 
@@ -201,10 +227,42 @@ function SimDistributeInner() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Autocomplete */}
+                {/* Field 1: มหาวิทยาลัย */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="institute">
+                    มหาวิทยาลัย <span className="text-destructive">*</span>
+                  </Label>
+                  {isAdvisor ? (
+                    <div className="flex items-center gap-2 rounded-lg border border-border bg-muted px-3 py-2">
+                      <Lock className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="text-sm text-foreground">{selectedInstituteName || "—"}</span>
+                    </div>
+                  ) : (
+                    <Select
+                      value={selectedInstituteId}
+                      onValueChange={(val) => {
+                        const inst = institutes.find((i: any) => i.id === val);
+                        setSelectedInstituteId(val);
+                        setSelectedInstituteName(inst?.name ?? "");
+                        clearSelected();
+                      }}
+                    >
+                      <SelectTrigger id="institute">
+                        <SelectValue placeholder="เลือกมหาวิทยาลัย" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {institutes.map((i: any) => (
+                          <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+
+                {/* Field 2: Autocomplete ชื่อนักศึกษา */}
                 <div className="space-y-1.5">
                   <Label htmlFor="search">
-                    ชื่อ-นามสกุล <span className="text-destructive">*</span>
+                    ชื่อ-นามสกุลนักศึกษา <span className="text-destructive">*</span>
                   </Label>
                   <div className="relative" ref={dropdownRef}>
                     <div className="relative">
@@ -212,11 +270,11 @@ function SimDistributeInner() {
                       <Input
                         id="search"
                         type="text"
-                        placeholder="คลิกหรือพิมพ์ชื่อเพื่อค้นหาจากผู้ลงทะเบียน..."
+                        placeholder={selectedInstituteId ? "พิมพ์ชื่อเพื่อค้นหา..." : "เลือกมหาวิทยาลัยก่อน"}
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        onFocus={() => setFocused(true)}
-                        disabled={!!selected}
+                        onFocus={() => { if (selectedInstituteId) setFocused(true); }}
+                        disabled={!!selected || !selectedInstituteId}
                         autoComplete="off"
                         className="pl-9"
                       />
@@ -233,19 +291,29 @@ function SimDistributeInner() {
 
                     {showDropdown && results.length > 0 && (
                       <div className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-popover shadow-lg">
-                        {results.map((r) => (
-                          <button
-                            key={r.id}
-                            type="button"
-                            onClick={() => selectStudent(r)}
-                            className="flex w-full flex-col gap-0.5 px-4 py-3 text-left hover:bg-muted first:rounded-t-xl last:rounded-b-xl"
-                          >
-                            <span className="font-medium text-foreground">{r.full_name}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {r.student_id} · {r.institute_name}
-                            </span>
-                          </button>
-                        ))}
+                        {results.map((r) => {
+                          const received = r.wants_sim === 2;
+                          return (
+                            <button
+                              key={r.id}
+                              type="button"
+                              onClick={() => selectStudent(r)}
+                              className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left hover:bg-muted first:rounded-t-xl last:rounded-b-xl ${received ? 'bg-red-50 hover:bg-red-100' : ''}`}
+                            >
+                              <div className="flex flex-col gap-0.5">
+                                <span className={`font-medium ${received ? 'text-red-600' : 'text-foreground'}`}>
+                                  {r.full_name}
+                                </span>
+                                <span className="text-xs text-muted-foreground">{r.student_id}</span>
+                              </div>
+                              {received && (
+                                <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600">
+                                  รับ SIM แล้ว
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
 
@@ -255,19 +323,6 @@ function SimDistributeInner() {
                       </div>
                     )}
                   </div>
-                </div>
-
-                {/* Institute (read-only) */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="institute">มหาวิทยาลัย</Label>
-                  <Input
-                    id="institute"
-                    type="text"
-                    readOnly
-                    value={selected?.institute_name ?? ""}
-                    placeholder="กรอกจากข้อมูลนักศึกษาที่เลือก"
-                    className="cursor-default bg-muted text-muted-foreground"
-                  />
                 </div>
 
                 {/* Phone */}
