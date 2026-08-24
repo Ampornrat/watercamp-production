@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { readFile, stat } from 'fs/promises'
+import { readFile, stat, access } from 'fs/promises'
 import { join, extname } from 'path'
 
 const MIME: Record<string, string> = {
@@ -14,13 +14,27 @@ const MIME: Record<string, string> = {
   '.mov': 'video/quicktime',
 }
 
-function uploadsDir() {
-  return (
-    process.env.UPLOAD_DIR ??
-    (process.env.NODE_ENV === 'production'
-      ? join(process.cwd(), '.output', 'public', 'uploads')
-      : join(process.cwd(), 'public', 'uploads'))
-  )
+// Candidate directories searched in order until the file is found
+function uploadsDirCandidates(): string[] {
+  if (process.env.UPLOAD_DIR) return [process.env.UPLOAD_DIR]
+  const cwd = process.cwd()
+  return [
+    join(cwd, 'public', 'uploads'),                  // git-tracked static assets (always present)
+    join(cwd, '.output', 'public', 'uploads'),        // Vinxi production build copy
+  ]
+}
+
+async function resolveFilePath(name: string): Promise<string | null> {
+  for (const dir of uploadsDirCandidates()) {
+    const candidate = join(dir, name)
+    try {
+      await access(candidate)
+      return candidate
+    } catch {
+      // not found in this directory, try next
+    }
+  }
+  return null
 }
 
 export const Route = createFileRoute('/uploads/$name')({
@@ -32,7 +46,8 @@ export const Route = createFileRoute('/uploads/$name')({
           return new Response('Not found', { status: 404 })
         }
 
-        const filePath = join(uploadsDir(), params.name)
+        const filePath = await resolveFilePath(params.name)
+        if (!filePath) return new Response('Not found', { status: 404 })
 
         try {
           const info = await stat(filePath)
