@@ -32,6 +32,7 @@ import { Route as StudentProfileRouteImport } from './routes/student.profile'
 import { Route as StudentLoginRouteImport } from './routes/student.login'
 import { Route as StudentDashboardRouteImport } from './routes/student.dashboard'
 import { Route as STokenRouteImport } from './routes/s.$token'
+import { Route as ImagesNameRouteImport } from './routes/images.$name'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as ContestSubmitRouteImport } from './routes/contest.submit'
 import { Route as ContestRegisterRouteImport } from './routes/contest.register'
@@ -163,6 +164,11 @@ const STokenRoute = STokenRouteImport.update({
   path: '/s/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ImagesNameRoute = ImagesNameRouteImport.update({
+  id: '/images/$name',
+  path: '/images/$name',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   id: '/email/unsubscribe',
   path: '/email/unsubscribe',
@@ -264,6 +270,7 @@ export interface FileRoutesByFullPath {
   '/contest/register': typeof ContestRegisterRoute
   '/contest/submit': typeof ContestSubmitRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/images/$name': typeof ImagesNameRoute
   '/s/$token': typeof STokenRoute
   '/student/dashboard': typeof StudentDashboardRoute
   '/student/login': typeof StudentLoginRoute
@@ -304,6 +311,7 @@ export interface FileRoutesByTo {
   '/contest/register': typeof ContestRegisterRoute
   '/contest/submit': typeof ContestSubmitRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/images/$name': typeof ImagesNameRoute
   '/s/$token': typeof STokenRoute
   '/student/dashboard': typeof StudentDashboardRoute
   '/student/login': typeof StudentLoginRoute
@@ -345,6 +353,7 @@ export interface FileRoutesById {
   '/contest/register': typeof ContestRegisterRoute
   '/contest/submit': typeof ContestSubmitRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/images/$name': typeof ImagesNameRoute
   '/s/$token': typeof STokenRoute
   '/student/dashboard': typeof StudentDashboardRoute
   '/student/login': typeof StudentLoginRoute
@@ -387,6 +396,7 @@ export interface FileRouteTypes {
     | '/contest/register'
     | '/contest/submit'
     | '/email/unsubscribe'
+    | '/images/$name'
     | '/s/$token'
     | '/student/dashboard'
     | '/student/login'
@@ -427,6 +437,7 @@ export interface FileRouteTypes {
     | '/contest/register'
     | '/contest/submit'
     | '/email/unsubscribe'
+    | '/images/$name'
     | '/s/$token'
     | '/student/dashboard'
     | '/student/login'
@@ -467,6 +478,7 @@ export interface FileRouteTypes {
     | '/contest/register'
     | '/contest/submit'
     | '/email/unsubscribe'
+    | '/images/$name'
     | '/s/$token'
     | '/student/dashboard'
     | '/student/login'
@@ -508,6 +520,7 @@ export interface RootRouteChildren {
   ContestRegisterRoute: typeof ContestRegisterRoute
   ContestSubmitRoute: typeof ContestSubmitRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  ImagesNameRoute: typeof ImagesNameRoute
   STokenRoute: typeof STokenRoute
   StudentDashboardRoute: typeof StudentDashboardRoute
   StudentLoginRoute: typeof StudentLoginRoute
@@ -691,6 +704,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof STokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/images/$name': {
+      id: '/images/$name'
+      path: '/images/$name'
+      fullPath: '/images/$name'
+      preLoaderRoute: typeof ImagesNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/email/unsubscribe': {
       id: '/email/unsubscribe'
       path: '/email/unsubscribe'
@@ -820,6 +840,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContestRegisterRoute: ContestRegisterRoute,
   ContestSubmitRoute: ContestSubmitRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  ImagesNameRoute: ImagesNameRoute,
   STokenRoute: STokenRoute,
   StudentDashboardRoute: StudentDashboardRoute,
   StudentLoginRoute: StudentLoginRoute,

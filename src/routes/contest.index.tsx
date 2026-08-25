@@ -22,21 +22,21 @@ const FINAL_CRITERIA = [
 const HASHTAGS = ["#Thaiwater", "#วัยรุ่นรู้ทันน้ำ", "#thaiwaterambassador", "#สสน"];
 
 const LOGOS_ROW1 = [
-  { src: "/uploads/logo_mhesi.png", alt: "กระทรวงการอุดมศึกษา วิทยาศาสตร์ วิจัยและนวัตกรรม", h: 44 },
-  { src: "/uploads/logo_ssn.jpg", alt: "สสน", h: 44 },
-  { src: "/uploads/logo_ungc.png", alt: "UN Global Compact Network Thailand", h: 40 },
-  { src: "/uploads/logo_dct.png", alt: "DCT", h: 40 },
-  { src: "/uploads/logo_kyf.webp", alt: "กองทุนเงินให้กู้ยืมเพื่อการศึกษา", h: 44 },
+  { src: "/images/logo_mhesi.png", alt: "กระทรวงการอุดมศึกษา วิทยาศาสตร์ วิจัยและนวัตกรรม", h: 44 },
+  { src: "/images/logo_ssn.jpg", alt: "สสน", h: 44 },
+  { src: "/images/logo_ungc.png", alt: "UN Global Compact Network Thailand", h: 40 },
+  { src: "/images/logo_dct.png", alt: "DCT", h: 40 },
+  { src: "/images/logo_kyf.webp", alt: "กองทุนเงินให้กู้ยืมเพื่อการศึกษา", h: 44 },
 ];
 
 const LOGOS_ROW2 = [
-  { src: "/uploads/logo_true.png", alt: "True", h: 32 },
-  { src: "/uploads/logo_thaibev.png", alt: "ThaiBev", h: 32 },
-  { src: "/uploads/logo_kabinburi.png", alt: "Kabinburi Industrial Zone", h: 32 },
-  { src: "/uploads/logo_tcp.png", alt: "TCP", h: 32 },
-  { src: "/uploads/logo_scgc.png", alt: "SCGC", h: 32 },
-  { src: "/uploads/logo_aiat.png", alt: "AIAT", h: 32 },
-  { src: "/uploads/logo_mk.png", alt: "MK Restaurants", h: 32 },
+  { src: "/images/logo_true.png", alt: "True", h: 32 },
+  { src: "/images/logo_thaibev.png", alt: "ThaiBev", h: 32 },
+  { src: "/images/logo_kabinburi.png", alt: "Kabinburi Industrial Zone", h: 32 },
+  { src: "/images/logo_tcp.png", alt: "TCP", h: 32 },
+  { src: "/images/logo_scgc.png", alt: "SCGC", h: 32 },
+  { src: "/images/logo_aiat.png", alt: "AIAT", h: 32 },
+  { src: "/images/logo_mk.png", alt: "MK Restaurants", h: 32 },
 ];
 
 function ScoreRing({ pct }: { pct: number }) {
@@ -147,7 +147,7 @@ function ContestPage() {
                 </a>
               </div>
             </div>
-            <img src="/uploads/students_hero.png" alt="นักเรียนนักศึกษา" style={{ width: "100%", height: "auto", display: "block" }} />
+            <img src="/images/students_hero.png" alt="นักเรียนนักศึกษา" style={{ width: "100%", height: "auto", display: "block" }} />
           </div>
         </section>
 
@@ -180,7 +180,7 @@ function ContestPage() {
             <div style={{ background: "#fff", border: "1.5px solid #b9e2ee", borderRadius: 16, padding: 28 }}>
               <SectionPill label="แนวทาง" />
               <div className="flex items-center" style={{ gap: 18 }}>
-                <img src="/uploads/edutainment_icons.png" alt="ไอคอนแนวทาง Edutainment" style={{ height: 56, width: "auto", flexShrink: 0 }} />
+                <img src="/images/edutainment_icons.png" alt="ไอคอนแนวทาง Edutainment" style={{ height: 56, width: "auto", flexShrink: 0 }} />
                 <p style={{ margin: 0, fontSize: 16, lineHeight: 1.7, color: "#274a63" }}>
                   แนวทาง <strong>"Edutainment"</strong> (สนุกและได้ความรู้) เช่น คลิป POV หรือรีวิวแอพ
                 </p>
@@ -194,7 +194,7 @@ function ContestPage() {
           <div style={{ background: "#fff", border: "1.5px solid #b9e2ee", borderRadius: 16, padding: 28, textAlign: "center" }}>
             <SectionPill label="เนื้อหา" />
             <img
-              src="/uploads/app_screens.png"
+              src="/images/app_screens.png"
               alt="ตัวอย่างฟังก์ชันแอปพลิเคชัน ThaiWater"
               style={{ maxWidth: "100%", height: "auto", display: "block", margin: "0 auto 18px" }}
             />
@@ -299,9 +299,9 @@ function ContestPage() {
               </Link>
             </div>
             <div className="flex flex-wrap items-center gap-4">
-              <img src="/uploads/download_thaiwater.png" alt="Download ThaiWater" style={{ height: 52, width: "auto" }} />
-              <img src="/uploads/badge_googleplay.png" alt="Get it on Google Play" style={{ height: 42, width: "auto" }} />
-              <img src="/uploads/badge_appstore.png" alt="Download on the App Store" style={{ height: 42, width: "auto" }} />
+              <img src="/images/download_thaiwater.png" alt="Download ThaiWater" style={{ height: 52, width: "auto" }} />
+              <img src="/images/badge_googleplay.png" alt="Get it on Google Play" style={{ height: 42, width: "auto" }} />
+              <img src="/images/badge_appstore.png" alt="Download on the App Store" style={{ height: 42, width: "auto" }} />
             </div>
           </div>
         </section>
