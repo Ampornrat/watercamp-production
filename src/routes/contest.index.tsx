@@ -132,7 +132,7 @@ function ContestPage() {
               </div>
               <div className="flex flex-wrap gap-3.5">
                 <Link
-                  to="/contest/submit"
+                  to="/student/login"
                   className="font-heading font-bold"
                   style={{ background: "#ffb703", color: "#12314f", padding: "14px 28px", borderRadius: 10, fontSize: 17, textDecoration: "none", display: "inline-block" }}
                 >
