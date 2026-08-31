@@ -332,7 +332,7 @@ function ContestPage() {
                 เริ่มส่งผลงานตั้งแต่วันที่ 1-30 กันยายน 69 ได้ที่
               </p>
               <Link
-                to="/contest/submit"
+                to="/student/login"
                 style={{ color: "#fff", fontSize: 15, textDecoration: "underline" }}
               >
                 watercamp.kwunjai.com/contest/submit
