@@ -3,7 +3,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useServerFn } from '@tanstack/react-start'
 import { toast } from 'sonner'
-import { ArrowLeft, Loader2, Trophy, Users } from 'lucide-react'
+import { ArrowLeft, FileText, Loader2, Trophy, Users } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,7 +14,7 @@ import { SiteHeader } from '@/components/SiteHeader'
 import { SiteFooter } from '@/components/SiteFooter'
 import { getSession } from '@/lib/auth.server'
 import { getStudentProfile } from '@/lib/student-profile.functions'
-import { getContestEligibleMembers, registerContestTeam } from '@/lib/contest.functions'
+import { getContestEligibleMembers, registerContestTeam, createStoryboardUploadUrl } from '@/lib/contest.functions'
 
 export const Route = createFileRoute('/contest/register')({
   component: ContestRegisterPage,
@@ -26,6 +26,7 @@ function ContestRegisterPage() {
   const getProfileFn = useServerFn(getStudentProfile)
   const getEligibleFn = useServerFn(getContestEligibleMembers)
   const registerTeamFn = useServerFn(registerContestTeam)
+  const createStoryboardUploadFn = useServerFn(createStoryboardUploadUrl)
 
   const [sessionUser, setSessionUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
@@ -35,6 +36,7 @@ function ContestRegisterPage() {
   const [memberEmails, setMemberEmails] = useState<string[]>([])
   const [campaignName, setCampaignName] = useState('')
   const [concept, setConcept] = useState('')
+  const [storyboardFile, setStoryboardFile] = useState<File | null>(null)
 
   useEffect(() => {
     getSessionFn()
@@ -75,6 +77,22 @@ function ContestRegisterPage() {
       if (memberEmails.length < 4) throw new Error('กรุณาเลือกสมาชิกทีมอย่างน้อย 4 คน (ทั้งทีมรวมหัวหน้าต้องมี 5 คนขึ้นไป)')
       if (!campaignName.trim()) throw new Error('กรุณากรอกชื่อแคมเปญ')
       if (!concept.trim()) throw new Error('กรุณากรอกคอนเซป')
+      if (!storyboardFile) throw new Error('กรุณาแนบไฟล์ Story Board')
+      const allowedTypes = ['application/pdf', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation']
+      if (!allowedTypes.includes(storyboardFile.type) && !/\.(pdf|ppt|pptx)$/i.test(storyboardFile.name))
+        throw new Error('Story Board รองรับเฉพาะไฟล์ PDF, PPT หรือ PPTX เท่านั้น')
+      if (storyboardFile.size > 100 * 1024 * 1024) throw new Error('ไฟล์ Story Board ต้องไม่เกิน 100MB')
+
+      const safeSbName = `storyboard_${storyboardFile.name.replace(/[^\w.\- ]/g, '_')}`
+      const { path: sbPath, signedUrl: sbSignedUrl } = await createStoryboardUploadFn({
+        data: { filename: safeSbName },
+      })
+      const sbRes = await fetch(sbSignedUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': storyboardFile.type || 'application/octet-stream' },
+        body: storyboardFile,
+      })
+      if (!sbRes.ok) throw new Error('อัปโหลดไฟล์ Story Board ไม่สำเร็จ')
 
       const res = await registerTeamFn({
         data: {
@@ -84,6 +102,9 @@ function ContestRegisterPage() {
           memberEmails,
           campaignName: campaignName.trim(),
           concept: concept.trim(),
+          storyboardPath: sbPath,
+          storyboardFileName: storyboardFile.name,
+          storyboardFileSize: storyboardFile.size,
         },
       })
       return res.id
@@ -202,6 +223,23 @@ function ContestRegisterPage() {
                   maxLength={1500}
                   placeholder="อธิบายแนวคิดของแคมเปญ..."
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label>ไฟล์ Story Board * (PDF, PPT หรือ PPTX ไม่เกิน 100MB)</Label>
+                <div className="rounded-md border border-dashed p-4">
+                  <input
+                    type="file"
+                    onChange={(e) => setStoryboardFile(e.target.files?.[0] ?? null)}
+                    className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-teal file:px-4 file:py-2 file:font-semibold file:text-navy hover:file:bg-teal/90"
+                    accept=".pdf,.ppt,.pptx,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                  />
+                  {storyboardFile && (
+                    <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                      <FileText className="h-4 w-4" /> {storyboardFile.name} ({(storyboardFile.size / 1024 / 1024).toFixed(2)} MB)
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Contest eligibility notice */}

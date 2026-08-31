@@ -62,6 +62,9 @@ const RegisterTeamSchema = z.object({
   memberEmails: z.array(z.string().email()).min(4).max(20),
   campaignName: z.string().min(1).max(200),
   concept: z.string().min(1).max(1500),
+  storyboardPath: z.string().min(1).max(500),
+  storyboardFileName: z.string().min(1).max(255),
+  storyboardFileSize: z.number().int().min(1).max(100 * 1024 * 1024),
 })
 
 export const registerContestTeam = createServerFn({ method: 'POST' })
@@ -115,10 +118,11 @@ export const registerContestTeam = createServerFn({ method: 'POST' })
     const leader = byEmail.get(data.leaderEmail.toLowerCase())!
     const teamId = randomUUID()
     await pool.query(
-      `INSERT INTO contest_teams (id, team_name, institute_id, leader_name, leader_email, campaign_name, concept, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+      `INSERT INTO contest_teams (id, team_name, institute_id, leader_name, leader_email, campaign_name, concept, storyboard_url, storyboard_file_name, storyboard_file_size, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
       [teamId, data.teamName.trim(), data.instituteId, leader.name ?? '', data.leaderEmail.toLowerCase(),
-       data.campaignName.trim(), data.concept.trim()]
+       data.campaignName.trim(), data.concept.trim(),
+       data.storyboardPath, data.storyboardFileName, data.storyboardFileSize]
     )
 
     for (const email of data.memberEmails.map((e) => e.toLowerCase())) {
@@ -139,6 +143,16 @@ const UploadUrlSchema = z.object({
 
 export const createContestUploadUrl = createServerFn({ method: 'POST' })
   .inputValidator((input: unknown) => UploadUrlSchema.parse(input))
+  .handler(async () => {
+    throw new Error('ระบบอัปโหลดไฟล์ยังไม่พร้อมใช้งาน กรุณาติดต่อผู้ดูแลระบบ');
+  })
+
+const StoryboardUploadUrlSchema = z.object({
+  filename: z.string().min(1).max(255).regex(/^[\w.\- ]+$/),
+})
+
+export const createStoryboardUploadUrl = createServerFn({ method: 'POST' })
+  .inputValidator((input: unknown) => StoryboardUploadUrlSchema.parse(input))
   .handler(async () => {
     throw new Error('ระบบอัปโหลดไฟล์ยังไม่พร้อมใช้งาน กรุณาติดต่อผู้ดูแลระบบ');
   })

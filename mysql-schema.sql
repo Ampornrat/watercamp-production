@@ -186,6 +186,9 @@ CREATE TABLE IF NOT EXISTS contest_teams (
   leader_email VARCHAR(255),
   campaign_name VARCHAR(200),
   concept TEXT,
+  storyboard_url TEXT NULL,
+  storyboard_file_name VARCHAR(255) NULL,
+  storyboard_file_size BIGINT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (institute_id) REFERENCES institutes_tab(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
