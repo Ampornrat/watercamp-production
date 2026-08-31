@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, Loader2, FileVideo } from "lucide-react";
+import { ArrowLeft, Upload, Loader2, FileVideo, FileText } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,7 @@ function ContestSubmitPage() {
   const [submitterEmail, setSubmitterEmail] = useState("");
   const [note, setNote] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [storyboardFile, setStoryboardFile] = useState<File | null>(null);
   const listTeams = useServerFn(listContestTeams);
   const createUpload = useServerFn(createContestUploadUrl);
   const submitEntry = useServerFn(submitContestEntry);
@@ -44,20 +45,42 @@ function ContestSubmitPage() {
       if (!teamId) throw new Error("กรุณาเลือกทีม");
       if (!campaignName.trim()) throw new Error("กรุณาระบุชื่อแคมเปญ");
       if (!file) throw new Error("กรุณาแนบไฟล์ผลงาน");
-      if (file.size > 500 * 1024 * 1024) throw new Error("ไฟล์ต้องไม่เกิน 500MB");
+      if (file.size > 500 * 1024 * 1024) throw new Error("ไฟล์ผลงานต้องไม่เกิน 500MB");
+      if (!storyboardFile) throw new Error("กรุณาแนบไฟล์ Story Board");
+      const allowedStoryboardTypes = [
+        "application/pdf",
+        "application/vnd.ms-powerpoint",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      ];
+      if (!allowedStoryboardTypes.includes(storyboardFile.type) &&
+          !/\.(pdf|ppt|pptx)$/i.test(storyboardFile.name)) {
+        throw new Error("Story Board รองรับเฉพาะไฟล์ PDF, PPT หรือ PPTX เท่านั้น");
+      }
+      if (storyboardFile.size > 100 * 1024 * 1024) throw new Error("ไฟล์ Story Board ต้องไม่เกิน 100MB");
 
       const safeName = file.name.replace(/[^\w.\- ]/g, "_");
       const { path, signedUrl } = await createUpload({
         data: { teamId, filename: safeName },
       });
 
-      // Upload directly to storage via the signed upload URL.
       const upRes = await fetch(signedUrl, {
         method: "PUT",
         headers: { "Content-Type": file.type || "application/octet-stream" },
         body: file,
       });
-      if (!upRes.ok) throw new Error("อัปโหลดไฟล์ไม่สำเร็จ");
+      if (!upRes.ok) throw new Error("อัปโหลดไฟล์ผลงานไม่สำเร็จ");
+
+      const safeSbName = `storyboard_${storyboardFile.name.replace(/[^\w.\- ]/g, "_")}`;
+      const { path: sbPath, signedUrl: sbSignedUrl } = await createUpload({
+        data: { teamId, filename: safeSbName },
+      });
+
+      const sbRes = await fetch(sbSignedUrl, {
+        method: "PUT",
+        headers: { "Content-Type": storyboardFile.type || "application/octet-stream" },
+        body: storyboardFile,
+      });
+      if (!sbRes.ok) throw new Error("อัปโหลดไฟล์ Story Board ไม่สำเร็จ");
 
       await submitEntry({
         data: {
@@ -66,6 +89,9 @@ function ContestSubmitPage() {
           path,
           fileName: file.name,
           fileSize: file.size,
+          storyboardPath: sbPath,
+          storyboardFileName: storyboardFile.name,
+          storyboardFileSize: storyboardFile.size,
           note: note.trim() || null,
           submitterEmail: submitterEmail.trim().toLowerCase() || null,
         },
@@ -74,6 +100,7 @@ function ContestSubmitPage() {
     onSuccess: () => {
       toast.success("ส่งผลงานเรียบร้อย ขอบคุณที่ร่วมประกวด!");
       setFile(null);
+      setStoryboardFile(null);
       setNote("");
     },
     onError: (e: Error) => toast.error(e.message),
@@ -93,7 +120,7 @@ function ContestSubmitPage() {
               <div className="rounded-lg bg-teal/15 p-2 text-teal"><Upload className="h-6 w-6" /></div>
               <div>
                 <h1 className="font-heading text-2xl font-extrabold">ส่งผลงานเข้าประกวด</h1>
-                <p className="text-sm text-muted-foreground">เลือกทีมและแนบไฟล์ผลงาน (วิดีโอหรือไฟล์อื่นๆ ขนาดไม่เกิน 500MB)</p>
+                <p className="text-sm text-muted-foreground">เลือกทีมและแนบไฟล์ผลงาน พร้อม Story Board (PDF/PPT)</p>
               </div>
             </div>
 
@@ -128,7 +155,7 @@ function ContestSubmitPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>ไฟล์ผลงาน *</Label>
+                <Label>ไฟล์ผลงาน * (วิดีโอหรือไฟล์อื่นๆ ไม่เกิน 500MB)</Label>
                 <div className="rounded-md border border-dashed p-4">
                   <input
                     type="file"
@@ -139,6 +166,23 @@ function ContestSubmitPage() {
                   {file && (
                     <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
                       <FileVideo className="h-4 w-4" /> {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>ไฟล์ Story Board * (PDF, PPT หรือ PPTX ไม่เกิน 100MB)</Label>
+                <div className="rounded-md border border-dashed p-4">
+                  <input
+                    type="file"
+                    onChange={(e) => setStoryboardFile(e.target.files?.[0] ?? null)}
+                    className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-teal file:px-4 file:py-2 file:font-semibold file:text-navy hover:file:bg-teal/90"
+                    accept=".pdf,.ppt,.pptx,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                  />
+                  {storyboardFile && (
+                    <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                      <FileText className="h-4 w-4" /> {storyboardFile.name} ({(storyboardFile.size / 1024 / 1024).toFixed(2)} MB)
                     </div>
                   )}
                 </div>

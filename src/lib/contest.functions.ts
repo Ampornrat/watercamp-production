@@ -59,7 +59,7 @@ const RegisterTeamSchema = z.object({
   teamName: z.string().min(1).max(120),
   instituteId: z.string().uuid(),
   leaderEmail: z.string().email().max(255),
-  memberEmails: z.array(z.string().email()).min(1).max(20),
+  memberEmails: z.array(z.string().email()).min(4).max(20),
   campaignName: z.string().min(1).max(200),
   concept: z.string().min(1).max(1500),
 })
@@ -149,6 +149,9 @@ const SubmitEntrySchema = z.object({
   path: z.string().min(1).max(500),
   fileName: z.string().min(1).max(255),
   fileSize: z.number().int().min(1).max(500 * 1024 * 1024),
+  storyboardPath: z.string().min(1).max(500),
+  storyboardFileName: z.string().min(1).max(255),
+  storyboardFileSize: z.number().int().min(1).max(100 * 1024 * 1024),
   note: z.string().max(2000).optional().nullable(),
   submitterEmail: z.string().email().max(255).optional().nullable(),
 })
@@ -163,9 +166,11 @@ export const submitContestEntry = createServerFn({ method: 'POST' })
 
     const id = randomUUID();
     await pool.query(
-      `INSERT INTO contest_submissions (id, team_id, campaign_name, file_url, file_name, file_size, note, submitted_by_email, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      `INSERT INTO contest_submissions
+         (id, team_id, campaign_name, file_url, file_name, file_size, storyboard_url, storyboard_file_name, storyboard_file_size, note, submitted_by_email, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
       [id, data.teamId, data.campaignName.trim(), data.path, data.fileName, data.fileSize,
+       data.storyboardPath, data.storyboardFileName, data.storyboardFileSize,
        data.note?.trim() || null, data.submitterEmail?.trim().toLowerCase() || team.leader_email || 'unknown']
     );
     return { ok: true };
