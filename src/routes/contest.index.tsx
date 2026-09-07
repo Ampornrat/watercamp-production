@@ -329,7 +329,7 @@ function ContestPage() {
             </p>
             <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 14, padding: "18px 22px", marginBottom: 22 }}>
               <p className="font-heading font-semibold" style={{ margin: "0 0 4px", fontSize: 17, color: "#7fd9ef" }}>
-                เริ่มส่งผลงานตั้งแต่วันที่ 1-30 กันยายน 69 ได้ที่
+                เริ่มส่งผลงานตั้งแต่วันที่ 1 ก.ย. - 15 ต.ค. 69 ได้ที่
               </p>
               <Link
                 to="/student/login"
