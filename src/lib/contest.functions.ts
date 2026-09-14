@@ -91,6 +91,22 @@ export const registerContestTeam = createServerFn({ method: 'POST' })
         throw new Error(`${email} ไม่ได้สังกัดสถาบันที่เลือก`)
     }
 
+    // Verify no member is already in another team
+    const [existingRows] = await pool.query(
+      `SELECT email FROM (
+         SELECT LOWER(leader_email) AS email FROM contest_teams
+         UNION ALL
+         SELECT LOWER(member_email) AS email FROM contest_team_members
+       ) AS all_members
+       WHERE email IN (${emailPlaceholders})`,
+      allEmails
+    )
+    const alreadyInTeam = (existingRows as any[]).map((r) => r.email)
+    if (alreadyInTeam.length > 0) {
+      const names = alreadyInTeam.map((email: string) => byEmail.get(email)?.name ?? email)
+      throw new Error(`สมาชิกต่อไปนี้อยู่ในทีมอื่นแล้ว: ${names.join(', ')}`)
+    }
+
     // Validate required_for_contest completion
     const [reqRows] = await pool.query(`SELECT id FROM trainings WHERE required_for_contest = 1`)
     const reqIds = (reqRows as any[]).map((r: any) => r.id)
