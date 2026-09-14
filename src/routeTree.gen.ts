@@ -15,12 +15,12 @@ import { Route as SimDistributeRouteImport } from './routes/sim-distribute'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SetPasswordRouteImport } from './routes/set-password'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as ContestReportRouteImport } from './routes/contest-report'
 import { Route as ReportRouteImport } from './routes/report'
 import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ContestReportRouteImport } from './routes/contest-report'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
@@ -80,11 +80,6 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ContestReportRoute = ContestReportRouteImport.update({
-  id: '/contest-report',
-  path: '/contest-report',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ReportRoute = ReportRouteImport.update({
   id: '/report',
   path: '/report',
@@ -108,6 +103,11 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContestReportRoute = ContestReportRouteImport.update({
+  id: '/contest-report',
+  path: '/contest-report',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -259,11 +259,11 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
+  '/contest-report': typeof ContestReportRoute
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/partners': typeof PartnersRoute
-  '/contest-report': typeof ContestReportRoute
   '/report': typeof ReportRoute
   '/reset-password': typeof ResetPasswordRoute
   '/set-password': typeof SetPasswordRoute
@@ -301,11 +301,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
+  '/contest-report': typeof ContestReportRoute
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/partners': typeof PartnersRoute
-  '/contest-report': typeof ContestReportRoute
   '/report': typeof ReportRoute
   '/reset-password': typeof ResetPasswordRoute
   '/set-password': typeof SetPasswordRoute
@@ -344,11 +344,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
+  '/contest-report': typeof ContestReportRoute
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/partners': typeof PartnersRoute
-  '/contest-report': typeof ContestReportRoute
   '/report': typeof ReportRoute
   '/reset-password': typeof ResetPasswordRoute
   '/set-password': typeof SetPasswordRoute
@@ -388,11 +388,11 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/contest-report'
     | '/dashboard'
     | '/forgot-password'
     | '/login'
     | '/partners'
-    | '/contest-report'
     | '/report'
     | '/reset-password'
     | '/set-password'
@@ -430,11 +430,11 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/contest-report'
     | '/dashboard'
     | '/forgot-password'
     | '/login'
     | '/partners'
-    | '/contest-report'
     | '/report'
     | '/reset-password'
     | '/set-password'
@@ -472,11 +472,11 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/contest-report'
     | '/dashboard'
     | '/forgot-password'
     | '/login'
     | '/partners'
-    | '/contest-report'
     | '/report'
     | '/reset-password'
     | '/set-password'
@@ -598,13 +598,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/contest-report': {
-      id: '/contest-report'
-      path: '/contest-report'
-      fullPath: '/contest-report'
-      preLoaderRoute: typeof ContestReportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/report': {
       id: '/report'
       path: '/report'
@@ -638,6 +631,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contest-report': {
+      id: '/contest-report'
+      path: '/contest-report'
+      fullPath: '/contest-report'
+      preLoaderRoute: typeof ContestReportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
