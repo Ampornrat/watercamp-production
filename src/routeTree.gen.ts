@@ -15,6 +15,7 @@ import { Route as SimDistributeRouteImport } from './routes/sim-distribute'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SetPasswordRouteImport } from './routes/set-password'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as ContestReportRouteImport } from './routes/contest-report'
 import { Route as ReportRouteImport } from './routes/report'
 import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as LoginRouteImport } from './routes/login'
@@ -77,6 +78,11 @@ const SetPasswordRoute = SetPasswordRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContestReportRoute = ContestReportRouteImport.update({
+  id: '/contest-report',
+  path: '/contest-report',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportRoute = ReportRouteImport.update({
@@ -257,6 +263,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/partners': typeof PartnersRoute
+  '/contest-report': typeof ContestReportRoute
   '/report': typeof ReportRoute
   '/reset-password': typeof ResetPasswordRoute
   '/set-password': typeof SetPasswordRoute
@@ -298,6 +305,7 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/partners': typeof PartnersRoute
+  '/contest-report': typeof ContestReportRoute
   '/report': typeof ReportRoute
   '/reset-password': typeof ResetPasswordRoute
   '/set-password': typeof SetPasswordRoute
@@ -340,6 +348,7 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/partners': typeof PartnersRoute
+  '/contest-report': typeof ContestReportRoute
   '/report': typeof ReportRoute
   '/reset-password': typeof ResetPasswordRoute
   '/set-password': typeof SetPasswordRoute
@@ -383,6 +392,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/partners'
+    | '/contest-report'
     | '/report'
     | '/reset-password'
     | '/set-password'
@@ -424,6 +434,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/partners'
+    | '/contest-report'
     | '/report'
     | '/reset-password'
     | '/set-password'
@@ -465,6 +476,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/partners'
+    | '/contest-report'
     | '/report'
     | '/reset-password'
     | '/set-password'
@@ -503,6 +515,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRoute
+  ContestReportRoute: typeof ContestReportRoute
   DashboardRoute: typeof DashboardRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
@@ -583,6 +596,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contest-report': {
+      id: '/contest-report'
+      path: '/contest-report'
+      fullPath: '/contest-report'
+      preLoaderRoute: typeof ContestReportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/report': {
@@ -823,6 +843,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRoute,
+  ContestReportRoute: ContestReportRoute,
   DashboardRoute: DashboardRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,

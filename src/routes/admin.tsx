@@ -22,6 +22,7 @@ import { SurveyBuilder } from "@/components/SurveyBuilder";
 import { CustomSurveyDashboard } from "@/components/CustomSurveyDashboard";
 import { ReportContent, AdvisorsReportContent } from "@/routes/report";
 import { SimDistributeContent } from "@/routes/sim-distribute";
+import { ContestReportContent } from "@/routes/contest-report";
 import {
   getAdminTrainings,
   getAdminRegistrations,
@@ -298,6 +299,7 @@ function Admin() {
             <TabsTrigger value="report">รายงานการลงทะเบียน</TabsTrigger>
             <TabsTrigger value="advisors-report">รายงานอาจารย์ที่ปรึกษา</TabsTrigger>
             <TabsTrigger value="sim-distribute">แจก SIM</TabsTrigger>
+            <TabsTrigger value="contest-report">ทีมประกวด</TabsTrigger>
           </TabsList>
 
           <TabsContent value="trainings" className="mt-4">
@@ -644,6 +646,10 @@ function Admin() {
 
           <TabsContent value="sim-distribute" className="mt-4">
             <SimDistributeContent />
+          </TabsContent>
+
+          <TabsContent value="contest-report" className="mt-4">
+            <ContestReportContent />
           </TabsContent>
         </Tabs>
       </div>

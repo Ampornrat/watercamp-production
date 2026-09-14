@@ -152,6 +152,63 @@ export const registerContestTeam = createServerFn({ method: 'POST' })
     return { id: teamId }
   })
 
+export const getContestTeamsReport = createServerFn({ method: 'GET' }).handler(async () => {
+  const pool = (await import('@/lib/db.server')).default;
+
+  const [teamRows] = await pool.query(
+    `SELECT
+       ct.id, ct.team_name, ct.leader_name, ct.leader_email,
+       ct.campaign_name, ct.concept,
+       ct.storyboard_url, ct.storyboard_file_name, ct.storyboard_file_size,
+       ct.created_at,
+       COALESCE(i.name, '') AS institute_name,
+       GROUP_CONCAT(
+         DISTINCT CONCAT_WS('||', ctm.member_name, ctm.member_email)
+         ORDER BY ctm.member_name
+         SEPARATOR ';;'
+       ) AS members_raw
+     FROM contest_teams ct
+     LEFT JOIN institutes_tab i ON i.id = ct.institute_id
+     LEFT JOIN contest_team_members ctm ON ctm.team_id = ct.id
+     GROUP BY ct.id
+     ORDER BY ct.created_at DESC`
+  )
+
+  const [subRows] = await pool.query(
+    `SELECT team_id, id, campaign_name, file_url, file_name, file_size,
+            storyboard_url, storyboard_file_name, note, submitted_by_email, created_at
+     FROM contest_submissions
+     ORDER BY created_at DESC`
+  )
+
+  const subsByTeam = new Map<string, any[]>()
+  for (const s of subRows as any[]) {
+    if (!subsByTeam.has(s.team_id)) subsByTeam.set(s.team_id, [])
+    subsByTeam.get(s.team_id)!.push(s)
+  }
+
+  return (teamRows as any[]).map((t) => ({
+    id: t.id as string,
+    team_name: t.team_name as string,
+    leader_name: t.leader_name as string,
+    leader_email: t.leader_email as string,
+    campaign_name: t.campaign_name as string,
+    concept: t.concept as string,
+    storyboard_url: t.storyboard_url as string | null,
+    storyboard_file_name: t.storyboard_file_name as string | null,
+    storyboard_file_size: t.storyboard_file_size as number | null,
+    created_at: t.created_at as string,
+    institute_name: t.institute_name as string,
+    members: (t.members_raw as string | null)
+      ? (t.members_raw as string).split(';;').map((m: string) => {
+          const [name, email] = m.split('||')
+          return { name: name ?? '', email: email ?? '' }
+        })
+      : [],
+    submissions: subsByTeam.get(t.id) ?? [],
+  }))
+})
+
 const UploadUrlSchema = z.object({
   teamId: z.string().uuid(),
   filename: z.string().min(1).max(255).regex(/^[\w.\- ]+$/),
