@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { GraduationCap } from "lucide-react";
-import nsaLogo from "@/assets/nsa-logo.png";
 import unLogo from "@/assets/un-global-compact-transparent.png";
 import dctLogo from "@/assets/dct-logo.png";
 import hiiLogo from "@/assets/hii-logo-transparent.png";
@@ -29,7 +28,6 @@ type Partner = {
 const partners: Partner[] = [
   {
     name: "กองทุนเงินให้กู้ยืมเพื่อการศึกษา (กยศ.)",
-    logo: nsaLogo,
     items: [
       "ประชาสัมพันธ์สถานศึกษาเกี่ยวกับกิจกรรมสอนน้องรู้น้ำ",
       "ติดตามการเข้าร่วมกิจกรรมของนักศึกษา (ผู้กู้ยืม กยศ.)",

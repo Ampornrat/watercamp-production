@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { LogIn, LogOut, User, Menu, X } from "lucide-react";
 import hiiLogo from "@/assets/hii-logo-transparent.png";
-import nsaLogo from "@/assets/nsa-logo.png";
 import gcntLogo from "@/assets/gcnt-logo.png";
 import dldLogo from "@/assets/dld-logo.png";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,7 +21,6 @@ export function SiteHeader() {
             <img src={hiiLogo} alt="HII" className="h-8 w-8 object-contain md:h-10 md:w-10" />
             <img src={gcntLogo} alt="Global Compact Network Thailand" className="h-8 w-auto object-contain md:h-10" />
             <img src={dldLogo} alt="DLD" className="h-8 w-auto object-contain md:h-10" />
-            <img src={nsaLogo} alt="NSA" className="h-8 w-auto object-contain md:h-10" />
           </div>
           <span className="font-heading text-base font-extrabold uppercase tracking-tight text-white md:text-lg">
             ThaiWater <span className="text-teal">Challenge</span>
