@@ -1,17 +1,19 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useServerFn } from '@tanstack/react-start'
-import { Download, FileText, FileVideo, ChevronDown, ChevronRight, Loader2, Trophy } from 'lucide-react'
+import { Download, FileText, FileVideo, ChevronDown, ChevronRight, Loader2, Trophy, CheckCircle2, XCircle, Save } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Textarea } from '@/components/ui/textarea'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { SiteHeader } from '@/components/SiteHeader'
 import { SiteFooter } from '@/components/SiteFooter'
 import { getSession } from '@/lib/auth.server'
-import { getContestTeamsReport } from '@/lib/contest.functions'
+import { getContestTeamsReport, setTeamScore, approveTeamRound1 } from '@/lib/contest.functions'
+import { toast } from 'sonner'
 
 export const Route = createFileRoute('/contest-report')({
   head: () => ({ meta: [{ title: 'รายงานทีมประกวด' }] }),
@@ -39,15 +41,65 @@ function fmtDate(d: string | null) {
   return new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
+const round1Badge = {
+  pending: <Badge variant="outline" className="text-xs">รอพิจารณา</Badge>,
+  approved: <Badge className="bg-green-600 text-xs text-white hover:bg-green-600">ผ่านรอบ 1</Badge>,
+  rejected: <Badge variant="destructive" className="text-xs">ไม่ผ่าน</Badge>,
+}
+
 export function ContestReportContent() {
   const getReportFn = useServerFn(getContestTeamsReport)
+  const setScoreFn = useServerFn(setTeamScore)
+  const approveFn = useServerFn(approveTeamRound1)
+  const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [scoreState, setScoreState] = useState<Record<string, { score: string; notes: string }>>({})
+  const [savingScore, setSavingScore] = useState<string | null>(null)
+  const [approvingTeam, setApprovingTeam] = useState<string | null>(null)
 
   const { data: teams = [], isLoading } = useQuery({
     queryKey: ['contest-teams-report'],
     queryFn: () => getReportFn(),
   })
+
+  useEffect(() => {
+    if (!teams.length) return
+    setScoreState((prev) => {
+      const next = { ...prev }
+      for (const t of teams) {
+        if (!next[t.id]) next[t.id] = { score: t.score != null ? String(t.score) : '', notes: t.round1_notes ?? '' }
+      }
+      return next
+    })
+  }, [teams])
+
+  const handleSaveScore = async (teamId: string) => {
+    setSavingScore(teamId)
+    try {
+      const s = scoreState[teamId]
+      await setScoreFn({ data: { teamId, score: s.score !== '' ? Number(s.score) : null, notes: s.notes || null } })
+      await queryClient.invalidateQueries({ queryKey: ['contest-teams-report'] })
+      toast.success('บันทึกคะแนนแล้ว')
+    } catch {
+      toast.error('บันทึกคะแนนไม่สำเร็จ')
+    } finally {
+      setSavingScore(null)
+    }
+  }
+
+  const handleApprove = async (teamId: string, approve: boolean) => {
+    setApprovingTeam(teamId)
+    try {
+      await approveFn({ data: { teamId, approve } })
+      await queryClient.invalidateQueries({ queryKey: ['contest-teams-report'] })
+      toast.success(approve ? 'อนุมัติทีมแล้ว — ส่ง email แจ้งสมาชิกทุกคน' : 'บันทึกผลไม่ผ่านแล้ว')
+    } catch {
+      toast.error('เกิดข้อผิดพลาด')
+    } finally {
+      setApprovingTeam(null)
+    }
+  }
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim()
@@ -134,6 +186,8 @@ export function ContestReportContent() {
               <TableHead>ชื่อแคมเปญ</TableHead>
               <TableHead>สมาชิก</TableHead>
               <TableHead>Story Board</TableHead>
+              <TableHead>คะแนน</TableHead>
+              <TableHead>สถานะรอบ 1</TableHead>
               <TableHead>ผลงานที่ส่ง</TableHead>
               <TableHead>วันที่สมัคร</TableHead>
             </TableRow>
@@ -141,7 +195,7 @@ export function ContestReportContent() {
           <TableBody>
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} className="py-16 text-center text-muted-foreground">
+                <TableCell colSpan={10} className="py-16 text-center text-muted-foreground">
                   ยังไม่มีทีมที่สมัคร
                 </TableCell>
               </TableRow>
@@ -184,6 +238,10 @@ export function ContestReportContent() {
                         <span className="text-xs text-muted-foreground">-</span>
                       )}
                     </TableCell>
+                    <TableCell className="text-sm font-semibold">
+                      {team.score != null ? team.score : <span className="text-muted-foreground">-</span>}
+                    </TableCell>
+                    <TableCell>{round1Badge[team.round1_status]}</TableCell>
                     <TableCell>
                       {team.submissions.length > 0 ? (
                         <div className="flex flex-col gap-1">
@@ -213,7 +271,77 @@ export function ContestReportContent() {
                   {isOpen && (
                     <TableRow key={`${team.id}-detail`} className="bg-muted/20">
                       <TableCell />
-                      <TableCell colSpan={7} className="py-4">
+                      <TableCell colSpan={9} className="py-4">
+                        {/* Round 1 scoring & approval */}
+                        <div className="mb-4 rounded-lg border bg-white p-4">
+                          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">ผลคะแนนรอบที่ 1</p>
+                          <div className="flex flex-wrap items-end gap-3">
+                            <div className="space-y-1">
+                              <label className="text-xs text-muted-foreground">คะแนน (0–100)</label>
+                              <Input
+                                type="number"
+                                min={0}
+                                max={100}
+                                step={0.5}
+                                className="w-28"
+                                value={scoreState[team.id]?.score ?? ''}
+                                onChange={(e) => setScoreState((prev) => ({ ...prev, [team.id]: { ...prev[team.id], score: e.target.value } }))}
+                                disabled={team.round1_status !== 'pending'}
+                              />
+                            </div>
+                            <div className="flex-1 space-y-1">
+                              <label className="text-xs text-muted-foreground">หมายเหตุกรรมการ</label>
+                              <Textarea
+                                rows={2}
+                                className="resize-none"
+                                value={scoreState[team.id]?.notes ?? ''}
+                                onChange={(e) => setScoreState((prev) => ({ ...prev, [team.id]: { ...prev[team.id], notes: e.target.value } }))}
+                                disabled={team.round1_status !== 'pending'}
+                              />
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1.5"
+                              disabled={savingScore === team.id || team.round1_status !== 'pending'}
+                              onClick={() => handleSaveScore(team.id)}
+                            >
+                              {savingScore === team.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                              บันทึกคะแนน
+                            </Button>
+                          </div>
+                          {team.round1_status === 'pending' && (
+                            <div className="mt-3 flex gap-2">
+                              <Button
+                                size="sm"
+                                className="gap-1.5 bg-green-600 text-white hover:bg-green-700"
+                                disabled={approvingTeam === team.id}
+                                onClick={() => handleApprove(team.id, true)}
+                              >
+                                {approvingTeam === team.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                                อนุมัติผ่านรอบ 1 (ส่ง email)
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="gap-1.5"
+                                disabled={approvingTeam === team.id}
+                                onClick={() => handleApprove(team.id, false)}
+                              >
+                                <XCircle className="h-3.5 w-3.5" />
+                                ไม่ผ่าน
+                              </Button>
+                            </div>
+                          )}
+                          {team.round1_status !== 'pending' && (
+                            <p className="mt-2 text-xs text-muted-foreground">
+                              {team.round1_status === 'approved'
+                                ? `✅ อนุมัติแล้ว${team.round1_approved_at ? ` เมื่อ ${fmtDate(team.round1_approved_at)}` : ''}`
+                                : '❌ บันทึกผลไม่ผ่านแล้ว'}
+                            </p>
+                          )}
+                        </div>
+
                         <div className="grid gap-4 md:grid-cols-2">
                           {/* Members */}
                           <div>

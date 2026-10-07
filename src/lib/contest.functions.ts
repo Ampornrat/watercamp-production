@@ -4,7 +4,9 @@ import { randomUUID } from 'crypto'
 
 export const listContestTeams = createServerFn({ method: 'GET' }).handler(async () => {
   const pool = (await import('@/lib/db.server')).default;
-  const [rows] = await pool.query(`SELECT id, team_name, campaign_name FROM contest_teams ORDER BY created_at DESC`);
+  const [rows] = await pool.query(
+    `SELECT id, team_name, campaign_name, leader_email, round1_status FROM contest_teams ORDER BY created_at DESC`
+  );
   return (rows as any[]) ?? [];
 })
 
@@ -161,6 +163,7 @@ export const getContestTeamsReport = createServerFn({ method: 'GET' }).handler(a
        ct.campaign_name, ct.concept,
        ct.storyboard_url, ct.storyboard_file_name, ct.storyboard_file_size,
        ct.created_at,
+       ct.score, ct.round1_status, ct.round1_approved_at, ct.round1_notes,
        COALESCE(i.name, '') AS institute_name,
        GROUP_CONCAT(
          DISTINCT CONCAT_WS('||', ctm.member_name, ctm.member_email)
@@ -198,6 +201,10 @@ export const getContestTeamsReport = createServerFn({ method: 'GET' }).handler(a
     storyboard_file_name: t.storyboard_file_name as string | null,
     storyboard_file_size: t.storyboard_file_size as number | null,
     created_at: t.created_at as string,
+    score: t.score as number | null,
+    round1_status: (t.round1_status ?? 'pending') as 'pending' | 'approved' | 'rejected',
+    round1_approved_at: t.round1_approved_at as string | null,
+    round1_notes: t.round1_notes as string | null,
     institute_name: t.institute_name as string,
     members: (t.members_raw as string | null)
       ? (t.members_raw as string).split(';;').map((m: string) => {
@@ -259,9 +266,13 @@ export const submitContestEntry = createServerFn({ method: 'POST' })
   .inputValidator((input: unknown) => SubmitEntrySchema.parse(input))
   .handler(async ({ data }) => {
     const pool = (await import('@/lib/db.server')).default;
-    const [teamRows] = await pool.query(`SELECT id, leader_email FROM contest_teams WHERE id = ? LIMIT 1`, [data.teamId]);
+    const [teamRows] = await pool.query(
+      `SELECT id, leader_email, round1_status FROM contest_teams WHERE id = ? LIMIT 1`,
+      [data.teamId]
+    );
     const team = (teamRows as any[])[0];
     if (!team) throw new Error('ไม่พบทีม');
+    if (team.round1_status !== 'approved') throw new Error('ทีมยังไม่ผ่านการคัดเลือกรอบที่ 1');
 
     const id = randomUUID();
     await pool.query(
@@ -274,3 +285,117 @@ export const submitContestEntry = createServerFn({ method: 'POST' })
     );
     return { ok: true };
   })
+
+// ─── Round 1 scoring & approval ───────────────────────────────────────────────
+
+const SetTeamScoreSchema = z.object({
+  teamId: z.string().uuid(),
+  score: z.number().min(0).max(100).nullable(),
+  notes: z.string().max(500).optional().nullable(),
+})
+
+export const setTeamScore = createServerFn({ method: 'POST' })
+  .inputValidator((input: unknown) => SetTeamScoreSchema.parse(input))
+  .handler(async ({ data }) => {
+    const pool = (await import('@/lib/db.server')).default;
+    await pool.query(
+      `UPDATE contest_teams SET score = ?, round1_notes = ? WHERE id = ?`,
+      [data.score, data.notes?.trim() || null, data.teamId]
+    );
+    return { ok: true };
+  })
+
+const ApproveRound1Schema = z.object({
+  teamId: z.string().uuid(),
+  approve: z.boolean(),
+})
+
+export const approveTeamRound1 = createServerFn({ method: 'POST' })
+  .inputValidator((input: unknown) => ApproveRound1Schema.parse(input))
+  .handler(async ({ data }) => {
+    const pool = (await import('@/lib/db.server')).default;
+    const status = data.approve ? 'approved' : 'rejected';
+    await pool.query(
+      `UPDATE contest_teams SET round1_status = ?, round1_approved_at = ? WHERE id = ?`,
+      [status, data.approve ? new Date() : null, data.teamId]
+    );
+
+    if (data.approve) {
+      const [teamRows] = await pool.query(
+        `SELECT team_name, leader_name, leader_email FROM contest_teams WHERE id = ? LIMIT 1`,
+        [data.teamId]
+      );
+      const team = (teamRows as any[])[0];
+      if (!team) return { ok: true };
+
+      const [memberRows] = await pool.query(
+        `SELECT member_name, member_email FROM contest_team_members WHERE team_id = ?`,
+        [data.teamId]
+      );
+      const recipients = [
+        { name: team.leader_name as string, email: team.leader_email as string },
+        ...(memberRows as any[]).map((m) => ({ name: m.member_name as string, email: m.member_email as string })),
+      ];
+
+      const siteUrl = process.env.SITE_URL ?? 'http://localhost:3000';
+      const { sendMail } = await import('@/lib/email/mailer.server');
+      await Promise.allSettled(
+        recipients.map((r) =>
+          sendMail({
+            to: r.email,
+            subject: `🎉 ยินดีด้วย! ทีม ${team.team_name} ผ่านการคัดเลือกรอบที่ 1 – ThaiWater Challenge`,
+            html: buildRound1ApprovalEmail(r.name, team.team_name as string, `${siteUrl}/contest/submit`),
+          })
+        )
+      );
+    }
+
+    return { ok: true };
+  })
+
+function buildRound1ApprovalEmail(name: string, teamName: string, submitUrl: string): string {
+  return `<!DOCTYPE html>
+<html lang="th">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f7fb;font-family:Sarabun,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f7fb;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);max-width:600px;">
+        <tr><td style="background:linear-gradient(135deg,#0f4c81,#0d9488);padding:32px 40px;text-align:center;">
+          <h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:700;">ThaiWater Challenge</h1>
+          <p style="margin:8px 0 0;color:#b2f5ea;font-size:14px;">โครงการอบรมแลกเปลี่ยนเรียนรู้และการประยุกต์</p>
+        </td></tr>
+        <tr><td style="padding:40px 40px 32px;">
+          <p style="margin:0 0 16px;font-size:16px;color:#374151;">เรียน <strong>${name || 'สมาชิก'}</strong>,</p>
+          <div style="background:#ecfdf5;border-left:4px solid #10b981;border-radius:6px;padding:16px 20px;margin-bottom:24px;">
+            <p style="margin:0;font-size:18px;font-weight:700;color:#065f46;">🎉 ยินดีด้วย! ทีมของท่านผ่านการคัดเลือกรอบที่ 1</p>
+          </div>
+          <p style="margin:0 0 12px;font-size:15px;color:#374151;">ทีม <strong style="color:#0f4c81;">${teamName}</strong> ผ่านการพิจารณา Story Board รอบที่ 1 ของ <strong>ThaiWater Challenge</strong> เรียบร้อยแล้ว</p>
+          <p style="margin:0 0 20px;font-size:15px;color:#374151;">ขอเชิญท่านส่งผลงานรอบที่ 2 โดยอัปโหลดไฟล์ดังต่อไปนี้:</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+            <tr><td style="padding:12px 16px;background:#f0f9ff;border-radius:8px;">
+              <span style="font-size:20px;">🎬</span>
+              <strong style="font-size:15px;color:#1e40af;"> VDO Clip</strong>
+              <span style="font-size:14px;color:#6b7280;"> — ไฟล์ .mp4 ขนาดไม่เกิน 500MB</span>
+            </td></tr>
+            <tr><td style="height:8px;"></td></tr>
+            <tr><td style="padding:12px 16px;background:#fefce8;border-radius:8px;">
+              <span style="font-size:20px;">📋</span>
+              <strong style="font-size:15px;color:#92400e;"> Story Board ที่ปรับปรุงแล้ว</strong>
+              <span style="font-size:14px;color:#6b7280;"> — ไฟล์ PDF ขนาดไม่เกิน 100MB</span>
+            </td></tr>
+          </table>
+          <div style="text-align:center;margin:32px 0;">
+            <a href="${submitUrl}" style="display:inline-block;background:#0d9488;color:#ffffff;font-size:16px;font-weight:700;padding:14px 36px;border-radius:8px;text-decoration:none;">ส่งผลงานรอบที่ 2</a>
+          </div>
+          <p style="margin:0;font-size:13px;color:#9ca3af;text-align:center;">หากมีข้อสงสัยกรุณาติดต่อ <a href="mailto:thaiwaterchallenge@gmail.com" style="color:#0d9488;">thaiwaterchallenge@gmail.com</a></p>
+        </td></tr>
+        <tr><td style="background:#f9fafb;padding:16px 40px;text-align:center;">
+          <p style="margin:0;font-size:12px;color:#9ca3af;">© 2025 ThaiWater Challenge · สถาบันสารสนเทศทรัพยากรน้ำ (สสน.)</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`
+}
