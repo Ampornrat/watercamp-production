@@ -216,8 +216,14 @@ const UploadUrlSchema = z.object({
 
 export const createContestUploadUrl = createServerFn({ method: 'POST' })
   .inputValidator((input: unknown) => UploadUrlSchema.parse(input))
-  .handler(async () => {
-    throw new Error('ระบบอัปโหลดไฟล์ยังไม่พร้อมใช้งาน กรุณาติดต่อผู้ดูแลระบบ');
+  .handler(async ({ data }) => {
+    const { createHmac } = await import('crypto')
+    const expires = Date.now() + 10 * 60 * 1000
+    const storagePath = `contest/${data.teamId}/${Date.now()}-${data.filename}`
+    const secret = process.env.DB_PASSWORD ?? 'watercamp-upload'
+    const sig = createHmac('sha256', secret).update(`${storagePath}:${expires}`).digest('hex')
+    const signedUrl = `/api/contest/upload?path=${encodeURIComponent(storagePath)}&expires=${expires}&sig=${sig}`
+    return { path: `/uploads/${storagePath}`, signedUrl }
   })
 
 const StoryboardUploadUrlSchema = z.object({
@@ -226,8 +232,14 @@ const StoryboardUploadUrlSchema = z.object({
 
 export const createStoryboardUploadUrl = createServerFn({ method: 'POST' })
   .inputValidator((input: unknown) => StoryboardUploadUrlSchema.parse(input))
-  .handler(async () => {
-    throw new Error('ระบบอัปโหลดไฟล์ยังไม่พร้อมใช้งาน กรุณาติดต่อผู้ดูแลระบบ');
+  .handler(async ({ data }) => {
+    const { createHmac } = await import('crypto')
+    const expires = Date.now() + 10 * 60 * 1000
+    const storagePath = `contest/storyboard/${Date.now()}-${data.filename}`
+    const secret = process.env.DB_PASSWORD ?? 'watercamp-upload'
+    const sig = createHmac('sha256', secret).update(`${storagePath}:${expires}`).digest('hex')
+    const signedUrl = `/api/contest/upload?path=${encodeURIComponent(storagePath)}&expires=${expires}&sig=${sig}`
+    return { path: `/uploads/${storagePath}`, signedUrl }
   })
 
 const SubmitEntrySchema = z.object({

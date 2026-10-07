@@ -42,6 +42,7 @@ import { Route as AdvisorQueueRouteImport } from './routes/advisor.queue'
 import { Route as AdvisorDashboardRouteImport } from './routes/advisor.dashboard'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiEmailImagesNameRouteImport } from './routes/api/email-images/$name'
+import { Route as ApiContestUploadRouteImport } from './routes/api/contest/upload'
 import { Route as ApiAdminUploadRouteImport } from './routes/api/admin/upload'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -215,6 +216,11 @@ const ApiEmailImagesNameRoute = ApiEmailImagesNameRouteImport.update({
   path: '/api/email-images/$name',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiContestUploadRoute = ApiContestUploadRouteImport.update({
+  id: '/api/contest/upload',
+  path: '/api/contest/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminUploadRoute = ApiAdminUploadRouteImport.update({
   id: '/api/admin/upload',
   path: '/api/admin/upload',
@@ -288,6 +294,7 @@ export interface FileRoutesByFullPath {
   '/contest/': typeof ContestIndexRoute
   '/trainings/': typeof TrainingsIndexRoute
   '/api/admin/upload': typeof ApiAdminUploadRoute
+  '/api/contest/upload': typeof ApiContestUploadRoute
   '/api/email-images/$name': typeof ApiEmailImagesNameRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/trainings/notify-registration': typeof ApiPublicTrainingsNotifyRegistrationRoute
@@ -330,6 +337,7 @@ export interface FileRoutesByTo {
   '/contest': typeof ContestIndexRoute
   '/trainings': typeof TrainingsIndexRoute
   '/api/admin/upload': typeof ApiAdminUploadRoute
+  '/api/contest/upload': typeof ApiContestUploadRoute
   '/api/email-images/$name': typeof ApiEmailImagesNameRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/trainings/notify-registration': typeof ApiPublicTrainingsNotifyRegistrationRoute
@@ -373,6 +381,7 @@ export interface FileRoutesById {
   '/contest/': typeof ContestIndexRoute
   '/trainings/': typeof TrainingsIndexRoute
   '/api/admin/upload': typeof ApiAdminUploadRoute
+  '/api/contest/upload': typeof ApiContestUploadRoute
   '/api/email-images/$name': typeof ApiEmailImagesNameRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/trainings/notify-registration': typeof ApiPublicTrainingsNotifyRegistrationRoute
@@ -417,6 +426,7 @@ export interface FileRouteTypes {
     | '/contest/'
     | '/trainings/'
     | '/api/admin/upload'
+    | '/api/contest/upload'
     | '/api/email-images/$name'
     | '/lovable/email/suppression'
     | '/api/public/trainings/notify-registration'
@@ -459,6 +469,7 @@ export interface FileRouteTypes {
     | '/contest'
     | '/trainings'
     | '/api/admin/upload'
+    | '/api/contest/upload'
     | '/api/email-images/$name'
     | '/lovable/email/suppression'
     | '/api/public/trainings/notify-registration'
@@ -501,6 +512,7 @@ export interface FileRouteTypes {
     | '/contest/'
     | '/trainings/'
     | '/api/admin/upload'
+    | '/api/contest/upload'
     | '/api/email-images/$name'
     | '/lovable/email/suppression'
     | '/api/public/trainings/notify-registration'
@@ -544,6 +556,7 @@ export interface RootRouteChildren {
   ContestIndexRoute: typeof ContestIndexRoute
   TrainingsIndexRoute: typeof TrainingsIndexRoute
   ApiAdminUploadRoute: typeof ApiAdminUploadRoute
+  ApiContestUploadRoute: typeof ApiContestUploadRoute
   ApiEmailImagesNameRoute: typeof ApiEmailImagesNameRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicTrainingsNotifyRegistrationRoute: typeof ApiPublicTrainingsNotifyRegistrationRoute
@@ -787,6 +800,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEmailImagesNameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/contest/upload': {
+      id: '/api/contest/upload'
+      path: '/api/contest/upload'
+      fullPath: '/api/contest/upload'
+      preLoaderRoute: typeof ApiContestUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/upload': {
       id: '/api/admin/upload'
       path: '/api/admin/upload'
@@ -872,6 +892,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContestIndexRoute: ContestIndexRoute,
   TrainingsIndexRoute: TrainingsIndexRoute,
   ApiAdminUploadRoute: ApiAdminUploadRoute,
+  ApiContestUploadRoute: ApiContestUploadRoute,
   ApiEmailImagesNameRoute: ApiEmailImagesNameRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicTrainingsNotifyRegistrationRoute:

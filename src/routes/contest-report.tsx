@@ -22,6 +22,12 @@ export const Route = createFileRoute('/contest-report')({
   component: ContestReportPage,
 })
 
+function toFileUrl(path: string | null | undefined) {
+  if (!path) return '#'
+  if (path.startsWith('http') || path.startsWith('/')) return path
+  return `/uploads/${path}`
+}
+
 function fmtSize(bytes: number | null) {
   if (!bytes) return ''
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
@@ -163,7 +169,7 @@ export function ContestReportContent() {
                     <TableCell>
                       {team.storyboard_url ? (
                         <a
-                          href={team.storyboard_url}
+                          href={toFileUrl(team.storyboard_url)}
                           download={team.storyboard_file_name ?? undefined}
                           target="_blank"
                           rel="noopener noreferrer"
@@ -184,7 +190,7 @@ export function ContestReportContent() {
                           {team.submissions.map((s) => (
                             <a
                               key={s.id}
-                              href={s.file_url}
+                              href={toFileUrl(s.file_url)}
                               download={s.file_name ?? undefined}
                               target="_blank"
                               rel="noopener noreferrer"
@@ -240,7 +246,7 @@ export function ContestReportContent() {
                                       <div className="font-medium">{s.campaign_name}</div>
                                       <div className="flex flex-wrap gap-3">
                                         <a
-                                          href={s.file_url}
+                                          href={toFileUrl(s.file_url)}
                                           download={s.file_name ?? undefined}
                                           target="_blank"
                                           rel="noopener noreferrer"
@@ -252,7 +258,7 @@ export function ContestReportContent() {
                                         </a>
                                         {s.storyboard_url && (
                                           <a
-                                            href={s.storyboard_url}
+                                            href={toFileUrl(s.storyboard_url)}
                                             download={s.storyboard_file_name ?? undefined}
                                             target="_blank"
                                             rel="noopener noreferrer"
