@@ -40,6 +40,7 @@ import { Route as ContestRegisterRouteImport } from './routes/contest.register'
 import { Route as AdvisorRegisterRouteImport } from './routes/advisor.register'
 import { Route as AdvisorQueueRouteImport } from './routes/advisor.queue'
 import { Route as AdvisorDashboardRouteImport } from './routes/advisor.dashboard'
+import { Route as UploadsContestSplatRouteImport } from './routes/uploads.contest.$'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiEmailImagesNameRouteImport } from './routes/api/email-images/$name'
 import { Route as ApiContestUploadRouteImport } from './routes/api/contest/upload'
@@ -206,6 +207,11 @@ const AdvisorDashboardRoute = AdvisorDashboardRouteImport.update({
   path: '/advisor/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UploadsContestSplatRoute = UploadsContestSplatRouteImport.update({
+  id: '/uploads/contest/$',
+  path: '/uploads/contest/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
@@ -297,6 +303,7 @@ export interface FileRoutesByFullPath {
   '/api/contest/upload': typeof ApiContestUploadRoute
   '/api/email-images/$name': typeof ApiEmailImagesNameRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/uploads/contest/$': typeof UploadsContestSplatRoute
   '/api/public/trainings/notify-registration': typeof ApiPublicTrainingsNotifyRegistrationRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -340,6 +347,7 @@ export interface FileRoutesByTo {
   '/api/contest/upload': typeof ApiContestUploadRoute
   '/api/email-images/$name': typeof ApiEmailImagesNameRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/uploads/contest/$': typeof UploadsContestSplatRoute
   '/api/public/trainings/notify-registration': typeof ApiPublicTrainingsNotifyRegistrationRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -384,6 +392,7 @@ export interface FileRoutesById {
   '/api/contest/upload': typeof ApiContestUploadRoute
   '/api/email-images/$name': typeof ApiEmailImagesNameRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/uploads/contest/$': typeof UploadsContestSplatRoute
   '/api/public/trainings/notify-registration': typeof ApiPublicTrainingsNotifyRegistrationRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -429,6 +438,7 @@ export interface FileRouteTypes {
     | '/api/contest/upload'
     | '/api/email-images/$name'
     | '/lovable/email/suppression'
+    | '/uploads/contest/$'
     | '/api/public/trainings/notify-registration'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -472,6 +482,7 @@ export interface FileRouteTypes {
     | '/api/contest/upload'
     | '/api/email-images/$name'
     | '/lovable/email/suppression'
+    | '/uploads/contest/$'
     | '/api/public/trainings/notify-registration'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -515,6 +526,7 @@ export interface FileRouteTypes {
     | '/api/contest/upload'
     | '/api/email-images/$name'
     | '/lovable/email/suppression'
+    | '/uploads/contest/$'
     | '/api/public/trainings/notify-registration'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -559,6 +571,7 @@ export interface RootRouteChildren {
   ApiContestUploadRoute: typeof ApiContestUploadRoute
   ApiEmailImagesNameRoute: typeof ApiEmailImagesNameRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  UploadsContestSplatRoute: typeof UploadsContestSplatRoute
   ApiPublicTrainingsNotifyRegistrationRoute: typeof ApiPublicTrainingsNotifyRegistrationRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -786,6 +799,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdvisorDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/uploads/contest/$': {
+      id: '/uploads/contest/$'
+      path: '/uploads/contest/$'
+      fullPath: '/uploads/contest/$'
+      preLoaderRoute: typeof UploadsContestSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
       path: '/lovable/email/suppression'
@@ -895,6 +915,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiContestUploadRoute: ApiContestUploadRoute,
   ApiEmailImagesNameRoute: ApiEmailImagesNameRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  UploadsContestSplatRoute: UploadsContestSplatRoute,
   ApiPublicTrainingsNotifyRegistrationRoute:
     ApiPublicTrainingsNotifyRegistrationRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
