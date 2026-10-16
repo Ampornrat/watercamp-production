@@ -164,7 +164,7 @@ export const getContestTeamsReport = createServerFn({ method: 'GET' }).handler(a
        ct.storyboard_url, ct.storyboard_file_name, ct.storyboard_file_size,
        ct.created_at,
        ct.score, ct.round1_status, ct.round1_approved_at, ct.round1_notes,
-       COALESCE(i.name, '') AS institute_name,
+       COALESCE(i.institute, i.name, '') AS institute_name,
        GROUP_CONCAT(
          DISTINCT CONCAT_WS('||', ctm.member_name, ctm.member_email)
          ORDER BY ctm.member_name

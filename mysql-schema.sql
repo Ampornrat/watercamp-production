@@ -189,6 +189,10 @@ CREATE TABLE IF NOT EXISTS contest_teams (
   storyboard_url TEXT NULL,
   storyboard_file_name VARCHAR(255) NULL,
   storyboard_file_size BIGINT NULL,
+  score DECIMAL(5,2) NULL,
+  round1_status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+  round1_approved_at DATETIME NULL,
+  round1_notes TEXT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (institute_id) REFERENCES institutes_tab(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
