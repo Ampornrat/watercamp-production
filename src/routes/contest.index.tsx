@@ -318,6 +318,58 @@ function ContestPage() {
           </div>
         </section>
 
+        {/* PRIZES */}
+        <section style={{ padding: "20px 32px" }}>
+          <div style={{ background: "#fff", border: "1.5px solid #b9e2ee", borderRadius: 16, padding: 28 }}>
+            <SectionPill label="รางวัลการประกวด (ThaiWater Challenge ๒๕๖๙)" />
+
+            {/* Cash prizes */}
+            <div className="grid gap-4" style={{ gridTemplateColumns: "1fr 1fr", marginBottom: 20 }}>
+              {[
+                { rank: "รางวัลที่ ๑", amount: "๑๐๐,๐๐๐ บาท", color: "#d4a017", bg: "#fffbea" },
+                { rank: "รางวัลที่ ๒", amount: "๕๐,๐๐๐ บาท", color: "#9ca3af", bg: "#f9fafb" },
+                { rank: "รางวัลที่ ๓", amount: "๒๕,๐๐๐ บาท", color: "#b45309", bg: "#fef3e2" },
+              ].map((r) => (
+                <div key={r.rank} className="flex items-center gap-3" style={{ background: r.bg, border: `1.5px solid ${r.color}40`, borderRadius: 12, padding: "14px 18px" }}>
+                  <span style={{ fontSize: 28 }}>🏆</span>
+                  <div>
+                    <p className="font-heading font-bold" style={{ margin: 0, fontSize: 16, color: r.color }}>{r.rank}</p>
+                    <p className="font-heading font-semibold" style={{ margin: 0, fontSize: 20, color: "#0b3d63" }}>{r.amount}</p>
+                  </div>
+                </div>
+              ))}
+              <div style={{ background: "#f0f9ff", border: "1.5px solid #bae6fd", borderRadius: 12, padding: "14px 18px" }}>
+                <p className="font-heading font-semibold" style={{ margin: "0 0 4px", fontSize: 14, color: "#0369a1" }}>รางวัลชมเชย (๒ รางวัล)</p>
+                <p className="font-heading font-bold" style={{ margin: 0, fontSize: 18, color: "#0b3d63" }}>รางวัลละ ๓,๐๐๐ บาท</p>
+                <p className="font-heading font-semibold" style={{ margin: "6px 0 0", fontSize: 14, color: "#0369a1" }}>รางวัลปลอบใจ (๕ รางวัล)</p>
+                <p className="font-heading font-bold" style={{ margin: 0, fontSize: 18, color: "#0b3d63" }}>รางวัลละ ๒,๐๐๐ บาท</p>
+              </div>
+            </div>
+
+            {/* Shield */}
+            <div className="flex items-start gap-3" style={{ background: "#f0fdf4", border: "1.5px solid #86efac", borderRadius: 12, padding: "14px 18px", marginBottom: 16 }}>
+              <span style={{ fontSize: 24, flexShrink: 0 }}>🛡️</span>
+              <p style={{ margin: 0, fontSize: 15, lineHeight: 1.7, color: "#166534" }}>
+                <strong>โล่เกียรติยศ</strong> สำหรับสถานศึกษาของเยาวชนที่เข้าร่วมและชนะการประกวด
+              </p>
+            </div>
+
+            {/* MK Special */}
+            <div style={{ background: "#fff7ed", border: "1.5px solid #fed7aa", borderRadius: 12, padding: "14px 18px" }}>
+              <div className="flex items-center gap-2" style={{ marginBottom: 8 }}>
+                <img src="/images/logo_mk.png" alt="MK" style={{ height: 24, width: "auto" }} />
+                <p className="font-heading font-semibold" style={{ margin: 0, fontSize: 15, color: "#9a3412" }}>สิทธิพิเศษเพิ่มเติมจาก MK</p>
+              </div>
+              <p style={{ margin: "0 0 6px", fontSize: 14, lineHeight: 1.7, color: "#7c2d12" }}>
+                🎁 <strong>Gift Voucher ทีมละ ๒,๐๐๐ บาท</strong> ให้กับ ๑๐ ทีมที่เข้ารอบ (รวมมูลค่า ๒๐,๐๐๐ บาท) เพื่อเติมพลังในการทำคลิป
+              </p>
+              <p style={{ margin: 0, fontSize: 13, color: "#92400e" }}>
+                <strong>เงื่อนไข:</strong> ถ่ายรูปหรือคลิปสั้นที่ MK แล้วส่งกลับให้ทีมงาน หรือโพสต์ลง Facebook พร้อมใส่แฮชแท็ก <strong>#MK</strong>
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* CONDITIONS + SUBMISSION */}
         <section style={{ padding: "20px 32px 56px" }}>
           <div style={{ background: "linear-gradient(180deg,#0b3d63,#0e4d78)", borderRadius: 20, padding: 36 }}>
