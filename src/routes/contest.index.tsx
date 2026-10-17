@@ -325,7 +325,7 @@ function ContestPage() {
               เงื่อนไข
             </h3>
             <p style={{ margin: "0 0 22px", fontSize: 16, lineHeight: 1.8, color: "#dfeef5" }}>
-              เข้าร่วมเป็นทีมอย่างน้อย 5 คนขึ้นไป โดยสามารถเรียนวิธีการทำสื่อผ่าน Zoom วันที่ 7 ก.ย. 69
+              เข้าร่วมเป็นทีมไม่เกิน 5 คน โดยสามารถเรียนวิธีการทำสื่อผ่าน Zoom วันที่ 7 ก.ย. 69
             </p>
             <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 14, padding: "18px 22px", marginBottom: 22 }}>
               <p className="font-heading font-semibold" style={{ margin: "0 0 4px", fontSize: 17, color: "#7fd9ef" }}>
