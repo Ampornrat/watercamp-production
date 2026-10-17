@@ -159,8 +159,39 @@ function StudentDashboardPage() {
               ))}
             </div>
 
-            {/* Contest eligibility */}
-            {coreCompleted > 0 ? (
+            {/* Contest eligibility / team status */}
+            {profile.contestTeam ? (
+              <Card className={`p-5 ${
+                profile.contestTeam.round1_status === 'approved'
+                  ? 'border-green-400/50 bg-green-50/50 dark:bg-green-950/20'
+                  : profile.contestTeam.round1_status === 'rejected'
+                  ? 'border-red-400/50 bg-red-50/50 dark:bg-red-950/20'
+                  : 'border-blue-400/50 bg-blue-50/50 dark:bg-blue-950/20'
+              }`}>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-semibold">
+                      {profile.contestTeam.round1_status === 'approved' ? '✅' :
+                       profile.contestTeam.round1_status === 'rejected' ? '❌' : '⏳'}{' '}
+                      ท่านอยู่ในทีม <strong>{profile.contestTeam.team_name}</strong>
+                      {' '}({profile.contestTeam.role === 'leader' ? 'หัวหน้าทีม' : 'สมาชิก'})
+                    </p>
+                    <p className="mt-0.5 text-sm text-muted-foreground">
+                      แคมเปญ: {profile.contestTeam.campaign_name} —{' '}
+                      {profile.contestTeam.round1_status === 'approved' ? 'ผ่านรอบ 1 แล้ว' :
+                       profile.contestTeam.round1_status === 'rejected' ? 'ไม่ผ่านรอบ 1' : 'รอผลพิจารณารอบ 1'}
+                    </p>
+                  </div>
+                  {profile.contestTeam.round1_status === 'approved' && (
+                    <Link to="/contest/submit">
+                      <Button size="sm" className="gap-2 bg-green-600 font-semibold text-white hover:bg-green-700">
+                        <Trophy className="h-4 w-4" /> ส่งผลงานรอบ 2
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              </Card>
+            ) : coreCompleted > 0 ? (
               <Card className="border-yellow-400/50 bg-yellow-50/50 p-5 dark:bg-yellow-950/20">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>

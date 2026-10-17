@@ -32,6 +32,21 @@ export const getStudentProfile = createServerFn({ method: 'GET' })
       [email]
     )
 
+    const [teamRows] = await pool.query(
+      `SELECT ct.id, ct.team_name, ct.campaign_name, ct.round1_status,
+              CASE WHEN LOWER(ct.leader_email) = ? THEN 'leader' ELSE 'member' END AS role
+       FROM contest_teams ct
+       WHERE LOWER(ct.leader_email) = ?
+       UNION
+       SELECT ct.id, ct.team_name, ct.campaign_name, ct.round1_status, 'member' AS role
+       FROM contest_team_members ctm
+       JOIN contest_teams ct ON ct.id = ctm.team_id
+       WHERE LOWER(ctm.member_email) = ?
+       LIMIT 1`,
+      [email, email, email]
+    )
+    const contestTeam = (teamRows as any[])[0] ?? null
+
     return {
       ...profile,
       registrations: regRows as {
@@ -44,6 +59,13 @@ export const getStudentProfile = createServerFn({ method: 'GET' })
         end_date: string
         course_type: string
       }[],
+      contestTeam: contestTeam as {
+        id: string
+        team_name: string
+        campaign_name: string
+        round1_status: 'pending' | 'approved' | 'rejected'
+        role: 'leader' | 'member'
+      } | null,
     }
   })
 
