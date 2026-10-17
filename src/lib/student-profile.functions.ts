@@ -14,8 +14,18 @@ export const getStudentProfile = createServerFn({ method: 'GET' })
        WHERE sp.email = ? LIMIT 1`,
       [email]
     )
-    const profile = (profileRows as any[])[0] ?? null
-    if (!profile) return null
+    let profile = (profileRows as any[])[0] ?? null
+
+    // Student may have logged in via registrations.guest_email without a student_profiles row yet
+    if (!profile) {
+      const [guestRows] = await pool.query(
+        `SELECT LOWER(guest_email) AS email, guest_name AS full_name FROM registrations WHERE LOWER(guest_email) = ? LIMIT 1`,
+        [email]
+      )
+      const guest = (guestRows as any[])[0]
+      if (!guest) return null
+      profile = { email: guest.email, full_name: guest.full_name ?? null, institute_name: null }
+    }
 
     const [regRows] = await pool.query(
       `SELECT r.id, r.approval_status, r.completion_status, r.self_confirmed_at, r.created_at,
