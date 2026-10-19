@@ -74,7 +74,7 @@ function ContestRegisterPage() {
       if (!teamName.trim()) throw new Error('กรุณากรอกชื่อทีม')
       if (!profile?.institute_id) throw new Error('ไม่พบข้อมูลสถาบัน')
       if (!sessionUser?.email) throw new Error('ไม่พบข้อมูลผู้ใช้')
-      if (memberEmails.length < 4) throw new Error('กรุณาเลือกสมาชิกทีมอย่างน้อย 4 คน (ทั้งทีมรวมหัวหน้าต้องมี 5 คนขึ้นไป)')
+      if (memberEmails.length < 1) throw new Error('กรุณาเลือกสมาชิกทีมอย่างน้อย 1 คน (ทั้งทีมรวมหัวหน้าต้องมีตั้งแต่ 2 คนขึ้นไป)')
       if (!campaignName.trim()) throw new Error('กรุณากรอกชื่อแคมเปญ')
       if (!concept.trim()) throw new Error('กรุณากรอกคอนเซป')
       if (!storyboardFile) throw new Error('กรุณาแนบไฟล์ Story Board')
@@ -169,7 +169,7 @@ function ContestRegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>สมาชิกในทีม * (ต้องเลือกอย่างน้อย 4 คน รวมหัวหน้าทีมทั้งหมด ≥ 5 คน)</Label>
+                <Label>สมาชิกในทีม * (ต้องเลือกอย่างน้อย 1 คน รวมหัวหน้าทีมทั้งหมดตั้งแต่ 2 คนขึ้นไป)</Label>
                 {loadingEligible ? (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" /> กำลังโหลดรายชื่อผู้มีสิทธิ์...

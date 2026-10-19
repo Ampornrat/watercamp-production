@@ -377,18 +377,18 @@ function ContestPage() {
               เงื่อนไข
             </h3>
             <p style={{ margin: "0 0 22px", fontSize: 16, lineHeight: 1.8, color: "#dfeef5" }}>
-              เข้าร่วมเป็นทีมไม่เกิน 5 คน โดยสามารถเรียนวิธีการทำสื่อผ่าน Zoom วันที่ 7 ก.ย. 69
+              เข้าร่วมเป็นทีมตั้งแต่ 2 คนขึ้นไป โดยสามารถเรียนวิธีการทำสื่อผ่าน Zoom วันที่ 7 ก.ย. 69
             </p>
             <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 14, padding: "18px 22px", marginBottom: 22 }}>
               <p className="font-heading font-semibold" style={{ margin: "0 0 4px", fontSize: 17, color: "#7fd9ef" }}>
                 เริ่มส่งผลงานตั้งแต่วันที่ 1 ก.ย. - 15 ต.ค. 69 ได้ที่
               </p>
-              <Link
-                to="/student/login"
+              <a
+                href="https://watercamp.kwunjai.com/student/login"
                 style={{ color: "#fff", fontSize: 15, textDecoration: "underline" }}
               >
-                watercamp.kwunjai.com/contest/submit
-              </Link>
+                https://watercamp.kwunjai.com/student/login
+              </a>
             </div>
             <div className="flex flex-wrap items-center gap-4">
               <img src="/images/download_thaiwater.png" alt="Download ThaiWater" style={{ height: 52, width: "auto" }} />

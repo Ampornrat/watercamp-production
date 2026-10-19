@@ -71,7 +71,7 @@ const RegisterTeamSchema = z.object({
   teamName: z.string().min(1).max(120),
   instituteId: z.string().uuid(),
   leaderEmail: z.string().email().max(255),
-  memberEmails: z.array(z.string().email()).min(4).max(20),
+  memberEmails: z.array(z.string().email()).min(1).max(20),
   campaignName: z.string().min(1).max(200),
   concept: z.string().min(1).max(1500),
   storyboardPath: z.string().min(1).max(500),
