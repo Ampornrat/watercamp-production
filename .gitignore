@@ -32,6 +32,15 @@ dist-ssr
 adminer.php
 mcp-server/
 
+# Generated/uploaded files — store on server, not in git
+public/certresult/
+public/uploads/contest/storyboard/
+public/uploads/contest/*.pdf
+public/uploads/contest/*.ppt
+public/uploads/contest/*.pptx
+public/uploads/contest/*.mp4
+public/uploads/contest/*.mov
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
