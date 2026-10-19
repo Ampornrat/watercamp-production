@@ -29,6 +29,11 @@ export const getContestEligibleMembers = createServerFn({ method: 'GET' })
          WHERE r.institute_id = ?
            AND r.completion_status = 'completed'
            AND t.required_for_contest = 1
+           AND LOWER(r.guest_email) NOT IN (
+             SELECT LOWER(leader_email) FROM contest_teams
+             UNION
+             SELECT LOWER(member_email) FROM contest_team_members
+           )
          ORDER BY r.guest_name`,
         [data.institute_id]
       )
@@ -39,6 +44,11 @@ export const getContestEligibleMembers = createServerFn({ method: 'GET' })
          FROM registrations r
          WHERE r.institute_id = ?
            AND r.approval_status = 'approved'
+           AND LOWER(r.guest_email) NOT IN (
+             SELECT LOWER(leader_email) FROM contest_teams
+             UNION
+             SELECT LOWER(member_email) FROM contest_team_members
+           )
          ORDER BY r.guest_name`,
         [data.institute_id]
       )
