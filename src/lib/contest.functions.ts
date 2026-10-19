@@ -84,7 +84,23 @@ export const registerContestTeam = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const pool = (await import('@/lib/db.server')).default;
 
-    const allEmails = [...new Set([data.leaderEmail, ...data.memberEmails].map((e) => e.toLowerCase()))]
+    const leaderEmail = data.leaderEmail.trim().toLowerCase()
+    const memberEmailsNorm = data.memberEmails.map((e) => e.trim().toLowerCase())
+
+    // Check leader not in member list
+    if (memberEmailsNorm.includes(leaderEmail))
+      throw new Error('หัวหน้าทีมไม่สามารถเป็นสมาชิกในทีมเดียวกันได้')
+
+    // Check no duplicate members
+    const uniqueMembers = new Set(memberEmailsNorm)
+    if (uniqueMembers.size !== memberEmailsNorm.length)
+      throw new Error('มีอีเมลสมาชิกซ้ำกัน กรุณาตรวจสอบรายชื่อ')
+
+    // Total team must be at least 2 (leader + 1 member)
+    if (memberEmailsNorm.length < 1)
+      throw new Error('ทีมต้องมีสมาชิกอย่างน้อย 2 คน (หัวหน้าทีม + สมาชิก 1 คน)')
+
+    const allEmails = [leaderEmail, ...memberEmailsNorm]
 
     // Verify all members belong to the same institute
     const emailPlaceholders = allEmails.map(() => '?').join(',')
@@ -143,17 +159,17 @@ export const registerContestTeam = createServerFn({ method: 'POST' })
       }
     }
 
-    const leader = byEmail.get(data.leaderEmail.toLowerCase())!
+    const leader = byEmail.get(leaderEmail)!
     const teamId = randomUUID()
     await pool.query(
       `INSERT INTO contest_teams (id, team_name, institute_id, leader_name, leader_email, campaign_name, concept, storyboard_url, storyboard_file_name, storyboard_file_size, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-      [teamId, data.teamName.trim(), data.instituteId, leader.name ?? '', data.leaderEmail.toLowerCase(),
+      [teamId, data.teamName.trim(), data.instituteId, leader.name ?? '', leaderEmail,
        data.campaignName.trim(), data.concept.trim(),
        data.storyboardPath, data.storyboardFileName, data.storyboardFileSize]
     )
 
-    for (const email of data.memberEmails.map((e) => e.toLowerCase())) {
+    for (const email of memberEmailsNorm) {
       const m = byEmail.get(email)
       await pool.query(
         `INSERT INTO contest_team_members (id, team_id, member_name, member_email) VALUES (?, ?, ?, ?)`,
