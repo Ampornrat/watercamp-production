@@ -44,7 +44,7 @@ export const Route = createFileRoute('/uploads/contest/$')({
   server: {
     handlers: {
       GET: async ({ params }) => {
-        const subpath = (params as any)['$'] as string ?? ''
+        const subpath = (params as any)._splat as string ?? ''
         if (subpath.includes('..')) return new Response('Not found', { status: 404 })
 
         const filePath = await resolveFilePath(subpath)
