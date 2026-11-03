@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { CheckCircle2, ClipboardList, Loader2, Save, BarChart3 } from 'lucide-react'
+import { CheckCircle2, ClipboardList, Loader2, Save, BarChart3, CloudOff } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import { SiteHeader } from '@/components/SiteHeader'
 import { SiteFooter } from '@/components/SiteFooter'
 import { getTeamsForScoring, submitJudgeScores, getJudgeExistingScores } from '@/lib/contest-scoring.functions'
@@ -28,6 +29,17 @@ function isFieldInvalid(value: string, max: number): boolean {
   return isNaN(n) || n < 0 || n > max || !Number.isFinite(n)
 }
 
+function isRowComplete(s: ScoreEntry): boolean {
+  return s.stem_score !== '' && s.content_score !== '' && s.presentation_score !== ''
+}
+
+function isRowValid(s: ScoreEntry): boolean {
+  return isRowComplete(s) &&
+    !isFieldInvalid(s.stem_score, 35) &&
+    !isFieldInvalid(s.content_score, 30) &&
+    !isFieldInvalid(s.presentation_score, 35)
+}
+
 function clampOnBlur(value: string, max: number, onChange: (v: string) => void) {
   if (value === '') return
   const n = parseFloat(value)
@@ -35,6 +47,10 @@ function clampOnBlur(value: string, max: number, onChange: (v: string) => void) 
     const clamped = Math.min(Math.max(0, n), max)
     if (clamped !== n) onChange(String(clamped))
   }
+}
+
+function localKey(email: string) {
+  return `contest-draft-${email.toLowerCase()}`
 }
 
 function ContestScoringPage() {
@@ -47,17 +63,30 @@ function ContestScoringPage() {
   const [judgeConfirmed, setJudgeConfirmed] = useState(false)
   const [teams, setTeams] = useState<Team[]>([])
   const [scores, setScores] = useState<Record<string, ScoreEntry>>({})
+  const [savedTeams, setSavedTeams] = useState<Set<string>>(new Set())   // saved to server
+  const [dirtyTeams, setDirtyTeams] = useState<Set<string>>(new Set())   // changed since last server save
+  const [savingTeam, setSavingTeam] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
   useEffect(() => {
     getTeamsFn().then((t) => {
       setTeams(t)
-      const init: Record<string, ScoreEntry> = {}
-      for (const team of t) init[team.id] = { stem_score: '', content_score: '', presentation_score: '' }
-      setScores(init)
+      setScores((prev) => {
+        const init: Record<string, ScoreEntry> = {}
+        for (const team of t) init[team.id] = prev[team.id] ?? { stem_score: '', content_score: '', presentation_score: '' }
+        return init
+      })
     })
   }, [])
+
+  // Auto-save to localStorage whenever scores change (after confirmed)
+  useEffect(() => {
+    if (!judgeConfirmed || !judgeEmail) return
+    try {
+      localStorage.setItem(localKey(judgeEmail), JSON.stringify({ judgeName, scores }))
+    } catch {}
+  }, [scores, judgeConfirmed, judgeEmail, judgeName])
 
   const handleConfirmJudge = async () => {
     if (!judgeName.trim()) { toast.error('กรุณากรอกชื่อกรรมการ'); return }
@@ -66,8 +95,26 @@ function ContestScoringPage() {
     }
     setLoading(true)
     try {
-      const existing = await getExistingFn({ data: { judge_email: judgeEmail } })
+      // Load from localStorage first (fastest feedback)
+      const email = judgeEmail.trim().toLowerCase()
+      const cached = localStorage.getItem(localKey(email))
+      if (cached) {
+        try {
+          const { scores: cachedScores } = JSON.parse(cached)
+          if (cachedScores) {
+            setScores((prev) => {
+              const next = { ...prev }
+              for (const [id, val] of Object.entries(cachedScores)) next[id] = val as ScoreEntry
+              return next
+            })
+          }
+        } catch {}
+      }
+
+      // Then load from server (authoritative — overwrites local for saved teams)
+      const existing = await getExistingFn({ data: { judge_email: email } })
       if (existing.length > 0) {
+        const serverSaved = new Set<string>()
         setScores((prev) => {
           const next = { ...prev }
           for (const e of existing) {
@@ -76,26 +123,64 @@ function ContestScoringPage() {
               content_score: String(e.content_score),
               presentation_score: String(e.presentation_score),
             }
+            serverSaved.add(e.team_id)
           }
           return next
         })
+        setSavedTeams(serverSaved)
         toast.info(`โหลดคะแนนที่บันทึกไว้แล้ว ${existing.length} ทีม`)
+      } else if (cached) {
+        toast.info('โหลด Draft จากเครื่องแล้ว (ยังไม่ได้บันทึกขึ้น server)')
       }
+
       setJudgeConfirmed(true)
     } finally {
       setLoading(false)
     }
   }
 
-  const setScore = (teamId: string, field: keyof ScoreEntry, val: string) => {
+  const setScore = useCallback((teamId: string, field: keyof ScoreEntry, val: string) => {
     setScores((prev) => ({ ...prev, [teamId]: { ...prev[teamId], [field]: val } }))
-  }
+    setDirtyTeams((prev) => new Set(prev).add(teamId))
+    setSavedTeams((prev) => { const next = new Set(prev); next.delete(teamId); return next })
+  }, [])
 
   const getTotal = (s: ScoreEntry) => {
     const stem = parseFloat(s.stem_score) || 0
     const content = parseFloat(s.content_score) || 0
     const pres = parseFloat(s.presentation_score) || 0
     return (stem + content + pres).toFixed(1)
+  }
+
+  // Save draft for a single team
+  const handleSaveTeam = async (teamId: string) => {
+    const s = scores[teamId]
+    if (!s || !isRowValid(s)) {
+      toast.error('กรุณากรอกคะแนนให้ครบและถูกต้องก่อนบันทึก')
+      return
+    }
+    setSavingTeam(teamId)
+    try {
+      await submitFn({
+        data: {
+          judge_name: judgeName.trim(),
+          judge_email: judgeEmail.trim().toLowerCase(),
+          scores: [{
+            team_id: teamId,
+            stem_score: parseFloat(s.stem_score),
+            content_score: parseFloat(s.content_score),
+            presentation_score: parseFloat(s.presentation_score),
+          }],
+        },
+      })
+      setSavedTeams((prev) => new Set(prev).add(teamId))
+      setDirtyTeams((prev) => { const next = new Set(prev); next.delete(teamId); return next })
+      toast.success('บันทึก Draft แล้ว')
+    } catch (e: any) {
+      toast.error(e?.message ?? 'บันทึกไม่สำเร็จ')
+    } finally {
+      setSavingTeam(null)
+    }
   }
 
   const invalidFields = teams.flatMap((team) => {
@@ -107,14 +192,16 @@ function ContestScoringPage() {
   })
   const hasErrors = invalidFields.length > 0
 
-  const submit = useMutation({
+  const completedCount = teams.filter((t) => isRowValid(scores[t.id] ?? { stem_score: '', content_score: '', presentation_score: '' })).length
+  const allComplete = completedCount === teams.length && teams.length > 0
+
+  const submitAll = useMutation({
     mutationFn: async () => {
       const entries = []
       for (const team of teams) {
         const s = scores[team.id]
-        if (!s) continue
-        if (s.stem_score === '' || s.content_score === '' || s.presentation_score === '')
-          throw new Error(`กรุณากรอกคะแนนให้ครบทุกช่องสำหรับทีม "${team.team_name}"`)
+        if (!s || !isRowComplete(s))
+          throw new Error(`กรุณากรอกคะแนนให้ครบทุกทีม (ยังขาดทีม "${team.team_name}")`)
         const stem = parseFloat(s.stem_score)
         const content = parseFloat(s.content_score)
         const pres = parseFloat(s.presentation_score)
@@ -125,7 +212,11 @@ function ContestScoringPage() {
       }
       await submitFn({ data: { judge_name: judgeName.trim(), judge_email: judgeEmail.trim().toLowerCase(), scores: entries } })
     },
-    onSuccess: () => { setSubmitted(true); toast.success('บันทึกคะแนนเรียบร้อยแล้ว') },
+    onSuccess: () => {
+      try { localStorage.removeItem(localKey(judgeEmail.toLowerCase())) } catch {}
+      setSubmitted(true)
+      toast.success('บันทึกคะแนนทั้งหมดเรียบร้อยแล้ว')
+    },
     onError: (e: Error) => toast.error(e.message),
   })
 
@@ -197,9 +288,14 @@ function ContestScoringPage() {
               </Button>
             )}
             {judgeConfirmed && (
-              <p className="mt-3 text-sm text-green-600 flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4" /> ยืนยันแล้ว: <strong>{judgeName}</strong> ({judgeEmail})
-              </p>
+              <div className="mt-3 flex items-center justify-between flex-wrap gap-2">
+                <p className="text-sm text-green-600 flex items-center gap-1.5">
+                  <CheckCircle2 className="h-4 w-4" /> ยืนยันแล้ว: <strong>{judgeName}</strong> ({judgeEmail})
+                </p>
+                <Badge variant="secondary" className="text-xs">
+                  บันทึกแล้ว {savedTeams.size}/{teams.length} ทีม
+                </Badge>
+              </div>
             )}
           </Card>
 
@@ -226,33 +322,61 @@ function ContestScoringPage() {
           {judgeConfirmed && (
             <>
               <Card className="mb-6 overflow-hidden">
+                <div className="flex items-center justify-between border-b px-4 py-3 bg-muted/30">
+                  <p className="text-sm text-muted-foreground">
+                    กรอกคะแนนทีละทีมแล้วกด <strong>"บันทึก Draft"</strong> เพื่อบันทึกทีละรายการ
+                    หรือกรอกทั้งหมดแล้วกด <strong>"บันทึกทั้งหมด"</strong>
+                  </p>
+                  <span className="shrink-0 text-sm font-semibold text-primary ml-4">
+                    {completedCount}/{teams.length} ทีม
+                  </span>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="border-b bg-muted/50">
                       <tr>
-                        <th className="px-4 py-3 text-left font-semibold">#</th>
+                        <th className="px-4 py-3 text-left font-semibold w-8">#</th>
                         <th className="px-4 py-3 text-left font-semibold">ชื่อทีม / แคมเปญ</th>
                         <th className="px-3 py-3 text-center font-semibold text-blue-600">STEM<br/><span className="font-normal text-xs">(0–35)</span></th>
                         <th className="px-3 py-3 text-center font-semibold text-teal-600">เนื้อหา<br/><span className="font-normal text-xs">(0–30)</span></th>
                         <th className="px-3 py-3 text-center font-semibold text-purple-600">เทคนิค<br/><span className="font-normal text-xs">(0–35)</span></th>
                         <th className="px-3 py-3 text-center font-semibold">รวม</th>
+                        <th className="px-3 py-3 text-center font-semibold">Draft</th>
                       </tr>
                     </thead>
                     <tbody>
                       {teams.map((team, i) => {
                         const s = scores[team.id] ?? { stem_score: '', content_score: '', presentation_score: '' }
-                        const total = getTotal(s)
-                        const filled = s.stem_score !== '' && s.content_score !== '' && s.presentation_score !== ''
                         const stemErr = isFieldInvalid(s.stem_score, 35)
                         const contentErr = isFieldInvalid(s.content_score, 30)
                         const presErr = isFieldInvalid(s.presentation_score, 35)
                         const rowHasError = stemErr || contentErr || presErr
+                        const rowSaved = savedTeams.has(team.id)
+                        const rowDirty = dirtyTeams.has(team.id)
+                        const rowComplete = isRowValid(s)
+                        const isSaving = savingTeam === team.id
+
+                        let rowBg = ''
+                        if (rowHasError) rowBg = 'bg-red-50/40 dark:bg-red-950/10'
+                        else if (rowSaved && !rowDirty) rowBg = 'bg-green-50/60 dark:bg-green-950/15'
+                        else if (rowComplete) rowBg = 'bg-blue-50/40 dark:bg-blue-950/10'
+
                         return (
-                          <tr key={team.id} className={`border-b transition-colors ${rowHasError ? 'bg-red-50/40 dark:bg-red-950/10' : filled ? 'bg-green-50/50 dark:bg-green-950/10' : ''}`}>
+                          <tr key={team.id} className={`border-b transition-colors ${rowBg}`}>
                             <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
                             <td className="px-4 py-3">
                               <div className="font-semibold">{team.team_name}</div>
                               <div className="text-xs text-muted-foreground">{team.campaign_name}</div>
+                              {rowSaved && !rowDirty && (
+                                <span className="mt-0.5 inline-flex items-center gap-1 text-xs text-green-600">
+                                  <CheckCircle2 className="h-3 w-3" /> บันทึกแล้ว
+                                </span>
+                              )}
+                              {rowDirty && rowComplete && (
+                                <span className="mt-0.5 inline-flex items-center gap-1 text-xs text-amber-600">
+                                  <CloudOff className="h-3 w-3" /> ยังไม่ได้บันทึก
+                                </span>
+                              )}
                             </td>
                             <td className="px-3 py-2 w-24">
                               <input
@@ -287,13 +411,29 @@ function ContestScoringPage() {
                               />
                               {presErr && <p className="mt-0.5 text-center text-xs text-red-600">0–35</p>}
                             </td>
-                            <td className="px-3 py-2 text-center">
+                            <td className="px-3 py-2 text-center min-w-[52px]">
                               {rowHasError ? (
                                 <span className="text-xs font-semibold text-red-500">ค่าผิด</span>
+                              ) : rowComplete ? (
+                                <span className="font-bold text-base text-primary">{getTotal(s)}</span>
                               ) : (
-                                <span className={`font-bold text-base ${filled ? 'text-primary' : 'text-muted-foreground'}`}>
-                                  {filled ? total : '—'}
-                                </span>
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-center">
+                              {rowSaved && !rowDirty ? (
+                                <CheckCircle2 className="mx-auto h-5 w-5 text-green-500" />
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={!rowComplete || rowHasError || isSaving}
+                                  onClick={() => handleSaveTeam(team.id)}
+                                  className="h-7 px-2 text-xs gap-1"
+                                >
+                                  {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                                  Draft
+                                </Button>
                               )}
                             </td>
                           </tr>
@@ -310,14 +450,19 @@ function ContestScoringPage() {
                     มีคะแนนที่กรอกเกินเกณฑ์ {invalidFields.length} ช่อง — กรุณาแก้ไขก่อนบันทึก
                   </p>
                 )}
+                {!allComplete && !hasErrors && (
+                  <p className="text-sm text-muted-foreground">
+                    กรอกครบแล้ว {completedCount}/{teams.length} ทีม — กรอกให้ครบทุกทีมเพื่อบันทึกรอบสุดท้าย
+                  </p>
+                )}
                 <Button
-                  onClick={() => submit.mutate()}
-                  disabled={submit.isPending || hasErrors}
+                  onClick={() => submitAll.mutate()}
+                  disabled={submitAll.isPending || hasErrors || !allComplete}
                   size="lg"
                   className="gap-2 bg-primary font-bold disabled:opacity-50"
                 >
-                  {submit.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  บันทึกคะแนนทั้งหมด
+                  {submitAll.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                  บันทึกทั้งหมด ({completedCount}/{teams.length} ทีม)
                 </Button>
               </div>
             </>
