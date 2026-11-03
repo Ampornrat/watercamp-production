@@ -46,3 +46,19 @@ CALL _add_col('contest_teams', 'round1_approved_at', 'DATETIME NULL');
 CALL _add_col('contest_teams', 'round1_notes',       'TEXT NULL');
 
 DROP PROCEDURE IF EXISTS _add_col;
+
+-- 5. contest_scores table (judge scoring system)
+CREATE TABLE IF NOT EXISTS contest_scores (
+  id VARCHAR(36) NOT NULL PRIMARY KEY,
+  team_id VARCHAR(36) NOT NULL,
+  judge_name VARCHAR(255) NOT NULL,
+  judge_email VARCHAR(255) NOT NULL,
+  stem_score DECIMAL(5,2) NOT NULL,
+  content_score DECIMAL(5,2) NOT NULL,
+  presentation_score DECIMAL(5,2) NOT NULL,
+  total_score DECIMAL(5,2) AS (stem_score + content_score + presentation_score) STORED,
+  submitted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_judge_team (judge_email, team_id),
+  KEY idx_team (team_id),
+  CONSTRAINT fk_cs_team FOREIGN KEY (team_id) REFERENCES contest_teams(id) ON DELETE CASCADE
+);
