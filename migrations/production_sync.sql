@@ -48,9 +48,10 @@ CALL _add_col('contest_teams', 'round1_notes',       'TEXT NULL');
 DROP PROCEDURE IF EXISTS _add_col;
 
 -- 5. contest_scores table (judge scoring system)
+-- Note: id and team_id must be CHAR(36) to match contest_teams.id (CHAR(36) utf8mb4_unicode_ci)
 CREATE TABLE IF NOT EXISTS contest_scores (
-  id VARCHAR(36) NOT NULL PRIMARY KEY,
-  team_id VARCHAR(36) NOT NULL,
+  id CHAR(36) NOT NULL PRIMARY KEY,
+  team_id CHAR(36) NOT NULL,
   judge_name VARCHAR(255) NOT NULL,
   judge_email VARCHAR(255) NOT NULL,
   stem_score DECIMAL(5,2) NOT NULL,
@@ -61,4 +62,4 @@ CREATE TABLE IF NOT EXISTS contest_scores (
   UNIQUE KEY uq_judge_team (judge_email, team_id),
   KEY idx_team (team_id),
   CONSTRAINT fk_cs_team FOREIGN KEY (team_id) REFERENCES contest_teams(id) ON DELETE CASCADE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
