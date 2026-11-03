@@ -20,27 +20,21 @@ export const Route = createFileRoute('/contest-scoring')({
 type Team = { id: string; team_name: string; campaign_name: string }
 type ScoreEntry = { stem_score: string; content_score: string; presentation_score: string }
 
-function ScoreInput({
-  value, onChange, max, label,
-}: { value: string; onChange: (v: string) => void; max: number; label: string }) {
-  const num = parseFloat(value)
-  const invalid = value !== '' && (isNaN(num) || num < 0 || num > max)
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="text-xs text-muted-foreground">{label} (0–{max})</span>
-      <input
-        type="number"
-        min={0}
-        max={max}
-        step={0.5}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={`w-full rounded-md border px-2 py-1.5 text-center text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50 ${
-          invalid ? 'border-red-400 bg-red-50' : 'border-input bg-background'
-        }`}
-      />
-    </div>
-  )
+const LIMITS = { stem_score: 35, content_score: 30, presentation_score: 35 } as const
+
+function isFieldInvalid(value: string, max: number): boolean {
+  if (value === '') return false
+  const n = parseFloat(value)
+  return isNaN(n) || n < 0 || n > max || !Number.isFinite(n)
+}
+
+function clampOnBlur(value: string, max: number, onChange: (v: string) => void) {
+  if (value === '') return
+  const n = parseFloat(value)
+  if (!isNaN(n)) {
+    const clamped = Math.min(Math.max(0, n), max)
+    if (clamped !== n) onChange(String(clamped))
+  }
 }
 
 function ContestScoringPage() {
@@ -103,6 +97,15 @@ function ContestScoringPage() {
     const pres = parseFloat(s.presentation_score) || 0
     return (stem + content + pres).toFixed(1)
   }
+
+  const invalidFields = teams.flatMap((team) => {
+    const s = scores[team.id]
+    if (!s) return []
+    return (Object.keys(LIMITS) as (keyof typeof LIMITS)[]).filter(
+      (field) => isFieldInvalid(s[field], LIMITS[field])
+    ).map((field) => ({ team: team.team_name, field }))
+  })
+  const hasErrors = invalidFields.length > 0
 
   const submit = useMutation({
     mutationFn: async () => {
@@ -240,8 +243,12 @@ function ContestScoringPage() {
                         const s = scores[team.id] ?? { stem_score: '', content_score: '', presentation_score: '' }
                         const total = getTotal(s)
                         const filled = s.stem_score !== '' && s.content_score !== '' && s.presentation_score !== ''
+                        const stemErr = isFieldInvalid(s.stem_score, 35)
+                        const contentErr = isFieldInvalid(s.content_score, 30)
+                        const presErr = isFieldInvalid(s.presentation_score, 35)
+                        const rowHasError = stemErr || contentErr || presErr
                         return (
-                          <tr key={team.id} className={`border-b transition-colors ${filled ? 'bg-green-50/50 dark:bg-green-950/10' : ''}`}>
+                          <tr key={team.id} className={`border-b transition-colors ${rowHasError ? 'bg-red-50/40 dark:bg-red-950/10' : filled ? 'bg-green-50/50 dark:bg-green-950/10' : ''}`}>
                             <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
                             <td className="px-4 py-3">
                               <div className="font-semibold">{team.team_name}</div>
@@ -252,32 +259,42 @@ function ContestScoringPage() {
                                 type="number" min={0} max={35} step={0.5}
                                 value={s.stem_score}
                                 onChange={(e) => setScore(team.id, 'stem_score', e.target.value)}
-                                className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-center text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                onBlur={(e) => clampOnBlur(e.target.value, 35, (v) => setScore(team.id, 'stem_score', v))}
+                                className={`w-full rounded-md border px-2 py-1.5 text-center text-sm font-semibold focus:outline-none focus:ring-2 ${stemErr ? 'border-red-400 bg-red-50 text-red-700 focus:ring-red-400/50' : 'border-input bg-background focus:ring-primary/50'}`}
                                 placeholder="—"
                               />
+                              {stemErr && <p className="mt-0.5 text-center text-xs text-red-600">0–35</p>}
                             </td>
                             <td className="px-3 py-2 w-24">
                               <input
                                 type="number" min={0} max={30} step={0.5}
                                 value={s.content_score}
                                 onChange={(e) => setScore(team.id, 'content_score', e.target.value)}
-                                className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-center text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                onBlur={(e) => clampOnBlur(e.target.value, 30, (v) => setScore(team.id, 'content_score', v))}
+                                className={`w-full rounded-md border px-2 py-1.5 text-center text-sm font-semibold focus:outline-none focus:ring-2 ${contentErr ? 'border-red-400 bg-red-50 text-red-700 focus:ring-red-400/50' : 'border-input bg-background focus:ring-primary/50'}`}
                                 placeholder="—"
                               />
+                              {contentErr && <p className="mt-0.5 text-center text-xs text-red-600">0–30</p>}
                             </td>
                             <td className="px-3 py-2 w-24">
                               <input
                                 type="number" min={0} max={35} step={0.5}
                                 value={s.presentation_score}
                                 onChange={(e) => setScore(team.id, 'presentation_score', e.target.value)}
-                                className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-center text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                onBlur={(e) => clampOnBlur(e.target.value, 35, (v) => setScore(team.id, 'presentation_score', v))}
+                                className={`w-full rounded-md border px-2 py-1.5 text-center text-sm font-semibold focus:outline-none focus:ring-2 ${presErr ? 'border-red-400 bg-red-50 text-red-700 focus:ring-red-400/50' : 'border-input bg-background focus:ring-primary/50'}`}
                                 placeholder="—"
                               />
+                              {presErr && <p className="mt-0.5 text-center text-xs text-red-600">0–35</p>}
                             </td>
                             <td className="px-3 py-2 text-center">
-                              <span className={`font-bold text-base ${filled ? 'text-primary' : 'text-muted-foreground'}`}>
-                                {filled ? total : '—'}
-                              </span>
+                              {rowHasError ? (
+                                <span className="text-xs font-semibold text-red-500">ค่าผิด</span>
+                              ) : (
+                                <span className={`font-bold text-base ${filled ? 'text-primary' : 'text-muted-foreground'}`}>
+                                  {filled ? total : '—'}
+                                </span>
+                              )}
                             </td>
                           </tr>
                         )
@@ -287,12 +304,17 @@ function ContestScoringPage() {
                 </div>
               </Card>
 
-              <div className="flex justify-end">
+              <div className="flex flex-col items-end gap-2">
+                {hasErrors && (
+                  <p className="text-sm text-red-600 font-medium">
+                    มีคะแนนที่กรอกเกินเกณฑ์ {invalidFields.length} ช่อง — กรุณาแก้ไขก่อนบันทึก
+                  </p>
+                )}
                 <Button
                   onClick={() => submit.mutate()}
-                  disabled={submit.isPending}
+                  disabled={submit.isPending || hasErrors}
                   size="lg"
-                  className="gap-2 bg-primary font-bold"
+                  className="gap-2 bg-primary font-bold disabled:opacity-50"
                 >
                   {submit.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                   บันทึกคะแนนทั้งหมด
