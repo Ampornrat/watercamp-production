@@ -5,7 +5,7 @@ import { randomUUID } from 'crypto'
 export const getTeamsForScoring = createServerFn({ method: 'GET' }).handler(async () => {
   const pool = (await import('@/lib/db.server')).default
   const [rows] = await pool.query(
-    `SELECT id, team_name, campaign_name FROM contest_teams ORDER BY team_name`
+    `SELECT id, team_name, campaign_name FROM contest_teams ORDER BY created_at DESC`
   )
   return rows as { id: string; team_name: string; campaign_name: string }[]
 })
