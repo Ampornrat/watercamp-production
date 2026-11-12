@@ -64,12 +64,18 @@ function ContestSubmitPage() {
         throw new Error('Story Board ต้องเป็นไฟล์ PDF เท่านั้น')
       if (storyboardFile.size > 100 * 1024 * 1024) throw new Error('ไฟล์ Story Board ต้องไม่เกิน 100MB')
 
-      const safeVideo = videoFile.name.replace(/[^\w.\- ]/g, '_')
+      // Decode URL-encoded filenames (some browsers report file.name as encoded)
+      let videoOrigName: string
+      try { videoOrigName = decodeURIComponent(videoFile.name) } catch { videoOrigName = videoFile.name }
+      let sbOrigName: string
+      try { sbOrigName = decodeURIComponent(storyboardFile.name) } catch { sbOrigName = storyboardFile.name }
+
+      const safeVideo = videoOrigName.replace(/[^\w.\- ]/g, '_')
       const { path: videoPath, signedUrl: videoUrl } = await createUpload({ data: { teamId: team.id, filename: safeVideo } })
       const upVideo = await fetch(videoUrl, { method: 'PUT', headers: { 'Content-Type': 'video/mp4' }, body: videoFile })
       if (!upVideo.ok) throw new Error('อัปโหลดไฟล์ VDO ไม่สำเร็จ')
 
-      const safeSb = `storyboard_r2_${storyboardFile.name.replace(/[^\w.\- ]/g, '_')}`
+      const safeSb = `storyboard_r2_${sbOrigName.replace(/[^\w.\- ]/g, '_')}`
       const { path: sbPath, signedUrl: sbUrl } = await createUpload({ data: { teamId: team.id, filename: safeSb } })
       const upSb = await fetch(sbUrl, { method: 'PUT', headers: { 'Content-Type': 'application/pdf' }, body: storyboardFile })
       if (!upSb.ok) throw new Error('อัปโหลดไฟล์ Story Board ไม่สำเร็จ')
@@ -79,10 +85,10 @@ function ContestSubmitPage() {
           teamId: team.id,
           campaignName: campaignName.trim(),
           path: videoPath,
-          fileName: videoFile.name,
+          fileName: videoOrigName,
           fileSize: videoFile.size,
           storyboardPath: sbPath,
-          storyboardFileName: storyboardFile.name,
+          storyboardFileName: sbOrigName,
           storyboardFileSize: storyboardFile.size,
           note: note.trim() || null,
           submitterEmail: sessionUser?.email ?? null,

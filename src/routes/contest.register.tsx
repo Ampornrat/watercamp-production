@@ -87,7 +87,10 @@ function ContestRegisterPage() {
         throw new Error('Story Board รองรับเฉพาะไฟล์ PDF, PPT หรือ PPTX เท่านั้น')
       if (storyboardFile.size > 100 * 1024 * 1024) throw new Error('ไฟล์ Story Board ต้องไม่เกิน 100MB')
 
-      const safeSbName = `storyboard_${storyboardFile.name.replace(/[^\w.\- ]/g, '_')}`
+      // Decode URL-encoded filename (some browsers report file.name as encoded)
+      let sbOriginalName: string
+      try { sbOriginalName = decodeURIComponent(storyboardFile.name) } catch { sbOriginalName = storyboardFile.name }
+      const safeSbName = `storyboard_${sbOriginalName.replace(/[^\w.\- ]/g, '_')}`
       const { path: sbPath, signedUrl: sbSignedUrl } = await createStoryboardUploadFn({
         data: { filename: safeSbName },
       })
@@ -107,7 +110,7 @@ function ContestRegisterPage() {
           campaignName: campaignName.trim(),
           concept: concept.trim(),
           storyboardPath: sbPath,
-          storyboardFileName: storyboardFile.name,
+          storyboardFileName: sbOriginalName,
           storyboardFileSize: storyboardFile.size,
         },
       })

@@ -30,6 +30,11 @@ function toFileUrl(path: string | null | undefined) {
   return `/uploads/${path}`
 }
 
+function decodeFileName(name: string | null | undefined): string {
+  if (!name) return 'ดาวน์โหลด'
+  try { return decodeURIComponent(name) } catch { return name }
+}
+
 function fmtSize(bytes: number | null) {
   if (!bytes) return ''
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
@@ -133,8 +138,8 @@ export function ContestReportContent() {
       t.leader_name,
       t.leader_email,
       t.members.map((m) => m.name).join(' / '),
-      t.storyboard_file_name ?? '',
-      t.submissions.map((s) => s.file_name).join(' / '),
+      decodeFileName(t.storyboard_file_name),
+      t.submissions.map((s) => decodeFileName(s.file_name)).join(' / '),
       fmtDate(t.created_at),
     ].map(escape).join(','))
     const csv = '﻿' + [headers.join(','), ...rows].join('\n')
@@ -224,14 +229,14 @@ export function ContestReportContent() {
                       {team.storyboard_url ? (
                         <a
                           href={toFileUrl(team.storyboard_url)}
-                          download={team.storyboard_file_name ?? undefined}
+                          download={decodeFileName(team.storyboard_file_name)}
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
                           className="inline-flex items-center gap-1 text-xs text-teal-600 underline hover:text-teal-700"
                         >
                           <FileText className="h-3 w-3" />
-                          {team.storyboard_file_name ?? 'ดาวน์โหลด'}
+                          {decodeFileName(team.storyboard_file_name)}
                           {team.storyboard_file_size ? <span className="text-muted-foreground">({fmtSize(team.storyboard_file_size)})</span> : null}
                         </a>
                       ) : (
@@ -249,14 +254,14 @@ export function ContestReportContent() {
                             <a
                               key={s.id}
                               href={toFileUrl(s.file_url)}
-                              download={s.file_name ?? undefined}
+                              download={decodeFileName(s.file_name)}
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
                               className="inline-flex items-center gap-1 text-xs text-blue-600 underline hover:text-blue-700"
                             >
                               <FileVideo className="h-3 w-3" />
-                              {s.file_name ?? 'ดาวน์โหลด'}
+                              {decodeFileName(s.file_name)}
                               {s.file_size ? <span className="text-muted-foreground">({fmtSize(s.file_size)})</span> : null}
                             </a>
                           ))}
@@ -375,25 +380,25 @@ export function ContestReportContent() {
                                       <div className="flex flex-wrap gap-3">
                                         <a
                                           href={toFileUrl(s.file_url)}
-                                          download={s.file_name ?? undefined}
+                                          download={decodeFileName(s.file_name)}
                                           target="_blank"
                                           rel="noopener noreferrer"
                                           className="inline-flex items-center gap-1 text-blue-600 underline"
                                         >
                                           <FileVideo className="h-3.5 w-3.5" />
-                                          {s.file_name ?? 'ไฟล์ผลงาน'}
+                                          {decodeFileName(s.file_name)}
                                           {s.file_size ? <span className="text-muted-foreground text-xs">({fmtSize(s.file_size)})</span> : null}
                                         </a>
                                         {s.storyboard_url && (
                                           <a
                                             href={toFileUrl(s.storyboard_url)}
-                                            download={s.storyboard_file_name ?? undefined}
+                                            download={decodeFileName(s.storyboard_file_name)}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="inline-flex items-center gap-1 text-teal-600 underline"
                                           >
                                             <FileText className="h-3.5 w-3.5" />
-                                            {s.storyboard_file_name ?? 'Story Board'}
+                                            {decodeFileName(s.storyboard_file_name)}
                                           </a>
                                         )}
                                       </div>
