@@ -10,6 +10,27 @@ export const listContestTeams = createServerFn({ method: 'GET' }).handler(async 
   return (rows as any[]) ?? [];
 })
 
+export const getMyContestTeam = createServerFn({ method: 'GET' })
+  .inputValidator((d: unknown) => d as { email: string })
+  .handler(async ({ data }) => {
+    const pool = (await import('@/lib/db.server')).default
+    const email = data.email.trim().toLowerCase()
+    const [rows] = await pool.query(
+      `SELECT ct.id, ct.team_name, ct.campaign_name, ct.round1_status,
+              CASE WHEN LOWER(ct.leader_email) = ? THEN 'leader' ELSE 'member' END AS role
+       FROM contest_teams ct
+       WHERE LOWER(ct.leader_email) = ?
+       UNION
+       SELECT ct.id, ct.team_name, ct.campaign_name, ct.round1_status, 'member' AS role
+       FROM contest_team_members ctm
+       JOIN contest_teams ct ON ct.id = ctm.team_id
+       WHERE LOWER(ctm.member_email) = ?
+       LIMIT 1`,
+      [email, email, email]
+    )
+    return (rows as any[])[0] ?? null
+  })
+
 export const getContestEligibleMembers = createServerFn({ method: 'GET' })
   .inputValidator((d: unknown) => d as { institute_id: string })
   .handler(async ({ data }) => {
