@@ -32,6 +32,9 @@ dist-ssr
 adminer.php
 mcp-server/
 
+# Google Service Account key (use GOOGLE_SA_KEY_JSON env var in production)
+google-sa-key.json
+
 # Generated/uploaded files — store on server, not in git
 public/certresult/
 public/uploads/contest/storyboard/

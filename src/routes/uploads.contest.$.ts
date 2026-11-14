@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { readFile, stat, access } from 'fs/promises'
-import { join, extname, normalize } from 'path'
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { extname } from 'path'
 
 const MIME: Record<string, string> = {
   '.png': 'image/png',
@@ -16,30 +16,6 @@ const MIME: Record<string, string> = {
   '.mov': 'video/quicktime',
 }
 
-function uploadsDirCandidates(): string[] {
-  if (process.env.UPLOAD_DIR) return [process.env.UPLOAD_DIR]
-  const cwd = process.cwd()
-  return [
-    join(cwd, 'public', 'uploads'),
-    join(cwd, '.output', 'public', 'uploads'),
-  ]
-}
-
-async function resolveFilePath(subpath: string): Promise<string | null> {
-  for (const base of uploadsDirCandidates()) {
-    const candidate = normalize(join(base, 'contest', subpath))
-    // Prevent path traversal
-    if (!candidate.startsWith(normalize(base))) continue
-    try {
-      await access(candidate)
-      return candidate
-    } catch {
-      // not found, try next
-    }
-  }
-  return null
-}
-
 export const Route = createFileRoute('/uploads/contest/$')({
   server: {
     handlers: {
@@ -47,19 +23,32 @@ export const Route = createFileRoute('/uploads/contest/$')({
         const subpath = (params as any)._splat as string ?? ''
         if (subpath.includes('..')) return new Response('Not found', { status: 404 })
 
-        const filePath = await resolveFilePath(subpath)
-        if (!filePath) return new Response('Not found', { status: 404 })
+        const accountId = process.env.R2_ACCOUNT_ID
+        const bucket = process.env.R2_BUCKET
+        if (!accountId || !bucket) return new Response('Storage not configured', { status: 500 })
+
+        const client = new S3Client({
+          region: 'auto',
+          endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+          credentials: {
+            accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+            secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+          },
+        })
 
         try {
-          const info = await stat(filePath)
-          const ext = extname(filePath).toLowerCase()
-          const contentType = MIME[ext] ?? 'application/octet-stream'
-          const buffer = await readFile(filePath)
+          const key = `contest/${subpath}`
+          const res = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }))
+          const body = await res.Body?.transformToByteArray()
+          if (!body) return new Response('Not found', { status: 404 })
 
-          return new Response(buffer, {
+          const ext = extname(subpath).toLowerCase()
+          const contentType = MIME[ext] ?? res.ContentType ?? 'application/octet-stream'
+
+          return new Response(body, {
             headers: {
               'Content-Type': contentType,
-              'Content-Length': String(info.size),
+              'Content-Length': String(res.ContentLength ?? body.length),
               'Cache-Control': 'public, max-age=86400, must-revalidate',
             },
           })
