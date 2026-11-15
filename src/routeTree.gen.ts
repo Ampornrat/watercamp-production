@@ -21,6 +21,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ContestScoringReportRouteImport } from './routes/contest-scoring-report'
+import { Route as ContestScoringR2RouteImport } from './routes/contest-scoring-r2'
 import { Route as ContestScoringRouteImport } from './routes/contest-scoring'
 import { Route as ContestReportRouteImport } from './routes/contest-report'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -112,6 +113,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const ContestScoringReportRoute = ContestScoringReportRouteImport.update({
   id: '/contest-scoring-report',
   path: '/contest-scoring-report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContestScoringR2Route = ContestScoringR2RouteImport.update({
+  id: '/contest-scoring-r2',
+  path: '/contest-scoring-r2',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContestScoringRoute = ContestScoringRouteImport.update({
@@ -285,6 +291,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/contest-report': typeof ContestReportRoute
   '/contest-scoring': typeof ContestScoringRoute
+  '/contest-scoring-r2': typeof ContestScoringR2Route
   '/contest-scoring-report': typeof ContestScoringReportRoute
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -331,6 +338,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/contest-report': typeof ContestReportRoute
   '/contest-scoring': typeof ContestScoringRoute
+  '/contest-scoring-r2': typeof ContestScoringR2Route
   '/contest-scoring-report': typeof ContestScoringReportRoute
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -378,6 +386,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/contest-report': typeof ContestReportRoute
   '/contest-scoring': typeof ContestScoringRoute
+  '/contest-scoring-r2': typeof ContestScoringR2Route
   '/contest-scoring-report': typeof ContestScoringReportRoute
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -426,6 +435,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/contest-report'
     | '/contest-scoring'
+    | '/contest-scoring-r2'
     | '/contest-scoring-report'
     | '/dashboard'
     | '/forgot-password'
@@ -472,6 +482,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/contest-report'
     | '/contest-scoring'
+    | '/contest-scoring-r2'
     | '/contest-scoring-report'
     | '/dashboard'
     | '/forgot-password'
@@ -518,6 +529,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/contest-report'
     | '/contest-scoring'
+    | '/contest-scoring-r2'
     | '/contest-scoring-report'
     | '/dashboard'
     | '/forgot-password'
@@ -565,6 +577,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   ContestReportRoute: typeof ContestReportRoute
   ContestScoringRoute: typeof ContestScoringRoute
+  ContestScoringR2Route: typeof ContestScoringR2Route
   ContestScoringReportRoute: typeof ContestScoringReportRoute
   DashboardRoute: typeof DashboardRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -690,6 +703,13 @@ declare module '@tanstack/react-router' {
       path: '/contest-scoring-report'
       fullPath: '/contest-scoring-report'
       preLoaderRoute: typeof ContestScoringReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contest-scoring-r2': {
+      id: '/contest-scoring-r2'
+      path: '/contest-scoring-r2'
+      fullPath: '/contest-scoring-r2'
+      preLoaderRoute: typeof ContestScoringR2RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contest-scoring': {
@@ -925,6 +945,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   ContestReportRoute: ContestReportRoute,
   ContestScoringRoute: ContestScoringRoute,
+  ContestScoringR2Route: ContestScoringR2Route,
   ContestScoringReportRoute: ContestScoringReportRoute,
   DashboardRoute: DashboardRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
