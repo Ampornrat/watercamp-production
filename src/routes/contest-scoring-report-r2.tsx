@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
 import { useQuery } from '@tanstack/react-query'
-import { BarChart3, ClipboardList, Medal, Trophy, Users, MessageSquare, ChevronDown, ChevronRight } from 'lucide-react'
+import { BarChart3, ClipboardList, Medal, RefreshCw, Trophy, Users, MessageSquare, ChevronDown, ChevronRight } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -40,10 +40,10 @@ function ScoringReportR2Page() {
   const getReportFn = useServerFn(getScoringReportR2)
   const [expandedJudge, setExpandedJudge] = useState<string | null>(null)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch, dataUpdatedAt } = useQuery({
     queryKey: ['scoring-report-r2'],
     queryFn: () => getReportFn(),
-    refetchInterval: 30_000,
+    refetchInterval: false,
   })
 
   const teams = data?.teams ?? []
@@ -76,14 +76,23 @@ function ScoringReportR2Page() {
               <div className="rounded-lg bg-primary/10 p-2 text-primary"><BarChart3 className="h-6 w-6" /></div>
               <div>
                 <h1 className="font-heading text-2xl font-extrabold">รายงานผลคะแนนรอบ 2 (VDO)</h1>
-                <p className="text-sm text-muted-foreground">ThaiWater Challenge — อัปเดตทุก 30 วินาที</p>
+                {dataUpdatedAt > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    อัปเดตล่าสุด: {new Date(dataUpdatedAt).toLocaleTimeString('th-TH')}
+                  </p>
+                )}
               </div>
             </div>
-            <Link to="/contest-scoring-r2">
-              <Button variant="outline" size="sm" className="gap-2 shrink-0">
-                <ClipboardList className="h-4 w-4" /> กลับไปให้คะแนน
+            <div className="flex items-center gap-2 shrink-0">
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => refetch()} disabled={isLoading}>
+                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} /> โหลดใหม่
               </Button>
-            </Link>
+              <Link to="/contest-scoring-r2">
+                <Button variant="outline" size="sm" className="gap-2">
+                  <ClipboardList className="h-4 w-4" /> กลับไปให้คะแนน
+                </Button>
+              </Link>
+            </div>
           </div>
 
           {isLoading ? (
