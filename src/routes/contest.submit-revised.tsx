@@ -3,7 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, Loader2, FileVideo, FileText, LogIn, XCircle, MessageSquare, Users } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Upload, Loader2, FileVideo, FileText, LogIn, XCircle, MessageSquare, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -221,6 +221,15 @@ function ContestSubmitRevisedPage() {
               <p className="mt-1 text-xs text-blue-600 flex items-center gap-1">
                 <MessageSquare className="h-3 w-3" /> มี comment จากกรรมการ — กรุณาแก้ไขและ upload ใหม่
               </p>
+            </div>
+
+            {/* Warning */}
+            <div className="mb-5 flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950/30">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+              <div>
+                <p className="font-semibold text-amber-800 dark:text-amber-400">กรุณาตรวจสอบ version ไฟล์ที่ถูกต้องก่อนทำการ Upload File</p>
+                <p className="mt-0.5 text-sm text-amber-700 dark:text-amber-500">เมื่อส่งผลงานแก้ไขแล้ว <strong>ไม่สามารถ Upload ใหม่ได้</strong> กรุณาตรวจสอบไฟล์ให้ครบถ้วนก่อนกดส่ง</p>
+              </div>
             </div>
 
             <div className="space-y-5">
