@@ -348,7 +348,7 @@ export const submitContestEntry = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const pool = (await import('@/lib/db.server')).default;
     const [teamRows] = await pool.query(
-      `SELECT id, leader_email, round1_status FROM contest_teams WHERE id = ? LIMIT 1`,
+      `SELECT id, team_name, leader_email, round1_status FROM contest_teams WHERE id = ? LIMIT 1`,
       [data.teamId]
     );
     const team = (teamRows as any[])[0];
@@ -364,6 +364,12 @@ export const submitContestEntry = createServerFn({ method: 'POST' })
        data.storyboardPath, data.storyboardFileName, data.storyboardFileSize,
        data.note?.trim() || null, data.submitterEmail?.trim().toLowerCase() || team.leader_email || 'unknown']
     );
+
+    const { sendLineNotify } = await import('@/lib/line-notify.server')
+    sendLineNotify(
+      `\n📹 ส่งผลงานรอบ 2 (ต้นฉบับ)\nทีม: ${team.team_name}\nแคมเปญ: ${data.campaignName.trim()}\nไฟล์: ${data.fileName}\nโดย: ${data.submitterEmail ?? team.leader_email}`
+    )
+
     return { ok: true };
   })
 
@@ -384,7 +390,7 @@ export const submitRevisedContestEntry = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const pool = (await import('@/lib/db.server')).default;
     const [teamRows] = await pool.query(
-      `SELECT id, leader_email, round1_status FROM contest_teams WHERE id = ? LIMIT 1`,
+      `SELECT id, team_name, leader_email, round1_status FROM contest_teams WHERE id = ? LIMIT 1`,
       [data.teamId]
     );
     const team = (teamRows as any[])[0];
@@ -412,6 +418,12 @@ export const submitRevisedContestEntry = createServerFn({ method: 'POST' })
        data.storyboardPath || null, data.storyboardFileName || null, data.storyboardFileSize || null,
        data.note?.trim() || null, data.submitterEmail?.trim().toLowerCase() || team.leader_email || 'unknown']
     );
+
+    const { sendLineNotify } = await import('@/lib/line-notify.server')
+    sendLineNotify(
+      `\n✏️ ส่งผลงานรอบ 2 (แก้ไขแล้ว)\nทีม: ${team.team_name}\nไฟล์: ${data.fileName}\nโดย: ${data.submitterEmail ?? team.leader_email}`
+    )
+
     return { ok: true };
   })
 
