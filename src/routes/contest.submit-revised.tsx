@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { getSession } from "@/lib/auth.server";
@@ -273,16 +274,46 @@ function ContestSubmitRevisedPage() {
                   placeholder="อธิบายสิ่งที่แก้ไขตาม comment ของกรรมการ..." />
               </div>
 
-              <Button
-                onClick={() => submit.mutate()}
-                disabled={submit.isPending}
-                className="w-full bg-blue-600 font-bold text-white hover:bg-blue-700"
-                size="lg"
-              >
-                {submit.isPending
-                  ? <><Loader2 className="h-4 w-4 animate-spin" /> กำลังอัปโหลด...</>
-                  : <><Upload className="h-4 w-4" /> ส่งผลงานแก้ไข</>}
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    disabled={submit.isPending}
+                    className="w-full bg-blue-600 font-bold text-white hover:bg-blue-700"
+                    size="lg"
+                  >
+                    {submit.isPending
+                      ? <><Loader2 className="h-4 w-4 animate-spin" /> กำลังอัปโหลด...</>
+                      : <><Upload className="h-4 w-4" /> ส่งผลงานแก้ไข</>}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>ยืนยันการส่งผลงานรอบ 2 (แก้ไข)</AlertDialogTitle>
+                    <AlertDialogDescription asChild>
+                      <div className="space-y-2 text-sm">
+                        <p>กรุณาตรวจสอบให้แน่ใจว่าไฟล์ที่เลือกถูกต้องก่อนยืนยัน</p>
+                        {videoFile && (
+                          <div className="rounded-md bg-muted px-3 py-2 text-xs">
+                            <span className="font-medium">VDO:</span> {videoFile.name} ({(videoFile.size / 1024 / 1024).toFixed(2)} MB)
+                          </div>
+                        )}
+                        {storyboardFile && (
+                          <div className="rounded-md bg-muted px-3 py-2 text-xs">
+                            <span className="font-medium">Story Board:</span> {storyboardFile.name} ({(storyboardFile.size / 1024 / 1024).toFixed(2)} MB)
+                          </div>
+                        )}
+                        <p className="font-semibold text-destructive">⚠️ เมื่อส่งแล้วไม่สามารถ Upload ใหม่ได้</p>
+                      </div>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>ยกเลิก — ตรวจสอบไฟล์อีกครั้ง</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => submit.mutate()} className="bg-blue-600 text-white hover:bg-blue-700">
+                      ยืนยัน ส่งผลงานแก้ไข
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </Card>
         </div>
