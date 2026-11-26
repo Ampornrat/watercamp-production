@@ -1,18 +1,15 @@
 export async function sendLineNotify(message: string): Promise<void> {
-  const token = process.env.LINE_NOTIFY_TOKEN
-  if (!token) return
+  const token = process.env.TELEGRAM_BOT_TOKEN
+  const chatId = process.env.TELEGRAM_CHAT_ID
+  if (!token || !chatId) return
 
   try {
-    const body = new URLSearchParams({ message })
-    await fetch('https://notify-api.line.me/api/notify', {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: body.toString(),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text: message }),
     })
   } catch {
-    // fire-and-forget — ไม่ให้ LINE error กระทบ flow หลัก
+    // fire-and-forget — ไม่ให้ Telegram error กระทบ flow หลัก
   }
 }
