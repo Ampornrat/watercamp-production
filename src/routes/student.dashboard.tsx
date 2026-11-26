@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
 import { useEffect, useState } from 'react'
-import { BookOpen, CheckCircle2, Clock, ExternalLink, GraduationCap, LogOut, Trophy, User, XCircle, Upload, FileVideo, FileText, Users } from 'lucide-react'
+import { BookOpen, CheckCircle2, Clock, Download, ExternalLink, GraduationCap, LogOut, Trophy, User, XCircle, Upload, FileVideo, FileText, Users } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -72,14 +72,38 @@ function ContestTeamSection({ team }: { team: any }) {
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <FileVideo className="h-3.5 w-3.5 shrink-0 text-blue-500" />
                   <span className="font-medium text-foreground">ไฟล์ล่าสุด:</span>
-                  <span className="truncate max-w-[260px]">{decodeFileName(team.latest_file_name)}</span>
+                  {team.latest_file_url ? (
+                    <a
+                      href={team.latest_file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 truncate max-w-[240px] text-blue-600 underline-offset-2 hover:underline"
+                    >
+                      {decodeFileName(team.latest_file_name)}
+                      <Download className="h-3 w-3 shrink-0" />
+                    </a>
+                  ) : (
+                    <span className="truncate max-w-[260px]">{decodeFileName(team.latest_file_name)}</span>
+                  )}
                 </div>
               )}
               {team.latest_storyboard_file_name && (
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <FileText className="h-3.5 w-3.5 shrink-0 text-amber-500" />
                   <span className="font-medium text-foreground">Script/SB:</span>
-                  <span className="truncate max-w-[260px]">{decodeFileName(team.latest_storyboard_file_name)}</span>
+                  {team.latest_storyboard_url ? (
+                    <a
+                      href={team.latest_storyboard_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 truncate max-w-[240px] text-blue-600 underline-offset-2 hover:underline"
+                    >
+                      {decodeFileName(team.latest_storyboard_file_name)}
+                      <Download className="h-3 w-3 shrink-0" />
+                    </a>
+                  ) : (
+                    <span className="truncate max-w-[260px]">{decodeFileName(team.latest_storyboard_file_name)}</span>
+                  )}
                 </div>
               )}
             </div>

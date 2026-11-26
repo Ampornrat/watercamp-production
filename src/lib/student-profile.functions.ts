@@ -44,18 +44,64 @@ export const getStudentProfile = createServerFn({ method: 'GET' })
 
     const [teamRows] = await pool.query(
       `SELECT ct.id, ct.team_name, ct.campaign_name, ct.round1_status,
-              CASE WHEN LOWER(ct.leader_email) = ? THEN 'leader' ELSE 'member' END AS role
+              CASE WHEN LOWER(ct.leader_email) = ? THEN 'leader' ELSE 'member' END AS role,
+              (SELECT COUNT(*) FROM contest_submissions cs
+               WHERE cs.team_id = ct.id AND cs.submission_type = 'original') > 0 AS has_original_submission,
+              (SELECT COUNT(*) FROM contest_scores_r2 csr
+               WHERE csr.team_id = ct.id AND csr.comment IS NOT NULL AND csr.comment != '') > 0 AS has_judge_comments,
+              (SELECT COUNT(*) FROM contest_scores_r2 csr
+               WHERE csr.team_id = ct.id) AS judge_count,
+              (SELECT cs.file_name FROM contest_submissions cs
+               WHERE cs.team_id = ct.id AND cs.submission_type = 'original'
+               ORDER BY cs.created_at DESC LIMIT 1) AS latest_file_name,
+              (SELECT cs.file_url FROM contest_submissions cs
+               WHERE cs.team_id = ct.id AND cs.submission_type = 'original'
+               ORDER BY cs.created_at DESC LIMIT 1) AS latest_file_url,
+              (SELECT cs.storyboard_file_name FROM contest_submissions cs
+               WHERE cs.team_id = ct.id AND cs.submission_type = 'original'
+               ORDER BY cs.created_at DESC LIMIT 1) AS latest_storyboard_file_name,
+              (SELECT cs.storyboard_url FROM contest_submissions cs
+               WHERE cs.team_id = ct.id AND cs.submission_type = 'original'
+               ORDER BY cs.created_at DESC LIMIT 1) AS latest_storyboard_url
        FROM contest_teams ct
        WHERE LOWER(ct.leader_email) = ?
        UNION
-       SELECT ct.id, ct.team_name, ct.campaign_name, ct.round1_status, 'member' AS role
+       SELECT ct.id, ct.team_name, ct.campaign_name, ct.round1_status, 'member' AS role,
+              (SELECT COUNT(*) FROM contest_submissions cs
+               WHERE cs.team_id = ct.id AND cs.submission_type = 'original') > 0 AS has_original_submission,
+              (SELECT COUNT(*) FROM contest_scores_r2 csr
+               WHERE csr.team_id = ct.id AND csr.comment IS NOT NULL AND csr.comment != '') > 0 AS has_judge_comments,
+              (SELECT COUNT(*) FROM contest_scores_r2 csr
+               WHERE csr.team_id = ct.id) AS judge_count,
+              (SELECT cs.file_name FROM contest_submissions cs
+               WHERE cs.team_id = ct.id AND cs.submission_type = 'original'
+               ORDER BY cs.created_at DESC LIMIT 1) AS latest_file_name,
+              (SELECT cs.file_url FROM contest_submissions cs
+               WHERE cs.team_id = ct.id AND cs.submission_type = 'original'
+               ORDER BY cs.created_at DESC LIMIT 1) AS latest_file_url,
+              (SELECT cs.storyboard_file_name FROM contest_submissions cs
+               WHERE cs.team_id = ct.id AND cs.submission_type = 'original'
+               ORDER BY cs.created_at DESC LIMIT 1) AS latest_storyboard_file_name,
+              (SELECT cs.storyboard_url FROM contest_submissions cs
+               WHERE cs.team_id = ct.id AND cs.submission_type = 'original'
+               ORDER BY cs.created_at DESC LIMIT 1) AS latest_storyboard_url
        FROM contest_team_members ctm
        JOIN contest_teams ct ON ct.id = ctm.team_id
        WHERE LOWER(ctm.member_email) = ?
        LIMIT 1`,
       [email, email, email]
     )
-    const contestTeam = (teamRows as any[])[0] ?? null
+    const rawTeam = (teamRows as any[])[0] ?? null
+    const contestTeam = rawTeam ? {
+      ...rawTeam,
+      has_original_submission: Boolean(rawTeam.has_original_submission),
+      has_judge_comments: Boolean(rawTeam.has_judge_comments),
+      judge_count: Number(rawTeam.judge_count ?? 0),
+      latest_file_name: rawTeam.latest_file_name as string | null,
+      latest_file_url: rawTeam.latest_file_url as string | null,
+      latest_storyboard_file_name: rawTeam.latest_storyboard_file_name as string | null,
+      latest_storyboard_url: rawTeam.latest_storyboard_url as string | null,
+    } : null
 
     return {
       ...profile,
@@ -75,6 +121,13 @@ export const getStudentProfile = createServerFn({ method: 'GET' })
         campaign_name: string
         round1_status: 'pending' | 'approved' | 'rejected'
         role: 'leader' | 'member'
+        has_original_submission: boolean
+        has_judge_comments: boolean
+        judge_count: number
+        latest_file_name: string | null
+        latest_file_url: string | null
+        latest_storyboard_file_name: string | null
+        latest_storyboard_url: string | null
       } | null,
     }
   })
