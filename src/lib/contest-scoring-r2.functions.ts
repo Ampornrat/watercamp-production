@@ -132,28 +132,79 @@ export const getJudgeExistingScoresR2 = createServerFn({ method: 'GET' })
 
 export const getScoringReportR2 = createServerFn({ method: 'GET' }).handler(async () => {
   const pool = (await import('@/lib/db.server')).default
+
   const [teamRows] = await pool.query(
     `SELECT ct.id, ct.team_name, ct.campaign_name,
             COALESCE(i.institute, i.name, '') AS institute_name,
             COALESCE(ct.engagement_score, 0) AS admin_engagement_score,
             COUNT(sr.id) AS judge_count,
-            ROUND(AVG(sr.stem_score), 2) AS avg_stem,
-            ROUND(AVG(sr.thaiwater_score), 2) AS avg_thaiwater,
-            ROUND(AVG(sr.storytelling_score), 2) AS avg_storytelling,
-            ROUND(AVG(sr.stem_score + sr.thaiwater_score + sr.storytelling_score) + COALESCE(ct.engagement_score, 0), 2) AS avg_total
+            ROUND(COALESCE(AVG(sr.stem_score), 0), 2) AS avg_stem,
+            ROUND(COALESCE(AVG(sr.thaiwater_score), 0), 2) AS avg_thaiwater,
+            ROUND(COALESCE(AVG(sr.storytelling_score), 0), 2) AS avg_storytelling,
+            ROUND(COALESCE(AVG(sr.stem_score + sr.thaiwater_score + sr.storytelling_score), 0) + COALESCE(ct.engagement_score, 0), 2) AS avg_total
      FROM contest_teams ct
      LEFT JOIN institutes_tab i ON i.id = ct.institute_id
      LEFT JOIN contest_scores_r2 sr ON sr.team_id = ct.id
      WHERE ct.round1_status = 'approved'
      GROUP BY ct.id, ct.team_name, ct.campaign_name, institute_name, ct.engagement_score
-     ORDER BY avg_total DESC`
+     ORDER BY avg_total DESC, ct.created_at ASC`
   )
-  return teamRows as {
-    id: string; team_name: string; campaign_name: string; institute_name: string
-    admin_engagement_score: number
-    judge_count: number; avg_stem: number; avg_thaiwater: number
-    avg_storytelling: number; avg_total: number
-  }[]
+
+  const [judgeRows] = await pool.query(
+    `SELECT sr.judge_name, sr.judge_email,
+            sr.team_id, ct.team_name,
+            sr.stem_score, sr.thaiwater_score, sr.storytelling_score,
+            sr.engagement_score, sr.total_score, sr.comment, sr.submitted_at
+     FROM contest_scores_r2 sr
+     JOIN contest_teams ct ON ct.id = sr.team_id
+     ORDER BY sr.judge_email, ct.team_name`
+  )
+
+  const [judgeListRows] = await pool.query(
+    `SELECT judge_name, judge_email,
+            COUNT(DISTINCT team_id) AS scored_teams,
+            MAX(submitted_at) AS last_submitted
+     FROM contest_scores_r2
+     GROUP BY judge_email, judge_name
+     ORDER BY judge_name`
+  )
+
+  return {
+    teams: (teamRows as any[]).map((r) => ({
+      id: r.id, team_name: r.team_name, campaign_name: r.campaign_name,
+      institute_name: r.institute_name,
+      admin_engagement_score: Number(r.admin_engagement_score),
+      judge_count: Number(r.judge_count),
+      avg_stem: Number(r.avg_stem),
+      avg_thaiwater: Number(r.avg_thaiwater),
+      avg_storytelling: Number(r.avg_storytelling),
+      avg_total: Number(r.avg_total),
+    })) as {
+      id: string; team_name: string; campaign_name: string; institute_name: string
+      admin_engagement_score: number
+      judge_count: number; avg_stem: number; avg_thaiwater: number
+      avg_storytelling: number; avg_total: number
+    }[],
+    scores: (judgeRows as any[]).map((r) => ({
+      ...r,
+      stem_score: Number(r.stem_score),
+      thaiwater_score: Number(r.thaiwater_score),
+      storytelling_score: Number(r.storytelling_score),
+      engagement_score: Number(r.engagement_score),
+      total_score: Number(r.total_score),
+    })) as {
+      judge_name: string; judge_email: string; team_id: string; team_name: string
+      stem_score: number; thaiwater_score: number; storytelling_score: number
+      engagement_score: number; total_score: number; comment: string | null
+      submitted_at: string
+    }[],
+    judges: (judgeListRows as any[]).map((r) => ({
+      ...r,
+      scored_teams: Number(r.scored_teams),
+    })) as {
+      judge_name: string; judge_email: string; scored_teams: number; last_submitted: string
+    }[],
+  }
 })
 
 // Admin: set engagement score for a team

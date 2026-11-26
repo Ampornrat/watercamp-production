@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, Fragment } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { CheckCircle2, ClipboardList, Loader2, Save, CloudOff, FileVideo, FileText, Download, MessageSquare } from 'lucide-react'
+import { BarChart3, CheckCircle2, ClipboardList, Loader2, Save, CloudOff, FileVideo, FileText, Download, MessageSquare } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -254,12 +254,19 @@ function ContestScoringR2Page() {
       <main className="container mx-auto px-4 py-8 md:py-10">
         <div className="mx-auto max-w-6xl">
           {/* Header */}
-          <div className="mb-6 flex items-center gap-3">
-            <div className="rounded-lg bg-primary/10 p-2 text-primary"><ClipboardList className="h-6 w-6" /></div>
-            <div>
-              <h1 className="font-heading text-2xl font-extrabold">แบบฟอร์มให้คะแนนรอบ 2 (VDO)</h1>
-              <p className="text-sm text-muted-foreground">ThaiWater Challenge — กรรมการตัดสิน</p>
+          <div className="mb-6 flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-primary/10 p-2 text-primary"><ClipboardList className="h-6 w-6" /></div>
+              <div>
+                <h1 className="font-heading text-2xl font-extrabold">แบบฟอร์มให้คะแนนรอบ 2 (VDO)</h1>
+                <p className="text-sm text-muted-foreground">ThaiWater Challenge — กรรมการตัดสิน</p>
+              </div>
             </div>
+            <Link to="/contest-scoring-report-r2">
+              <Button variant="outline" className="gap-2 shrink-0">
+                <BarChart3 className="h-4 w-4" /> ดูรายงานผลคะแนน
+              </Button>
+            </Link>
           </div>
 
           {/* Judge identity */}
