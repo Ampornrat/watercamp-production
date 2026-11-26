@@ -13,6 +13,7 @@ import { SiteHeader } from '@/components/SiteHeader'
 import { SiteFooter } from '@/components/SiteFooter'
 import { getSession } from '@/lib/auth.server'
 import { getContestTeamsReport, setTeamScore, approveTeamRound1 } from '@/lib/contest.functions'
+import { setTeamEngagementScore } from '@/lib/contest-scoring-r2.functions'
 import { toast } from 'sonner'
 
 export const Route = createFileRoute('/contest-report')({
@@ -56,11 +57,14 @@ export function ContestReportContent() {
   const getReportFn = useServerFn(getContestTeamsReport)
   const setScoreFn = useServerFn(setTeamScore)
   const approveFn = useServerFn(approveTeamRound1)
+  const setEngagementFn = useServerFn(setTeamEngagementScore)
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [scoreState, setScoreState] = useState<Record<string, { score: string; notes: string }>>({})
+  const [engagementState, setEngagementState] = useState<Record<string, string>>({})
   const [savingScore, setSavingScore] = useState<string | null>(null)
+  const [savingEngagement, setSavingEngagement] = useState<string | null>(null)
   const [approvingTeam, setApprovingTeam] = useState<string | null>(null)
 
   const { data: teams = [], isLoading } = useQuery({
@@ -77,6 +81,13 @@ export function ContestReportContent() {
       }
       return next
     })
+    setEngagementState((prev) => {
+      const next = { ...prev }
+      for (const t of teams) {
+        if (!(t.id in next)) next[t.id] = t.engagement_score != null ? String(t.engagement_score) : ''
+      }
+      return next
+    })
   }, [teams])
 
   const handleSaveScore = async (teamId: string) => {
@@ -90,6 +101,24 @@ export function ContestReportContent() {
       toast.error('บันทึกคะแนนไม่สำเร็จ')
     } finally {
       setSavingScore(null)
+    }
+  }
+
+  const handleSaveEngagement = async (teamId: string) => {
+    setSavingEngagement(teamId)
+    try {
+      const val = engagementState[teamId]
+      const score = val !== '' ? Number(val) : null
+      if (score !== null && (isNaN(score) || score < 0 || score > 10)) {
+        toast.error('คะแนนยอดมีส่วนร่วมต้องอยู่ระหว่าง 0–10'); return
+      }
+      await setEngagementFn({ data: { teamId, score } })
+      await queryClient.invalidateQueries({ queryKey: ['contest-teams-report'] })
+      toast.success('บันทึกคะแนนยอดมีส่วนร่วมแล้ว')
+    } catch {
+      toast.error('บันทึกไม่สำเร็จ')
+    } finally {
+      setSavingEngagement(null)
     }
   }
 
@@ -347,6 +376,41 @@ export function ContestReportContent() {
                           )}
                         </div>
 
+                        {/* Round 2 engagement score (admin-only) */}
+                        {team.round1_status === 'approved' && (
+                          <div className="mb-4 rounded-lg border bg-orange-50/50 p-4">
+                            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-orange-600">ยอดมีส่วนร่วม รอบ 2 (View/Like/Share)</p>
+                            <div className="flex flex-wrap items-end gap-3">
+                              <div className="space-y-1">
+                                <label className="text-xs text-muted-foreground">คะแนน (0–10)</label>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  max={10}
+                                  step={0.5}
+                                  className="w-24"
+                                  value={engagementState[team.id] ?? ''}
+                                  onChange={(e) => setEngagementState((prev) => ({ ...prev, [team.id]: e.target.value }))}
+                                  placeholder="0–10"
+                                />
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-1.5 border-orange-300 text-orange-700 hover:bg-orange-50"
+                                disabled={savingEngagement === team.id}
+                                onClick={() => handleSaveEngagement(team.id)}
+                              >
+                                {savingEngagement === team.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                                บันทึกยอดมีส่วนร่วม
+                              </Button>
+                              {team.engagement_score != null && (
+                                <span className="text-sm font-semibold text-orange-600">ปัจจุบัน: {team.engagement_score}</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
                         <div className="grid gap-4 md:grid-cols-2">
                           {/* Members */}
                           <div>
@@ -375,20 +439,28 @@ export function ContestReportContent() {
                                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">ผลงานที่ส่งทั้งหมด ({team.submissions.length} รายการ)</p>
                                 <div className="space-y-2">
                                   {team.submissions.map((s) => (
-                                    <div key={s.id} className="rounded-md border bg-white p-3 text-sm space-y-1">
-                                      <div className="font-medium">{s.campaign_name}</div>
+                                    <div key={s.id} className={`rounded-md border p-3 text-sm space-y-1 ${s.submission_type === 'revised' ? 'bg-blue-50/50 border-blue-200' : 'bg-white'}`}>
+                                      <div className="flex items-center gap-2">
+                                        {s.submission_type === 'revised'
+                                          ? <Badge className="text-[10px] px-1.5 py-0 h-4 bg-blue-600">แก้ไข</Badge>
+                                          : <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">ต้นฉบับ</Badge>
+                                        }
+                                        {s.campaign_name && <span className="font-medium">{s.campaign_name}</span>}
+                                      </div>
                                       <div className="flex flex-wrap gap-3">
-                                        <a
-                                          href={toFileUrl(s.file_url)}
-                                          download={decodeFileName(s.file_name)}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="inline-flex items-center gap-1 text-blue-600 underline"
-                                        >
-                                          <FileVideo className="h-3.5 w-3.5" />
-                                          {decodeFileName(s.file_name)}
-                                          {s.file_size ? <span className="text-muted-foreground text-xs">({fmtSize(s.file_size)})</span> : null}
-                                        </a>
+                                        {s.file_url && (
+                                          <a
+                                            href={toFileUrl(s.file_url)}
+                                            download={decodeFileName(s.file_name)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1 text-blue-600 underline"
+                                          >
+                                            <FileVideo className="h-3.5 w-3.5" />
+                                            {decodeFileName(s.file_name)}
+                                            {s.file_size ? <span className="text-muted-foreground text-xs">({fmtSize(s.file_size)})</span> : null}
+                                          </a>
+                                        )}
                                         {s.storyboard_url && (
                                           <a
                                             href={toFileUrl(s.storyboard_url)}

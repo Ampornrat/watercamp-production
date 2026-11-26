@@ -38,6 +38,7 @@ import { Route as StudentDashboardRouteImport } from './routes/student.dashboard
 import { Route as STokenRouteImport } from './routes/s.$token'
 import { Route as ImagesNameRouteImport } from './routes/images.$name'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
+import { Route as ContestSubmitRevisedRouteImport } from './routes/contest.submit-revised'
 import { Route as ContestSubmitRouteImport } from './routes/contest.submit'
 import { Route as ContestRegisterRouteImport } from './routes/contest.register'
 import { Route as AdvisorRegisterRouteImport } from './routes/advisor.register'
@@ -200,6 +201,11 @@ const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   path: '/email/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContestSubmitRevisedRoute = ContestSubmitRevisedRouteImport.update({
+  id: '/contest/submit-revised',
+  path: '/contest/submit-revised',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContestSubmitRoute = ContestSubmitRouteImport.update({
   id: '/contest/submit',
   path: '/contest/submit',
@@ -309,6 +315,7 @@ export interface FileRoutesByFullPath {
   '/advisor/register': typeof AdvisorRegisterRoute
   '/contest/register': typeof ContestRegisterRoute
   '/contest/submit': typeof ContestSubmitRoute
+  '/contest/submit-revised': typeof ContestSubmitRevisedRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/images/$name': typeof ImagesNameRoute
   '/s/$token': typeof STokenRoute
@@ -356,6 +363,7 @@ export interface FileRoutesByTo {
   '/advisor/register': typeof AdvisorRegisterRoute
   '/contest/register': typeof ContestRegisterRoute
   '/contest/submit': typeof ContestSubmitRoute
+  '/contest/submit-revised': typeof ContestSubmitRevisedRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/images/$name': typeof ImagesNameRoute
   '/s/$token': typeof STokenRoute
@@ -404,6 +412,7 @@ export interface FileRoutesById {
   '/advisor/register': typeof AdvisorRegisterRoute
   '/contest/register': typeof ContestRegisterRoute
   '/contest/submit': typeof ContestSubmitRoute
+  '/contest/submit-revised': typeof ContestSubmitRevisedRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/images/$name': typeof ImagesNameRoute
   '/s/$token': typeof STokenRoute
@@ -453,6 +462,7 @@ export interface FileRouteTypes {
     | '/advisor/register'
     | '/contest/register'
     | '/contest/submit'
+    | '/contest/submit-revised'
     | '/email/unsubscribe'
     | '/images/$name'
     | '/s/$token'
@@ -500,6 +510,7 @@ export interface FileRouteTypes {
     | '/advisor/register'
     | '/contest/register'
     | '/contest/submit'
+    | '/contest/submit-revised'
     | '/email/unsubscribe'
     | '/images/$name'
     | '/s/$token'
@@ -547,6 +558,7 @@ export interface FileRouteTypes {
     | '/advisor/register'
     | '/contest/register'
     | '/contest/submit'
+    | '/contest/submit-revised'
     | '/email/unsubscribe'
     | '/images/$name'
     | '/s/$token'
@@ -595,6 +607,7 @@ export interface RootRouteChildren {
   AdvisorRegisterRoute: typeof AdvisorRegisterRoute
   ContestRegisterRoute: typeof ContestRegisterRoute
   ContestSubmitRoute: typeof ContestSubmitRoute
+  ContestSubmitRevisedRoute: typeof ContestSubmitRevisedRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ImagesNameRoute: typeof ImagesNameRoute
   STokenRoute: typeof STokenRoute
@@ -824,6 +837,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmailUnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contest/submit-revised': {
+      id: '/contest/submit-revised'
+      path: '/contest/submit-revised'
+      fullPath: '/contest/submit-revised'
+      preLoaderRoute: typeof ContestSubmitRevisedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contest/submit': {
       id: '/contest/submit'
       path: '/contest/submit'
@@ -963,6 +983,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdvisorRegisterRoute: AdvisorRegisterRoute,
   ContestRegisterRoute: ContestRegisterRoute,
   ContestSubmitRoute: ContestSubmitRoute,
+  ContestSubmitRevisedRoute: ContestSubmitRevisedRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ImagesNameRoute: ImagesNameRoute,
   STokenRoute: STokenRoute,

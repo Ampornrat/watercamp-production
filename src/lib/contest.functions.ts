@@ -17,18 +17,51 @@ export const getMyContestTeam = createServerFn({ method: 'GET' })
     const email = data.email.trim().toLowerCase()
     const [rows] = await pool.query(
       `SELECT ct.id, ct.team_name, ct.campaign_name, ct.round1_status,
-              CASE WHEN LOWER(ct.leader_email) = ? THEN 'leader' ELSE 'member' END AS role
+              CASE WHEN LOWER(ct.leader_email) = ? THEN 'leader' ELSE 'member' END AS role,
+              (SELECT COUNT(*) FROM contest_submissions cs
+               WHERE cs.team_id = ct.id AND cs.submission_type = 'original') > 0 AS has_original_submission,
+              (SELECT COUNT(*) FROM contest_scores_r2 csr
+               WHERE csr.team_id = ct.id AND csr.comment IS NOT NULL AND csr.comment != '') > 0 AS has_judge_comments,
+              (SELECT COUNT(*) FROM contest_scores_r2 csr
+               WHERE csr.team_id = ct.id) AS judge_count,
+              (SELECT cs.file_name FROM contest_submissions cs
+               WHERE cs.team_id = ct.id AND cs.submission_type = 'original'
+               ORDER BY cs.created_at DESC LIMIT 1) AS latest_file_name,
+              (SELECT cs.storyboard_file_name FROM contest_submissions cs
+               WHERE cs.team_id = ct.id AND cs.submission_type = 'original'
+               ORDER BY cs.created_at DESC LIMIT 1) AS latest_storyboard_file_name
        FROM contest_teams ct
        WHERE LOWER(ct.leader_email) = ?
        UNION
-       SELECT ct.id, ct.team_name, ct.campaign_name, ct.round1_status, 'member' AS role
+       SELECT ct.id, ct.team_name, ct.campaign_name, ct.round1_status, 'member' AS role,
+              (SELECT COUNT(*) FROM contest_submissions cs
+               WHERE cs.team_id = ct.id AND cs.submission_type = 'original') > 0 AS has_original_submission,
+              (SELECT COUNT(*) FROM contest_scores_r2 csr
+               WHERE csr.team_id = ct.id AND csr.comment IS NOT NULL AND csr.comment != '') > 0 AS has_judge_comments,
+              (SELECT COUNT(*) FROM contest_scores_r2 csr
+               WHERE csr.team_id = ct.id) AS judge_count,
+              (SELECT cs.file_name FROM contest_submissions cs
+               WHERE cs.team_id = ct.id AND cs.submission_type = 'original'
+               ORDER BY cs.created_at DESC LIMIT 1) AS latest_file_name,
+              (SELECT cs.storyboard_file_name FROM contest_submissions cs
+               WHERE cs.team_id = ct.id AND cs.submission_type = 'original'
+               ORDER BY cs.created_at DESC LIMIT 1) AS latest_storyboard_file_name
        FROM contest_team_members ctm
        JOIN contest_teams ct ON ct.id = ctm.team_id
        WHERE LOWER(ctm.member_email) = ?
        LIMIT 1`,
       [email, email, email]
     )
-    return (rows as any[])[0] ?? null
+    const row = (rows as any[])[0] ?? null
+    if (!row) return null
+    return {
+      ...row,
+      has_original_submission: Boolean(row.has_original_submission),
+      has_judge_comments: Boolean(row.has_judge_comments),
+      judge_count: Number(row.judge_count ?? 0),
+      latest_file_name: row.latest_file_name as string | null,
+      latest_storyboard_file_name: row.latest_storyboard_file_name as string | null,
+    }
   })
 
 export const getContestEligibleMembers = createServerFn({ method: 'GET' })
@@ -210,7 +243,7 @@ export const getContestTeamsReport = createServerFn({ method: 'GET' }).handler(a
        ct.campaign_name, ct.concept,
        ct.storyboard_url, ct.storyboard_file_name, ct.storyboard_file_size,
        ct.created_at,
-       ct.score, ct.round1_status, ct.round1_approved_at, ct.round1_notes,
+       ct.score, ct.engagement_score, ct.round1_status, ct.round1_approved_at, ct.round1_notes,
        COALESCE(i.institute, i.name, '') AS institute_name,
        GROUP_CONCAT(
          DISTINCT CONCAT_WS('||', ctm.member_name, ctm.member_email)
@@ -225,7 +258,7 @@ export const getContestTeamsReport = createServerFn({ method: 'GET' }).handler(a
   )
 
   const [subRows] = await pool.query(
-    `SELECT team_id, id, campaign_name, file_url, file_name, file_size,
+    `SELECT team_id, id, submission_type, campaign_name, file_url, file_name, file_size,
             storyboard_url, storyboard_file_name, note, submitted_by_email, created_at
      FROM contest_submissions
      ORDER BY created_at DESC`
@@ -249,6 +282,7 @@ export const getContestTeamsReport = createServerFn({ method: 'GET' }).handler(a
     storyboard_file_size: t.storyboard_file_size as number | null,
     created_at: t.created_at as string,
     score: t.score as number | null,
+    engagement_score: t.engagement_score as number | null,
     round1_status: (t.round1_status ?? 'pending') as 'pending' | 'approved' | 'rejected',
     round1_approved_at: t.round1_approved_at as string | null,
     round1_notes: t.round1_notes as string | null,
@@ -324,10 +358,58 @@ export const submitContestEntry = createServerFn({ method: 'POST' })
     const id = randomUUID();
     await pool.query(
       `INSERT INTO contest_submissions
-         (id, team_id, campaign_name, file_url, file_name, file_size, storyboard_url, storyboard_file_name, storyboard_file_size, note, submitted_by_email, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+         (id, team_id, submission_type, campaign_name, file_url, file_name, file_size, storyboard_url, storyboard_file_name, storyboard_file_size, note, submitted_by_email, created_at)
+       VALUES (?, ?, 'original', ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
       [id, data.teamId, data.campaignName.trim(), data.path, data.fileName, data.fileSize,
        data.storyboardPath, data.storyboardFileName, data.storyboardFileSize,
+       data.note?.trim() || null, data.submitterEmail?.trim().toLowerCase() || team.leader_email || 'unknown']
+    );
+    return { ok: true };
+  })
+
+const SubmitRevisedEntrySchema = z.object({
+  teamId: z.string().uuid(),
+  path: z.string().min(1).max(500),
+  fileName: z.string().min(1).max(255),
+  fileSize: z.number().int().min(1).max(500 * 1024 * 1024),
+  storyboardPath: z.string().min(1).max(500).optional().nullable(),
+  storyboardFileName: z.string().min(1).max(255).optional().nullable(),
+  storyboardFileSize: z.number().int().min(1).max(100 * 1024 * 1024).optional().nullable(),
+  note: z.string().max(2000).optional().nullable(),
+  submitterEmail: z.string().email().max(255).optional().nullable(),
+})
+
+export const submitRevisedContestEntry = createServerFn({ method: 'POST' })
+  .inputValidator((input: unknown) => SubmitRevisedEntrySchema.parse(input))
+  .handler(async ({ data }) => {
+    const pool = (await import('@/lib/db.server')).default;
+    const [teamRows] = await pool.query(
+      `SELECT id, leader_email, round1_status FROM contest_teams WHERE id = ? LIMIT 1`,
+      [data.teamId]
+    );
+    const team = (teamRows as any[])[0];
+    if (!team) throw new Error('ไม่พบทีม');
+    if (team.round1_status !== 'approved') throw new Error('ทีมยังไม่ผ่านการคัดเลือกรอบที่ 1');
+
+    // Verify all 12 judges have scored and at least one has commented
+    const [judgeRows] = await pool.query(
+      `SELECT COUNT(*) AS judge_count,
+              SUM(CASE WHEN comment IS NOT NULL AND comment != '' THEN 1 ELSE 0 END) AS comment_count
+       FROM contest_scores_r2 WHERE team_id = ?`,
+      [data.teamId]
+    );
+    const judgeCount = Number((judgeRows as any[])[0]?.judge_count ?? 0);
+    const commentCount = Number((judgeRows as any[])[0]?.comment_count ?? 0);
+    if (judgeCount < 12) throw new Error(`กรรมการยังให้คะแนนไม่ครบ (${judgeCount}/12 ท่าน) ไม่สามารถส่งผลงานแก้ไขได้`);
+    if (commentCount === 0) throw new Error('ยังไม่มี comment จากกรรมการ ไม่สามารถส่งผลงานแก้ไขได้');
+
+    const id = randomUUID();
+    await pool.query(
+      `INSERT INTO contest_submissions
+         (id, team_id, submission_type, campaign_name, file_url, file_name, file_size, storyboard_url, storyboard_file_name, storyboard_file_size, note, submitted_by_email, created_at)
+       VALUES (?, ?, 'revised', NULL, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [id, data.teamId, data.path, data.fileName, data.fileSize,
+       data.storyboardPath || null, data.storyboardFileName || null, data.storyboardFileSize || null,
        data.note?.trim() || null, data.submitterEmail?.trim().toLowerCase() || team.leader_email || 'unknown']
     );
     return { ok: true };

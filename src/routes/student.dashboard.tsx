@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useServerFn } from '@tanstack/react-start'
 import { useEffect, useState } from 'react'
-import { BookOpen, CheckCircle2, Clock, ExternalLink, GraduationCap, LogOut, Trophy, User, XCircle } from 'lucide-react'
+import { BookOpen, CheckCircle2, Clock, ExternalLink, GraduationCap, LogOut, Trophy, User, XCircle, Upload, FileVideo, FileText, Users } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -24,6 +24,133 @@ const completionInfo: Record<string, string> = {
   enrolled: 'กำลังเรียน',
   completed: 'ผ่านแล้ว',
   failed: 'ไม่ผ่าน',
+}
+
+const TOTAL_JUDGES = 12
+
+function decodeFileName(name: string | null | undefined): string {
+  if (!name) return ''
+  try { return decodeURIComponent(name) } catch { return name }
+}
+
+function ContestTeamSection({ team }: { team: any }) {
+  const judgeCount = team.judge_count ?? 0
+  const isJudging = judgeCount > 0 && judgeCount < TOTAL_JUDGES
+  const judgingComplete = judgeCount >= TOTAL_JUDGES
+  const canSubmitOriginal = !team.has_original_submission && judgeCount === 0
+  const canSubmitRevised =
+    team.has_original_submission &&
+    team.has_judge_comments &&
+    judgingComplete &&
+    team.role === 'leader'
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div>
+        <p className="font-semibold">
+          {team.round1_status === 'approved' ? '✅' :
+           team.round1_status === 'rejected' ? '❌' : '⏳'}{' '}
+          ท่านอยู่ในทีม <strong>{team.team_name}</strong>
+          {' '}({team.role === 'leader' ? 'หัวหน้าทีม' : 'สมาชิก'})
+        </p>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          แคมเปญ: {team.campaign_name} —{' '}
+          {team.round1_status === 'approved' ? 'ผ่านรอบ 1 แล้ว' :
+           team.round1_status === 'rejected' ? 'ไม่ผ่านรอบ 1' : 'รอผลพิจารณารอบ 1'}
+        </p>
+      </div>
+
+      {/* Round 2 status (only when approved) */}
+      {team.round1_status === 'approved' && (
+        <div className="rounded-md border bg-white/60 p-3 dark:bg-black/10 space-y-2.5">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">สถานะผลงานรอบ 2</p>
+
+          {/* Latest uploaded files */}
+          {team.has_original_submission && (
+            <div className="space-y-1">
+              {team.latest_file_name && (
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <FileVideo className="h-3.5 w-3.5 shrink-0 text-blue-500" />
+                  <span className="font-medium text-foreground">ไฟล์ล่าสุด:</span>
+                  <span className="truncate max-w-[260px]">{decodeFileName(team.latest_file_name)}</span>
+                </div>
+              )}
+              {team.latest_storyboard_file_name && (
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <FileText className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+                  <span className="font-medium text-foreground">Script/SB:</span>
+                  <span className="truncate max-w-[260px]">{decodeFileName(team.latest_storyboard_file_name)}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Judge progress */}
+          {judgeCount > 0 && (
+            <div className={`flex items-center gap-1.5 text-xs font-medium ${judgingComplete ? 'text-green-700' : 'text-amber-700'}`}>
+              <Users className="h-3.5 w-3.5 shrink-0" />
+              {judgingComplete
+                ? `✅ กรรมการให้คะแนนครบ ${TOTAL_JUDGES} ท่านแล้ว`
+                : `⏳ กรรมการให้คะแนนแล้ว ${judgeCount}/${TOTAL_JUDGES} ท่าน — ไม่สามารถ upload ผลงานได้ขณะนี้`}
+            </div>
+          )}
+
+          {/* Comment notice */}
+          {team.has_judge_comments && (
+            <div className="text-xs text-blue-700 font-medium">
+              💬 กรรมการมี comment สำหรับทีมของท่าน
+              {!judgingComplete && ' — ปุ่มส่งผลงานแก้ไขจะเปิดเมื่อกรรมการให้คะแนนครบ 12 ท่าน'}
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="flex flex-wrap gap-2 pt-0.5">
+            {/* Original submit — only when no submission AND no judges yet */}
+            {canSubmitOriginal && (
+              <Link to="/contest/submit">
+                <Button size="sm" className="gap-2 bg-green-600 font-semibold text-white hover:bg-green-700">
+                  <Trophy className="h-4 w-4" /> ส่งผลงานรอบ 2
+                </Button>
+              </Link>
+            )}
+
+            {/* Submitted but no judges yet */}
+            {team.has_original_submission && judgeCount === 0 && (
+              <span className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs text-muted-foreground">
+                <CheckCircle2 className="h-3.5 w-3.5 text-green-500" /> ส่งผลงานรอบ 2 แล้ว — รอกรรมการให้คะแนน
+              </span>
+            )}
+
+            {/* Revised submit — leader only, after 12 judges + comments */}
+            {team.role === 'leader' && team.has_original_submission && (
+              canSubmitRevised ? (
+                <Link to="/contest/submit-revised">
+                  <Button size="sm" className="gap-2 bg-blue-600 font-semibold text-white hover:bg-blue-700">
+                    <Upload className="h-4 w-4" /> ส่งผลงานรอบ 2 แก้ไข
+                  </Button>
+                </Link>
+              ) : (
+                <Button
+                  size="sm"
+                  disabled
+                  className="gap-2 opacity-50 cursor-not-allowed"
+                  title={
+                    !judgingComplete
+                      ? `รอกรรมการให้คะแนนครบ ${TOTAL_JUDGES} ท่าน (ปัจจุบัน ${judgeCount} ท่าน)`
+                      : !team.has_judge_comments
+                      ? 'ยังไม่มี comment จากกรรมการ'
+                      : ''
+                  }
+                >
+                  <Upload className="h-4 w-4" /> ส่งผลงานรอบ 2 แก้ไข
+                </Button>
+              )
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 function StudentDashboardPage() {
@@ -168,28 +295,7 @@ function StudentDashboardPage() {
                   ? 'border-red-400/50 bg-red-50/50 dark:bg-red-950/20'
                   : 'border-blue-400/50 bg-blue-50/50 dark:bg-blue-950/20'
               }`}>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="font-semibold">
-                      {profile.contestTeam.round1_status === 'approved' ? '✅' :
-                       profile.contestTeam.round1_status === 'rejected' ? '❌' : '⏳'}{' '}
-                      ท่านอยู่ในทีม <strong>{profile.contestTeam.team_name}</strong>
-                      {' '}({profile.contestTeam.role === 'leader' ? 'หัวหน้าทีม' : 'สมาชิก'})
-                    </p>
-                    <p className="mt-0.5 text-sm text-muted-foreground">
-                      แคมเปญ: {profile.contestTeam.campaign_name} —{' '}
-                      {profile.contestTeam.round1_status === 'approved' ? 'ผ่านรอบ 1 แล้ว' :
-                       profile.contestTeam.round1_status === 'rejected' ? 'ไม่ผ่านรอบ 1' : 'รอผลพิจารณารอบ 1'}
-                    </p>
-                  </div>
-                  {profile.contestTeam.round1_status === 'approved' && (
-                    <Link to="/contest/submit">
-                      <Button size="sm" className="gap-2 bg-green-600 font-semibold text-white hover:bg-green-700">
-                        <Trophy className="h-4 w-4" /> ส่งผลงานรอบ 2
-                      </Button>
-                    </Link>
-                  )}
-                </div>
+                <ContestTeamSection team={profile.contestTeam} />
               </Card>
             ) : coreCompleted > 0 ? (
               <Card className="border-yellow-400/50 bg-yellow-50/50 p-5 dark:bg-yellow-950/20">
